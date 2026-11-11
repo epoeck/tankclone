@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs>
+<linearGradient id="brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe98a"/><stop offset=".45" stop-color="#f5bd24"/><stop offset="1" stop-color="#b8740a"/></linearGradient>
+<linearGradient id="ember" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc061"/><stop offset=".5" stop-color="#ff6d1f"/><stop offset="1" stop-color="#b52a16"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset=".5" stop-color="#b4bec9"/><stop offset="1" stop-color="#5f6a79"/></linearGradient>
+<radialGradient id="ball" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#9aa6b8"/><stop offset=".5" stop-color="#3d4760"/><stop offset="1" stop-color="#151a2c"/></radialGradient>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bcdcff"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3b17"/><stop offset=".5" stop-color="#c06a2c"/><stop offset="1" stop-color="#6b3213"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f4290"/><stop offset="1" stop-color="#18234f"/></linearGradient>
+</defs><polygon points="16.0,5.1 18.7,2.3 21.4,3.1 22.1,6.9 23.7,8.3 27.6,8.2 28.9,10.6 26.7,13.9 26.9,16.0 29.7,18.7 28.9,21.4 25.1,22.1 23.7,23.7 23.8,27.6 21.4,28.9 18.1,26.7 16.0,26.9 13.3,29.7 10.6,28.9 9.9,25.1 8.3,23.7 4.4,23.8 3.1,21.4 5.3,18.1 5.1,16.0 2.3,13.3 3.1,10.6 6.9,9.9 8.3,8.3 8.2,4.4 10.6,3.1 13.9,5.3" fill="url(#brass)" stroke="#141a3a" stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5"/><circle cx="16" cy="16" r="4.5" fill="#18234f" stroke="#141a3a" stroke-linejoin="round" stroke-linecap="round" stroke-width="2.0"/></svg>

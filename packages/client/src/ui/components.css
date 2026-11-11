@@ -1,0 +1,330 @@
+/* DDClank — componentes de UI. Depende de tokens.css.
+   Convenção: BEM simples (.bloco, .bloco__parte, .bloco--variante). Estados por atributo: [data-state], [aria-selected], [disabled]. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.dd {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Tipografia ---------- */
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: .02em;
+  color: var(--brass-300);
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 var(--purple-shadow);
+  margin: 0;
+  line-height: 1.05;
+}
+.title--xl { font-size: var(--fs-2xl); }
+.title--lg { font-size: var(--fs-xl); }
+.title--md { font-size: var(--fs-lg); -webkit-text-stroke-width: 5px; }
+.title--sm { font-size: var(--fs-md); -webkit-text-stroke-width: 4px; }
+.title--ember { color: var(--ember-300); }
+.title--cream { color: var(--cream); }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); font-weight: 800; }
+
+/* ---------- Painéis ---------- */
+/* Painel metálico: corpo azul, aro de latão, rebites nos cantos. */
+.panel {
+  position: relative;
+  background:
+    radial-gradient(circle at 12px 12px, var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at calc(100% - 12px) 12px, var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at 12px calc(100% - 12px), var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    var(--g-navy);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 0 0 3px var(--brass-500), inset 0 0 0 5px var(--brass-900), var(--drop);
+  padding: var(--gap-5);
+}
+.panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--gap-3);
+  margin-bottom: var(--gap-4);
+}
+/* Papel: área de leitura dentro de um painel (listas, chat, inventário). */
+.paper {
+  background: var(--cream);
+  color: var(--text-on-paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 2px var(--parchment-line);
+}
+.well {
+  background: var(--navy-950);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.5);
+}
+
+/* ---------- Botões ---------- */
+.btn {
+  appearance: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-2);
+  font-family: var(--font-display); font-size: var(--fs-lg); letter-spacing: .02em;
+  color: var(--cream);
+  -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill;
+  padding: 8px 20px 10px;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--g-brass);
+  box-shadow: var(--inset-shine), var(--drop);
+  transition: transform .06s, filter .12s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(3px); box-shadow: var(--inset-shine), 0 1px 0 var(--purple-shadow); }
+.btn:focus-visible { outline: 3px solid var(--sky-300); outline-offset: 3px; }
+.btn[disabled] { filter: grayscale(.9) brightness(.8); cursor: not-allowed; }
+.btn--ember { background: var(--g-ember); }
+.btn--steel { background: var(--g-steel); }
+.btn--sky { background: var(--g-sky); color: var(--navy-700); -webkit-text-stroke: 0; }
+.btn--blue { background: var(--g-teamblue); }
+.btn--sm { font-size: var(--fs-md); padding: 4px 12px 6px; -webkit-text-stroke-width: 3px; }
+.btn--lg { font-size: var(--fs-xl); padding: 10px 32px 14px; }
+.btn--icon { padding: 6px; }
+.btn img { width: 24px; height: 24px; }
+
+/* ---------- Abas ---------- */
+.tabs { display: flex; gap: var(--gap-2); flex-wrap: wrap; }
+.tab {
+  appearance: none; cursor: pointer;
+  font-family: var(--font-display); font-size: var(--fs-md);
+  color: var(--steel-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+  padding: 6px 14px 8px;
+  border: var(--line) solid var(--ink); border-bottom-width: 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: var(--navy-800);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab[aria-selected="true"] { background: var(--g-brass); color: var(--cream); }
+.tab[aria-disabled="true"] { opacity: .65; cursor: not-allowed; }
+.tab img { width: 18px; height: 18px; }
+.tab small { font-family: var(--font-body); font-size: var(--fs-xs); -webkit-text-stroke: 0; color: var(--text-dim); }
+
+/* ---------- Campos ---------- */
+.field { display: grid; gap: var(--gap-1); }
+.field input, .field select {
+  font: 800 var(--fs-md) var(--font-body);
+  color: var(--text-on-paper); background: var(--cream);
+  border: var(--line) solid var(--ink); border-radius: var(--r-sm);
+  padding: 8px 12px; box-shadow: inset 0 2px 0 var(--parchment-line);
+}
+.field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--sky-500); outline-offset: 1px; }
+
+/* ---------- Barras (medidores) ---------- */
+.bar {
+  --value: 50%;
+  --fill: var(--bar-hp);
+  position: relative; height: 18px;
+  background: var(--navy-950);
+  border: 2px solid var(--ink); border-radius: 999px;
+  overflow: hidden;
+}
+.bar::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: var(--value);
+  background: linear-gradient(180deg, rgba(255,255,255,.45), transparent 45%, rgba(0,0,0,.25)), var(--fill);
+  border-radius: inherit;
+  transition: width .25s;
+}
+.bar__text {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: var(--fs-xs); font-weight: 900; color: #fff;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+}
+.bar--hp { --fill: var(--bar-hp); }
+.bar--armor { --fill: var(--bar-armor); }
+.bar--dmg { --fill: var(--bar-dmg); }
+.bar--energy { --fill: var(--bar-energy); }
+.bar--xp { --fill: var(--bar-xp); height: 12px; }
+.bar--ok { --fill: var(--ok); }
+.bar--lg { height: 24px; }
+/* custo previsto (itens selecionados) sobreposto na barra de energia */
+.bar__cost { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.65) 0 4px, rgba(255,255,255,.2) 4px 8px); }
+
+/* ---------- Slots (equipamento / inventário / itens de turno) ---------- */
+.slot {
+  position: relative; width: 64px; height: 64px;
+  display: grid; place-items: center;
+  border: var(--line) solid var(--ink); border-radius: var(--r-md);
+  background: radial-gradient(circle at 50% 40%, var(--navy-600), var(--navy-900));
+  box-shadow: inset 0 0 0 2px var(--brass-700);
+}
+.slot img { width: 52px; height: 52px; }
+.slot--empty { background: var(--parchment); box-shadow: inset 0 0 0 2px var(--parchment-line); }
+.slot--empty::after { content: attr(data-label); font-size: var(--fs-xs); color: var(--parchment-line); font-weight: 900; text-align: center; }
+.slot--locked { filter: grayscale(1) brightness(.6); }
+.slot[aria-selected="true"] { box-shadow: inset 0 0 0 3px var(--brass-300), 0 0 0 3px var(--ember-500); }
+.slot__key, .slot__cost, .slot__tag {
+  position: absolute; font-weight: 900; font-size: var(--fs-xs); line-height: 1;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; color: #fff;
+}
+.slot__key { top: 3px; left: 5px; font-family: var(--font-display); font-size: var(--fs-md); color: var(--brass-300); }
+.slot__cost { bottom: 3px; right: 4px; color: var(--sky-300); }
+.slot__tag { top: 4px; right: 4px; color: var(--ember-300); }
+
+/* ---------- Chips / etiquetas ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-xs); font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 8px; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--steel-300); color: var(--ink);
+}
+.chip--wait { background: var(--ok); }
+.chip--play { background: var(--ember-500); color: #fff; }
+.chip--full { background: var(--steel-500); color: #fff; }
+.chip--lvl { background: var(--g-brass); }
+.chip img { width: 14px; height: 14px; }
+
+/* Distintivo de nível (engrenagem com número) */
+.lvl {
+  position: relative; width: 40px; height: 40px; display: grid; place-items: center;
+  background: url("/assets/ui/stats/icon-gear.svg") center / contain no-repeat;
+  font-family: var(--font-display); font-size: var(--fs-md); color: #fff;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+}
+
+/* ---------- Retrato de jogador ---------- */
+.portrait {
+  position: relative; width: 56px; height: 56px; flex: none;
+  border: var(--line) solid var(--ink); border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--sky-100), var(--sky-500));
+  overflow: hidden; box-shadow: var(--drop-sm);
+}
+.portrait--blue { background: radial-gradient(circle at 50% 35%, #9cc8ff, var(--team-blue)); }
+.portrait--red { background: radial-gradient(circle at 50% 35%, #ffb1a6, var(--team-red)); }
+.portrait .tank { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%) scale(.5); transform-origin: 50% 100%; }
+
+/* ---------- Tanque em camadas (placeholder do personagem) ---------- */
+.tank { position: relative; width: 120px; height: 96px; }
+.tank > img { position: absolute; inset: 0; width: 120px; height: 96px; }
+.tank > .tank__barrel { width: 72px; height: 24px; left: 52px; top: 34px; inset: auto; transform-origin: 8px 12px; transform: rotate(calc(var(--angle, 30deg) * -1)); }
+.tank--flip { transform: scaleX(-1); }
+
+/* ---------- Mensagens de chat ---------- */
+.chat { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); padding: var(--gap-3); overflow: auto; }
+.chat b { color: var(--team-blue-dark); }
+.chat .sys { color: var(--brass-700); font-style: italic; }
+.chat__input { display: flex; gap: var(--gap-2); }
+.chat__input input { flex: 1; min-width: 0; }
+
+/* ---------- Tabela (lista de salas, online) ---------- */
+.list { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.list th { text-align: left; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--brass-700); padding: 8px 10px; border-bottom: 2px solid var(--parchment-line); }
+.list td { padding: 8px 10px; border-bottom: 1px dashed var(--parchment-line); }
+.list tr[aria-selected="true"] td { background: var(--brass-300); }
+.list tr:hover td { background: rgba(245, 189, 36, .18); }
+.list .muted { color: #8a6f3c; }
+
+/* =================================================================
+   HUD da partida
+   ================================================================= */
+.hud { position: absolute; inset: 0; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+
+/* Ordem de turno (delay) */
+.turns { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; padding: 8px 10px; }
+.turns__item { position: relative; display: grid; justify-items: center; gap: 2px; }
+.turns__item .portrait { width: 42px; height: 42px; }
+.turns__item small { font-size: 10px; font-weight: 900; color: var(--text-dim); }
+.turns__item[aria-current="true"] .portrait { outline: 3px solid var(--brass-300); outline-offset: 2px; }
+.turns__item[aria-current="true"]::before { content: ""; position: absolute; top: -14px; width: 18px; height: 14px; background: url("/assets/ui/hud/turn-marker.svg") center / contain no-repeat; }
+
+/* Vento + relógio */
+.windbox { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--gap-3); padding: 8px 16px; }
+.wind { display: grid; justify-items: center; gap: 2px; min-width: 120px; }
+.wind__arrow { width: 96px; height: 40px; background: url("/assets/ui/hud/wind-arrow.svg") center / contain no-repeat; }
+.wind__arrow[data-dir="left"] { transform: scaleX(-1); }
+.wind__value { font-family: var(--font-display); font-size: var(--fs-xl); color: var(--sky-100); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; line-height: 1; }
+.timer {
+  --t: 70%;
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  border: var(--line) solid var(--ink);
+  background: conic-gradient(var(--brass-500) var(--t), var(--navy-950) 0);
+  box-shadow: var(--drop-sm);
+}
+.timer span { width: 46px; height: 46px; border-radius: 50%; background: var(--navy-800); border: 2px solid var(--ink); display: grid; place-items: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); }
+.timer[data-urgent] { background: conic-gradient(var(--ember-500) var(--t), var(--navy-950) 0); }
+
+/* Minimapa */
+.minimap { position: absolute; top: 12px; right: 12px; width: 220px; height: 88px; padding: 6px; }
+.minimap__view { position: absolute; border: 2px solid var(--cream); border-radius: 3px; }
+.minimap__dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); transform: translate(-50%, -50%); }
+
+/* Console inferior */
+.console {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+  display: grid; grid-template-columns: 250px 1fr 150px 150px; gap: var(--gap-4); align-items: center;
+  padding: 14px 20px 16px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.vitals { display: grid; gap: 6px; }
+.vitals__name { display: flex; align-items: center; gap: var(--gap-2); }
+.vitals__row { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 6px; }
+.vitals__row img { width: 22px; height: 22px; }
+
+.aim { display: grid; gap: 10px; }
+/* Barra de força: segurar e soltar. --power = força atual, --last = último tiro. */
+.power {
+  --power: 0%; --last: 0%;
+  position: relative; height: 28px;
+  border: var(--line) solid var(--ink); border-radius: var(--r-sm);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(255,255,255,.18) calc(10% - 2px) 10%),
+    var(--navy-950);
+  overflow: visible;
+}
+.power::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: var(--power);
+  background: linear-gradient(180deg, rgba(255,255,255,.5), transparent 50%), linear-gradient(90deg, var(--brass-500), var(--ember-500) 70%, var(--ember-700));
+}
+.power__last { position: absolute; top: -8px; bottom: -8px; left: var(--last); width: 3px; background: var(--sky-300); border: 1px solid var(--ink); transform: translateX(-50%); }
+.power__last::after { content: "último"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 900; color: var(--sky-300); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+.power__ruler { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: var(--text-dim); padding: 0 1px; margin-top: 2px; }
+.items { display: flex; gap: 6px; }
+.items .slot { width: 54px; height: 54px; }
+.items .slot img { width: 42px; height: 42px; }
+.items__sep { width: 2px; background: var(--brass-700); margin: 4px 2px; border-radius: 2px; }
+
+/* Transferidor de ângulo: --angle (graus absolutos), --min/--max = faixa da arma */
+.angle { position: relative; width: 150px; height: 112px; justify-self: center; }
+.angle__dial { position: absolute; left: 0; top: 0; width: 150px; height: 90px; }
+.angle__range {
+  --min: 20deg; --max: 65deg;
+  position: absolute; left: 11px; top: 11px; width: 128px; height: 128px; border-radius: 50%;
+  background: conic-gradient(from calc(270deg + var(--min) * 0) , transparent 0);
+}
+.angle__needle {
+  position: absolute; left: 75px; top: 79px; width: 62px; height: 4px; margin-top: -2px;
+  background: var(--ember-500); border: 1px solid var(--ink); border-radius: 2px;
+  transform-origin: 0 50%; transform: rotate(calc(var(--angle, 45deg) * -1));
+}
+.angle__value { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+
+/* Manômetro de pressão (a "fúria"): --pressure 0..1 gira o ponteiro de -135° a +135° */
+.gauge { position: relative; width: 120px; height: 120px; justify-self: center; }
+.gauge img { position: absolute; inset: 0; width: 120px; height: 120px; }
+.gauge__needle { transform: rotate(calc(-135deg + var(--pressure, 0) * 270deg)); transition: transform .3s; }
+.gauge__label { position: absolute; left: 0; right: 0; bottom: -6px; text-align: center; font-family: var(--font-display); font-size: var(--fs-sm); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.gauge[data-full] .gauge__label { color: var(--ember-300); }
+
+/* Rótulos flutuantes no mapa */
+.nameplate { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; gap: 3px; pointer-events: none; }
+.nameplate b { font-size: var(--fs-sm); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.nameplate .bar { width: 70px; height: 9px; }
+.nameplate--blue b { color: var(--sky-300); }
+.nameplate--red b { color: #ffb1a6; }
+.dmgpop { position: absolute; font-family: var(--font-display); font-size: var(--fs-xl); color: var(--ember-300); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; transform: translate(-50%, -50%) rotate(-6deg); }
+.dmgpop--crit { color: var(--brass-300); font-size: var(--fs-2xl); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar::before, .gauge__needle, .btn { transition: none; }
+}

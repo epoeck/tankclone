@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DDClank Telas</title>
+<link rel="icon" href="/assets/brand/mark.svg">
+<link rel="stylesheet" href="/src/ui/tokens.css">
+<link rel="stylesheet" href="/src/ui/components.css">
+<style>
+  /* Página de referência das telas (não é o jogo). Cada .stage é uma tela 1280×720. */
+  body { margin: 0; background: var(--navy-950); }
+  .sheet { display: grid; gap: 28px; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); justify-items: center; }
+  .sheet > h2 { justify-self: start; max-width: 1280px; width: 100%; margin: 0 auto -16px; }
+  .fit { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; position: relative; container-type: inline-size; }
+  .stage { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; transform-origin: 0 0; transform: scale(calc(100cqw / 1280px)); overflow: hidden; border-radius: 14px; border: 3px solid var(--ink); }
+  @supports not (transform: scale(calc(100cqw / 1280px))) { .stage { position: relative; } }
+  .bg-workshop {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(111,182,255,.25), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 80px),
+      linear-gradient(180deg, var(--navy-700), var(--navy-900));
+  }
+  .row { display: flex; gap: var(--gap-3); align-items: center; }
+  .col { display: grid; gap: var(--gap-3); }
+  .grow { flex: 1; min-width: 0; }
+  .muted { color: var(--text-dim); }
+</style>
+</head>
+<body class="dd">
+<main class="sheet">
+
+<!-- ======================= 1. LOGIN ======================= -->
+<h2 class="title title--md" id="login">1 · Entrada</h2>
+<div class="fit"><section class="stage bg-workshop">
+  <img src="/assets/brand/logo.png" alt="DDClank: O Retorno" style="position:absolute; left:50%; top:40px; width:640px; transform:translateX(-50%);">
+  <form class="panel" style="position:absolute; left:50%; top:345px; width:420px; transform:translateX(-50%); display:grid; gap:14px;">
+    <label class="field"><span class="label">Apelido</span><input id="login-nick" value="Izzy" autocomplete="username"></label>
+    <label class="field"><span class="label">Senha</span><input id="login-pass" type="password" value="••••••••" autocomplete="current-password"></label>
+    <div class="row" style="justify-content:space-between; margin-top:6px;">
+      <button type="button" class="btn btn--steel btn--sm">Criar conta</button>
+      <button type="button" class="btn btn--ember btn--lg">Entrar</button>
+    </div>
+  </form>
+  <div class="row" style="position:absolute; bottom:18px; left:24px; gap:8px;"><span class="chip chip--wait">Servidor on</span><span class="muted" style="font-size:13px;">Oficina do Izzy · 12 de 20 online</span></div>
+  <div class="muted" style="position:absolute; bottom:18px; right:24px; font-size:12px;">v0.1 build PvP</div>
+</section></div>
+
+<!-- ======================= 2. LOBBY ======================= -->
+<h2 class="title title--md" id="lobby">2 · Saguão</h2>
+<div class="fit"><section class="stage bg-workshop">
+  <!-- barra do jogador -->
+  <header class="panel" style="position:absolute; left:16px; right:16px; top:12px; height:84px; padding:12px 20px; display:flex; align-items:center; gap:16px;">
+    <div class="portrait portrait--blue"><div class="tank"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div></div>
+    <div class="col" style="gap:4px; width:260px;">
+      <div class="row" style="gap:8px;"><span class="title title--sm title--cream">Izzy</span><span class="chip chip--lvl">Nv 27</span></div>
+      <div class="bar bar--xp" style="--value:62%"></div>
+    </div>
+    <div class="row" style="gap:6px;"><img src="/assets/ui/stats/stat-power.svg" width="28" height="28" alt=""><span class="label">Poder</span><span class="title title--sm num">18.420</span></div>
+    <div class="grow"></div>
+    <img src="/assets/brand/logo.png" alt="" style="height:64px;">
+    <div class="grow"></div>
+    <button class="btn btn--sm"><img src="/assets/ui/stats/icon-gear.svg" alt="">Oficina</button>
+    <button class="btn btn--steel btn--sm">Sair</button>
+  </header>
+
+  <!-- lista de salas -->
+  <section class="panel" style="position:absolute; left:16px; top:112px; width:820px; bottom:16px; display:flex; flex-direction:column;">
+    <div class="panel__head">
+      <h3 class="title title--lg">Salas</h3>
+      <div class="tabs" role="tablist" style="margin-bottom:-24px;">
+        <button class="tab" role="tab" aria-selected="true">Todas</button>
+        <button class="tab" role="tab">1 contra 1</button>
+        <button class="tab" role="tab">2 contra 2</button>
+        <button class="tab" role="tab">4 contra 4</button>
+      </div>
+    </div>
+    <div class="paper grow" style="overflow:auto;">
+      <table class="list">
+        <thead><tr><th>Nº</th><th>Sala</th><th>Modo</th><th>Mapa</th><th>Jogadores</th><th>Situação</th></tr></thead>
+        <tbody>
+          <tr><td class="num muted">01</td><td>Treino de vento forte</td><td>1×1</td><td>Colinas de Latão</td><td class="num">1/2</td><td><span class="chip chip--wait">Esperando</span></td></tr>
+          <tr aria-selected="true"><td class="num muted">03</td><td>Só tiro alto <img src="/assets/ui/stats/icon-lock.svg" width="14" height="14" alt="com senha" style="vertical-align:-2px"></td><td>2×2</td><td>Pátio de Ferro</td><td class="num">3/4</td><td><span class="chip chip--wait">Esperando</span></td></tr>
+          <tr><td class="num muted">04</td><td>Revanche de ontem</td><td>4×4</td><td>Ilhas Flutuantes</td><td class="num">8/8</td><td><span class="chip chip--play">Em jogo</span></td></tr>
+          <tr><td class="num muted">06</td><td>Tatu liberado</td><td>2×2</td><td>Forja Vulcânica</td><td class="num">4/4</td><td><span class="chip chip--full">Cheia</span></td></tr>
+          <tr><td class="num muted">07</td><td>Galera do 4v4</td><td>4×4</td><td>Torres de Nuvem</td><td class="num">5/8</td><td><span class="chip chip--wait">Esperando</span></td></tr>
+          <tr><td class="num muted">09</td><td>x1 valendo pizza</td><td>1×1</td><td>Pátio de Ferro</td><td class="num">2/2</td><td><span class="chip chip--play">Em jogo</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-top:16px;">
+      <button class="btn btn--steel">Atualizar</button>
+      <button class="btn btn--sky">Entrada rápida</button>
+      <button class="btn btn--ember">Criar sala</button>
+    </div>
+  </section>
+
+  <!-- online + chat -->
+  <aside class="panel" style="position:absolute; left:852px; right:16px; top:112px; bottom:16px; display:grid; grid-template-rows:auto 1fr auto 150px; gap:10px;">
+    <h3 class="title title--md">Na oficina <span class="num" style="color:var(--sky-300)">12</span></h3>
+    <div class="paper" style="overflow:auto;">
+      <table class="list">
+        <tbody>
+          <tr><td>Izzy</td><td><span class="chip chip--lvl">27</span></td><td class="muted">Saguão</td></tr>
+          <tr><td>Bia</td><td><span class="chip chip--lvl">22</span></td><td class="muted">Sala 03</td></tr>
+          <tr><td>Kaio</td><td><span class="chip chip--lvl">30</span></td><td class="muted">Em jogo</td></tr>
+          <tr><td>Duda</td><td><span class="chip chip--lvl">14</span></td><td class="muted">Sala 07</td></tr>
+          <tr><td>Rafa</td><td><span class="chip chip--lvl">19</span></td><td class="muted">Em jogo</td></tr>
+          <tr><td>Nina</td><td><span class="chip chip--lvl">8</span></td><td class="muted">Tutorial</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <span class="label">Conversa geral</span>
+    <div class="paper" style="display:grid; grid-template-rows:1fr auto;">
+      <div class="chat"><span class="sys">Kaio venceu a sala 04.</span><span><b>Bia:</b> bora 2v2 no pátio?</span><span><b>Duda:</b> 1446 neles</span></div>
+      <div class="chat__input field" style="padding:0 8px 8px;"><input id="lobby-chat" placeholder="Escreva e aperte Enter"></div>
+    </div>
+  </aside>
+</section></div>
+
+<!-- ======================= 3. SALA ======================= -->
+<h2 class="title title--md" id="sala">3 · Sala</h2>
+<div class="fit"><section class="stage bg-workshop">
+  <header class="row" style="position:absolute; left:24px; right:24px; top:18px;">
+    <h3 class="title title--lg">Sala 03 · Só tiro alto</h3>
+    <span class="chip chip--lvl">2 contra 2</span>
+    <div class="grow"></div>
+    <button class="btn btn--steel btn--sm">Sair da sala</button>
+  </header>
+
+  <!-- times -->
+  <section style="position:absolute; left:24px; top:80px; width:820px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div class="panel" style="padding:16px; box-shadow: inset 0 0 0 3px var(--team-blue), inset 0 0 0 5px var(--team-blue-dark), var(--drop);">
+      <h4 class="title title--md" style="color:var(--sky-300); margin-bottom:12px;">Time Azul</h4>
+      <div class="col" style="gap:10px;">
+        <div class="paper row" style="padding:8px 12px;"><div class="portrait portrait--blue"><div class="tank"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-blue.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div></div><div class="grow"><b>Izzy</b> <img src="/assets/ui/stats/icon-crown.svg" width="16" height="16" alt="dono da sala" style="vertical-align:-2px"><br><small class="muted">Nv 27 · Poder 18.420</small></div><span class="chip chip--wait">Pronto</span></div>
+        <div class="paper row" style="padding:8px 12px;"><div class="portrait portrait--blue"><div class="tank"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-blue.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div></div><div class="grow"><b>Bia</b><br><small class="muted">Nv 22 · Poder 12.080</small></div><span class="chip chip--wait">Pronto</span></div>
+        <div class="slot slot--empty" data-label="Vago" style="width:100%; height:72px;"></div>
+        <div class="slot slot--empty slot--locked" data-label="Fechado" style="width:100%; height:72px;"></div>
+      </div>
+    </div>
+    <div class="panel" style="padding:16px; box-shadow: inset 0 0 0 3px var(--team-red), inset 0 0 0 5px var(--team-red-dark), var(--drop);">
+      <h4 class="title title--md" style="color:#ffb1a6; margin-bottom:12px;">Time Vermelho</h4>
+      <div class="col" style="gap:10px;">
+        <div class="paper row" style="padding:8px 12px;"><div class="portrait portrait--red"><div class="tank"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-red.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div></div><div class="grow"><b>Duda</b><br><small class="muted">Nv 14 · Poder 7.310</small></div><span class="chip">Escolhendo</span></div>
+        <div class="slot slot--empty" data-label="Vago" style="width:100%; height:72px;"></div>
+        <div class="slot slot--empty slot--locked" data-label="Fechado" style="width:100%; height:72px;"></div>
+        <div class="slot slot--empty slot--locked" data-label="Fechado" style="width:100%; height:72px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- configuração -->
+  <aside class="panel" style="position:absolute; left:860px; right:24px; top:80px; padding:16px; display:grid; gap:12px;">
+    <span class="label">Mapa</span>
+    <img src="/assets/maps/map-ferro.svg" alt="Pátio de Ferro" style="width:100%; border:3px solid var(--ink); border-radius:10px;">
+    <div class="row" style="justify-content:space-between;"><b>Pátio de Ferro</b><span class="chip">Chão firme</span></div>
+    <div class="row" style="gap:6px;">
+      <img src="/assets/maps/map-colinas.svg" alt="Colinas de Latão" style="width:64px; border:2px solid var(--ink); border-radius:6px;">
+      <img src="/assets/maps/map-ferro.svg" alt="Pátio de Ferro" style="width:64px; border:2px solid var(--brass-300); border-radius:6px;">
+      <img src="/assets/maps/map-ilhas.svg" alt="Ilhas Flutuantes" style="width:64px; border:2px solid var(--ink); border-radius:6px;">
+      <img src="/assets/maps/map-forja.svg" alt="Forja Vulcânica" style="width:64px; border:2px solid var(--ink); border-radius:6px;">
+      <img src="/assets/maps/map-nuvens.svg" alt="Torres de Nuvem" style="width:64px; border:2px solid var(--ink); border-radius:6px;">
+    </div>
+    <div class="row" style="justify-content:space-between;"><span class="label">Tempo de turno</span><b class="num">10 s</b></div>
+    <small class="muted">Cai para 5 s se todos tiverem Poder acima de 25.000.</small>
+  </aside>
+
+  <!-- chat + ações -->
+  <div class="paper" style="position:absolute; left:24px; top:500px; width:820px; height:196px; display:grid; grid-template-rows:1fr auto;">
+    <div class="chat"><span class="sys">Bia entrou na sala.</span><span><b>Bia:</b> vou de Marreta pra cavar</span><span><b>Izzy:</b> fechou, eu vou de Prisma</span></div>
+    <div class="chat__input field" style="padding:0 10px 10px;"><input id="room-chat" placeholder="Escreva e aperte Enter"></div>
+  </div>
+  <div class="col" style="position:absolute; left:860px; right:24px; bottom:24px;">
+    <div class="row" style="gap:8px;">
+      <span class="label">Arma</span>
+      <div class="slot" aria-selected="true" style="width:72px; height:48px;"><img src="/assets/ui/weapons/weapon-prism.svg" alt="Prisma" style="width:64px; height:32px;"></div>
+      <div class="slot" style="width:72px; height:48px;"><img src="/assets/ui/weapons/weapon-sledge.svg" alt="Marreta" style="width:64px; height:32px;"></div>
+      <div class="slot" style="width:72px; height:48px;"><img src="/assets/ui/weapons/weapon-furnace.svg" alt="Fornalha" style="width:64px; height:32px;"></div>
+    </div>
+    <div class="row"><button class="btn btn--steel grow">Trocar time</button><button class="btn btn--ember btn--lg grow">Iniciar</button></div>
+  </div>
+</section></div>
+
+<!-- ======================= 4. PARTIDA ======================= -->
+<h2 class="title title--md" id="partida">4 · Partida</h2>
+<div class="fit"><section class="stage">
+  <!-- cenário de exemplo (o jogo desenha isso no canvas) -->
+  <svg width="1280" height="720" viewBox="0 0 1280 720" style="position:absolute; inset:0;" aria-hidden="true">
+    <defs>
+      <linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc98a"/><stop offset=".6" stop-color="#ffe8c4"/><stop offset="1" stop-color="#cfe6ff"/></linearGradient>
+      <linearGradient id="chao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa3b3"/><stop offset="1" stop-color="#4a5466"/></linearGradient>
+    </defs>
+    <rect width="1280" height="720" fill="url(#ceu)"/>
+    <circle cx="1040" cy="190" r="60" fill="#fff6e0" opacity=".8"/>
+    <g fill="#c9b49a" opacity=".55"><path d="M0 520 L120 380 L220 470 L340 360 L470 500 L600 420 L760 520 L900 390 L1060 480 L1180 400 L1280 470 L1280 720 L0 720Z"/></g>
+    <path d="M0 560 C120 540 180 520 260 528 C360 540 420 600 520 596 C640 590 700 520 820 512 C920 506 1000 560 1100 548 C1180 540 1230 520 1280 524 L1280 720 L0 720 Z" fill="url(#chao)" stroke="#141a3a" stroke-width="4"/>
+    <path d="M488 598 a40 34 0 0 0 64 -2" fill="#ffe8c4" stroke="#141a3a" stroke-width="3"/>
+    <rect x="0" y="690" width="1280" height="30" fill="#4a5466" stroke="#141a3a" stroke-width="4"/>
+    <g fill="#141a3a">  <circle cx="40" cy="705" r="3"/><circle cx="200" cy="705" r="3"/><circle cx="360" cy="705" r="3"/><circle cx="520" cy="705" r="3"/><circle cx="680" cy="705" r="3"/><circle cx="840" cy="705" r="3"/><circle cx="1000" cy="705" r="3"/><circle cx="1160" cy="705" r="3"/></g>
+    <path d="M300 470 Q 600 120 900 460" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round" opacity=".9"/>
+  </svg>
+
+  <!-- tanques (sprites em camadas) -->
+  <div class="tank" style="position:absolute; left:220px; top:436px; --angle:52deg;"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-blue.svg" alt=""><img class="tank__barrel" src="/assets/sprites/tank/tank-barrel.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div>
+  <div class="tank tank--flip" style="position:absolute; left:850px; top:422px; --angle:35deg;"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-red.svg" alt=""><img class="tank__barrel" src="/assets/sprites/tank/tank-barrel.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div>
+  <div class="tank" style="position:absolute; left:80px; top:440px; --angle:40deg;"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-blue.svg" alt=""><img class="tank__barrel" src="/assets/sprites/tank/tank-barrel.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div>
+  <div class="tank tank--flip" style="position:absolute; left:1060px; top:446px; --angle:45deg;"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-red.svg" alt=""><img class="tank__barrel" src="/assets/sprites/tank/tank-barrel.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div>
+  <img src="/assets/ui/hud/shell.svg" alt="" style="position:absolute; left:590px; top:282px; width:28px;">
+
+  <div class="nameplate nameplate--blue" style="left:280px; top:432px;"><b>Izzy</b><div class="bar bar--hp" style="--value:84%"></div></div>
+  <div class="nameplate nameplate--red" style="left:910px; top:418px;"><b>Duda</b><div class="bar bar--hp" style="--value:46%"></div></div>
+  <div class="nameplate nameplate--blue" style="left:140px; top:436px;"><b>Bia</b><div class="bar bar--hp" style="--value:100%"></div></div>
+  <div class="nameplate nameplate--red" style="left:1120px; top:442px;"><b>Rafa</b><div class="bar bar--hp" style="--value:71%"></div></div>
+  <div class="dmgpop" style="left:930px; top:370px;">-612</div>
+
+  <div class="hud">
+    <div class="turns panel" style="padding:10px 12px;">
+      <div class="turns__item" aria-current="true"><div class="portrait portrait--blue"></div><small>Izzy</small></div>
+      <div class="turns__item"><div class="portrait portrait--red"></div><small>Duda +38</small></div>
+      <div class="turns__item"><div class="portrait portrait--blue"></div><small>Bia +52</small></div>
+      <div class="turns__item"><div class="portrait portrait--red"></div><small>Rafa +90</small></div>
+    </div>
+
+    <div class="windbox panel" style="padding:8px 16px;">
+      <div class="wind"><span class="label">Vento</span><div class="wind__arrow" data-dir="right"></div><span class="wind__value num">3,4</span></div>
+      <div class="timer" style="--t:70%"><span class="num">7</span></div>
+    </div>
+
+    <div class="minimap well">
+      <svg viewBox="0 0 220 88" width="208" height="76" aria-hidden="true"><path d="M0 60 C30 56 45 52 65 54 C90 56 105 70 130 69 C160 68 175 52 205 51 L220 51 L220 88 L0 88Z" fill="#7f8a99"/></svg>
+      <div class="minimap__view" style="left:40px; top:12px; width:120px; height:64px;"></div>
+      <span class="minimap__dot" style="left:60px; top:56px; background:var(--team-blue);"></span>
+      <span class="minimap__dot" style="left:30px; top:58px; background:var(--team-blue);"></span>
+      <span class="minimap__dot" style="left:160px; top:53px; background:var(--team-red);"></span>
+      <span class="minimap__dot" style="left:200px; top:54px; background:var(--team-red);"></span>
+    </div>
+
+    <div class="console panel">
+      <div class="vitals">
+        <div class="vitals__name"><span class="title title--sm title--cream">Izzy</span><span class="chip chip--lvl">Prisma</span></div>
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-hp.svg" alt="Vida"><div class="bar bar--hp" style="--value:84%"><span class="bar__text num">4.074 / 4.850</span></div></div>
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-energy.svg" alt="Energia"><div class="bar bar--energy" style="--value:100%"><span class="bar__cost" style="left:31%; right:0;"></span><span class="bar__text num">282 · itens −195</span></div></div>
+      </div>
+
+      <div class="aim">
+        <div>
+          <div class="power" style="--power:63%; --last:61%"><span class="power__last"></span></div>
+          <div class="power__ruler num"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90</span><span>100</span></div>
+        </div>
+        <div class="items">
+          <div class="slot" aria-selected="true"><img src="/assets/ui/items/item-1.svg" alt="Rajada"><span class="slot__key">1</span><span class="slot__cost">110</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-2.svg" alt="Leque"><span class="slot__key">2</span><span class="slot__cost">110</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-3.svg" alt="Bis"><span class="slot__key">3</span><span class="slot__cost">110</span></div>
+          <div class="slot" aria-selected="true"><img src="/assets/ui/items/item-4.svg" alt="Pólvora +50%"><span class="slot__key">4</span><span class="slot__tag">50%</span><span class="slot__cost">85</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-5.svg" alt="Pólvora +40%"><span class="slot__key">5</span><span class="slot__tag">40%</span><span class="slot__cost">80</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-6.svg" alt="Pólvora +30%"><span class="slot__key">6</span><span class="slot__tag">30%</span><span class="slot__cost">70</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-7.svg" alt="Pólvora +20%"><span class="slot__key">7</span><span class="slot__tag">20%</span><span class="slot__cost">55</span></div>
+          <div class="slot"><img src="/assets/ui/items/item-8.svg" alt="Pólvora +10%"><span class="slot__key">8</span><span class="slot__tag">10%</span><span class="slot__cost">50</span></div>
+          <span class="items__sep"></span>
+          <div class="slot"><img src="/assets/ui/items/item-f.svg" alt="Voo"><span class="slot__key">F</span><span class="slot__cost">150</span></div>
+        </div>
+      </div>
+
+      <div class="angle" style="--angle:52deg">
+        <img class="angle__dial" src="/assets/ui/hud/angle-dial.svg" alt="">
+        <span class="angle__needle"></span>
+        <span class="angle__value num">52°</span>
+      </div>
+
+      <div class="gauge" style="--pressure:.72">
+        <img src="/assets/ui/hud/pressure-gauge.svg" alt="">
+        <img class="gauge__needle" src="/assets/ui/hud/pressure-needle.svg" alt="">
+        <span class="gauge__label">Pressão 72%</span>
+      </div>
+    </div>
+  </div>
+</section></div>
+
+<!-- ======================= 5. OFICINA (perfil) ======================= -->
+<h2 class="title title--md" id="oficina">5 · Oficina (perfil e equipamentos)</h2>
+<div class="fit"><section class="stage bg-workshop">
+  <div class="tabs" role="tablist" style="position:absolute; left:28px; top:20px;">
+    <button class="tab" role="tab" aria-selected="true"><img src="/assets/ui/stats/icon-gear.svg" alt="">Equipar</button>
+    <button class="tab" role="tab" aria-disabled="true"><img src="/assets/ui/stats/icon-lock.svg" alt="">Pérolas <small>Nv 18</small></button>
+    <button class="tab" role="tab" aria-disabled="true"><img src="/assets/ui/stats/icon-lock.svg" alt="">Mascotes <small>Nv 25</small></button>
+    <button class="tab" role="tab" aria-disabled="true"><img src="/assets/ui/stats/icon-lock.svg" alt="">Cartas <small>Nv 30</small></button>
+  </div>
+  <button class="btn btn--ember btn--icon" style="position:absolute; right:24px; top:14px; width:44px; height:44px;" aria-label="Fechar">✕</button>
+
+  <!-- personagem + slots -->
+  <section class="panel" style="position:absolute; left:20px; top:62px; width:640px; bottom:20px; padding:18px; display:grid; grid-template-rows:auto 1fr auto auto; gap:12px;">
+    <div class="row">
+      <span class="title title--lg title--cream">Izzy</span><span class="chip chip--lvl">Nv 27</span>
+      <div class="grow"></div>
+      <img src="/assets/ui/stats/stat-power.svg" width="30" height="30" alt=""><span class="label">Poder</span><span class="title title--lg num">18.420</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(2, 64px) 1fr repeat(2, 64px); gap:10px; align-items:center;">
+      <div class="col" style="gap:10px;"><div class="slot" ><img src="/assets/ui/weapons/weapon-prism.svg" alt="Prisma" style="width:58px;height:29px"></div><div class="slot slot--empty" data-label="Chapéu"></div><div class="slot slot--empty" data-label="Cabelo"></div><div class="slot slot--empty" data-label="Roupa"></div></div>
+      <div class="col" style="gap:10px;"><div class="slot slot--empty" data-label="Óculos"></div><div class="slot slot--empty" data-label="Rosto"></div><div class="slot slot--empty" data-label="Asas"></div><div class="slot slot--empty" data-label="Emblema"></div></div>
+      <div style="position:relative; height:290px; display:grid; place-items:center; background: radial-gradient(circle at 50% 70%, rgba(255,233,138,.35), transparent 60%);">
+        <img src="/assets/brand/mark.svg" alt="" style="position:absolute; width:220px; opacity:.12;">
+        <div class="tank" style="transform:scale(1.7); --angle:30deg;"><img src="/assets/sprites/tank/tank-tracks.svg" alt=""><img src="/assets/sprites/tank/tank-hull.svg" alt=""><img src="/assets/sprites/tank/tank-flag-blue.svg" alt=""><img class="tank__barrel" src="/assets/sprites/tank/tank-barrel.svg" alt=""><img src="/assets/sprites/tank/tank-turret.svg" alt=""></div>
+      </div>
+      <div class="col" style="gap:10px;"><div class="slot slot--empty" data-label="Anel"></div><div class="slot slot--empty" data-label="Anel"></div><div class="slot slot--empty" data-label="Pulseira"></div><div class="slot slot--empty" data-label="Pulseira"></div></div>
+      <div class="col" style="gap:10px;"><div class="slot slot--empty slot--locked" data-label="Pérola"></div><div class="slot slot--empty slot--locked" data-label="Mascote"></div><div class="slot slot--empty slot--locked" data-label="Carta"></div><div class="slot slot--empty slot--locked" data-label="Carta"></div></div>
+    </div>
+    <div class="row"><span class="label">XP</span><div class="bar bar--xp grow" style="--value:62%; height:16px;"><span class="bar__text num">62% para o Nv 28</span></div></div>
+    <!-- atributos -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 18px;">
+      <div class="well col" style="padding:12px; gap:8px;">
+        <div class="row"><img src="/assets/ui/stats/stat-atk.svg" width="24" height="24" alt=""><span class="grow">Ataque</span><b class="num">1.240</b></div>
+        <div class="row"><img src="/assets/ui/stats/stat-def.svg" width="24" height="24" alt=""><span class="grow">Defesa</span><b class="num">980</b></div>
+        <div class="row"><img src="/assets/ui/stats/stat-agi.svg" width="24" height="24" alt=""><span class="grow">Agilidade</span><b class="num">1.860</b></div>
+        <div class="row"><img src="/assets/ui/stats/stat-luck.svg" width="24" height="24" alt=""><span class="grow">Sorte</span><b class="num">720</b></div>
+      </div>
+      <div class="well col" style="padding:12px; gap:8px;">
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-dmg.svg" alt="Dano"><div class="bar bar--dmg" style="--value:100%"><span class="bar__text num">Dano 412</span></div></div>
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-armor.svg" alt="Armadura"><div class="bar bar--armor" style="--value:100%"><span class="bar__text num">Armadura 365</span></div></div>
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-hp.svg" alt="Vida"><div class="bar bar--hp" style="--value:100%"><span class="bar__text num">Vida 4.850</span></div></div>
+        <div class="vitals__row" title="220 + Agilidade ÷ 30"><img src="/assets/ui/stats/stat-energy.svg" alt="Energia"><div class="bar bar--energy" style="--value:100%"><span class="bar__text num">Energia 282</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- inventário -->
+  <section class="panel" style="position:absolute; left:676px; right:20px; top:62px; bottom:20px; padding:18px; display:grid; grid-template-rows:auto 1fr auto; gap:12px;">
+    <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Equipamentos</button><button class="tab" role="tab">Itens</button></div>
+    <div class="paper" style="padding:14px; display:grid; grid-template-columns:repeat(7, 64px); gap:10px; justify-content:center; align-content:start;">
+      <div class="slot" aria-selected="true"><img src="/assets/ui/weapons/weapon-prism.svg" alt="Prisma" style="width:58px;height:29px"></div>
+      <div class="slot"><img src="/assets/ui/weapons/weapon-sledge.svg" alt="Marreta" style="width:58px;height:29px"></div>
+      <div class="slot"><img src="/assets/ui/weapons/weapon-furnace.svg" alt="Fornalha" style="width:58px;height:29px"></div>
+      <div class="slot"><img src="/assets/ui/stats/stat-armor.svg" alt="Capacete"></div>
+      <div class="slot"><img src="/assets/ui/stats/stat-def.svg" alt="Escudo"></div>
+      <div class="slot"><img src="/assets/ui/stats/stat-agi.svg" alt="Pena"></div>
+      <div class="slot"><img src="/assets/ui/stats/stat-luck.svg" alt="Ferradura"></div>
+      <div class="slot"><img src="/assets/ui/stats/stat-xp.svg" alt="Estrela"></div>
+      <div class="slot"><img src="/assets/ui/stats/icon-crown.svg" alt="Coroa"></div>
+      <div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div>
+      <div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div>
+      <div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div>
+      <div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div><div class="slot slot--empty" data-label=""></div>
+    </div>
+    <!-- ficha do item selecionado -->
+    <div class="well row" style="padding:12px; align-items:flex-start;">
+      <div class="slot"><img src="/assets/ui/weapons/weapon-prism.svg" alt="" style="width:58px;height:29px"></div>
+      <div class="grow col" style="gap:2px;">
+        <span class="title title--md">Prisma</span>
+        <small class="muted">Canhão de feixe colorido · ângulo 20° a 65°</small>
+        <span class="num">Dano base <b>200</b> · Ataque <b>+180</b></span>
+      </div>
+      <button class="btn btn--sm">Equipado</button>
+    </div>
+  </section>
+</section></div>
+
+</main>
+</body>
+</html>
