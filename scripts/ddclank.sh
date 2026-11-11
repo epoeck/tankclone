@@ -3,6 +3,7 @@
 # (WebSocket + arquivos do jogo na mesma porta) e abre o navegador em play.html.
 #   ddclank.sh [iniciar]   liga (ou só abre o navegador se já estiver ligado)
 #   ddclank.sh parar       desliga com calma (fecha conexões e o banco)
+#   ddclank.sh reiniciar   desliga, aplica o código novo (install/build se preciso) e liga de novo
 #   ddclank.sh status      diz se está ligado
 #   ddclank.sh log         abre o log do servidor
 set -u
@@ -42,6 +43,13 @@ parar() {
   avisar "DDClank desligado" "Servidor encerrado; partidas em andamento foram fechadas."
 }
 
+# Verdadeiro se algum código/arquivo do jogo é mais novo que o início do servidor em execução.
+desatualizado() {
+  [ -f "$PIDFILE" ] || return 1
+  [ -n "$(find "$ROOT"/package-lock.json "$ROOT"/packages/*/src "$ROOT"/packages/*/package.json "$ROOT"/packages/client/public "$ROOT"/packages/client/*.html -newer "$PIDFILE" -type f -print -quit 2>/dev/null)" ]
+}
+conexoes() { ss -tnH state established "( sport = :$PORT )" 2>/dev/null | wc -l; }
+
 precisa() { # alvo, fontes...  → verdadeiro se o alvo falta ou alguma fonte é mais nova
   local alvo="$1"; shift
   [ -e "$alvo" ] || return 0
@@ -49,7 +57,13 @@ precisa() { # alvo, fontes...  → verdadeiro se o alvo falta ou alguma fonte é
 }
 
 iniciar() {
-  if pid_vivo && porta_ok; then xdg-open "$URL" >/dev/null 2>&1 & return 0; fi
+  if pid_vivo && porta_ok; then
+    if desatualizado; then
+      if [ "$(conexoes)" -eq 0 ]; then avisar "DDClank" "Código novo encontrado; reiniciando o servidor..."; parar >/dev/null; iniciar; return; fi
+      avisar "DDClank: atualização pendente" "Tem código novo, mas há jogadores conectados. Quando puder: menu → DDClank → Reiniciar servidor."
+    fi
+    xdg-open "$URL" >/dev/null 2>&1 & return 0
+  fi
   porta_ok && falhar "A porta $PORT já está em uso por outro programa."
   achar_node
   cd "$ROOT" || exit 1
@@ -74,7 +88,8 @@ iniciar() {
 case "${1:-iniciar}" in
   iniciar|start) iniciar ;;
   parar|stop) parar ;;
+  reiniciar|restart) parar >/dev/null; iniciar ;;
   status) if pid_vivo && porta_ok; then echo "ligado (pid $(cat "$PIDFILE")) em $URL"; else echo "desligado"; exit 1; fi ;;
   log) xdg-open "$LOG" >/dev/null 2>&1 & ;;
-  *) echo "uso: $0 [iniciar|parar|status|log]"; exit 2 ;;
+  *) echo "uso: $0 [iniciar|parar|reiniciar|status|log]"; exit 2 ;;
 esac

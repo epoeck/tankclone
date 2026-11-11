@@ -15,10 +15,11 @@ servidor servindo **o jogo e o WebSocket na mesma porta** (`STATIC_DIR=packages/
 ```bash
 scripts/ddclank.sh            # liga (se já estiver ligado, só abre o navegador)
 scripts/ddclank.sh parar      # desliga com calma: fecha conexões e o banco (SIGTERM)
+scripts/ddclank.sh reiniciar  # aplica código novo (install/build se preciso) e liga de novo
 scripts/ddclank.sh status
 scripts/ddclank.sh log
 ```
-No menu do KDE: **DDClank** liga; clique direito → **Desligar servidor** (ou o item **DDClank — desligar servidor**).
+No menu do KDE: **DDClank** liga (e reinicia sozinho com código novo se ninguém estiver conectado); clique direito → **Reiniciar servidor** ou **Desligar servidor** (ou o item **DDClank — desligar servidor**).
 Os atalhos ficam em `~/.local/share/applications/ddclank.desktop` e `ddclank-parar.desktop`.
 Com o servidor servindo o cliente, o mesmo túnel (`cloudflared tunnel --url http://localhost:8080`) entrega o jogo e o
 `wss://` para os amigos.
