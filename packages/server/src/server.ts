@@ -2,6 +2,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Db, unlocksAt } from "./db";
+import { ChatLimiter, cleanChat } from "./chat";
 import { loadMaps } from "./maps";
 import { AuthLimiter, DEFAULT_LIMITS, type LimitConfig } from "./limits";
 import { Lobby, Room, XP_LOSE, XP_WIN, type Outbox } from "./rooms";
@@ -22,7 +23,7 @@ export interface ServerOptions {
   mapsDir?: string;
 }
 
-interface Session { ws: WebSocket; ip: string; nick?: string; authing?: boolean; lastMsg: number; burst: number }
+interface Session { ws: WebSocket; ip: string; nick?: string; authing?: boolean; lastMsg: number; burst: number; chat: ChatLimiter }
 
 export function startServer(opts: ServerOptions = {}) {
   const db = new Db(opts.dbPath ?? ":memory:");
@@ -120,6 +121,15 @@ export function startServer(opts: ServerOptions = {}) {
         if (r && r.status === "lobby") { r.members.get(nick)!.look = look; pushRoom(r); }
         return send(s.ws, { t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), unlocks: unlocksAt(db.getLevel(nick)), look });
       }
+      case "chat": {
+        const text = cleanChat(m.text);
+        if (!text) return err("mensagem vazia");
+        if (!s.chat.allow()) return err("devagar: muitas mensagens de chat");
+        const r = lobby.roomOf(nick);
+        if (r) outbox.broadcast(r, { t: "chat", from: nick, text, scope: "room" });
+        else for (const o of sessions.values()) if (o.nick && !lobby.roomOf(o.nick)) send(o.ws, { t: "chat", from: nick, text, scope: "lobby" });
+        return;
+      }
       case "setLoadout": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.setLoadout(nick, m.weaponId, m.build); return e ? err(e) : pushRoom(r); }
       case "start": {
         const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
@@ -149,7 +159,7 @@ export function startServer(opts: ServerOptions = {}) {
 
   wss.on("connection", (ws, req) => {
     if (wss.clients.size > (opts.maxConnections ?? 200)) { ws.close(1013); return; }
-    const s: Session = { ws, ip: clientIp(req), lastMsg: Date.now(), burst: 0 };
+    const s: Session = { ws, ip: clientIp(req), lastMsg: Date.now(), burst: 0, chat: new ChatLimiter() };
     ws.on("message", d => {
       onMessage(s, d.toString()).catch(e => { log("erro interno", e); send(ws, { t: "error", msg: "erro interno" }); });
     });

@@ -36,6 +36,7 @@ let endInfo: Record<string, { gained: number; level: number }> | null = null;
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   view = new MatchView(setup.mapId, setup.players);
+  view.me = me?.nick ?? null;
   view.push(events);
   show("match");
   controls ??= new Controls(view, () => view?.hud.player === me?.nick, i => send({ t: "intent", intent: i } as unknown as ClientMsg));
@@ -53,6 +54,7 @@ function onMsg(m: ServerMsg) {
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
     case "events": view?.push(m.events); break;
+    case "chat": addChat(m.scope, m.from, m.text); break;
     case "end": {
       endInfo = m.xp;
       const mine = me ? m.xp[me.nick] : undefined;
@@ -61,6 +63,19 @@ function onMsg(m: ServerMsg) {
       break;
     }
   }
+}
+
+// ---------- chat (só textContent; nada de innerHTML com texto de outros jogadores) ----------
+function addChat(scope: "room" | "lobby", from: string, text: string) {
+  const log = $(scope === "room" ? "chat-room" : "chat-lobby");
+  const line = el("span"); line.append(el("b", from + ": "), document.createTextNode(text));
+  log.append(line);
+  while (log.childElementCount > 100) log.firstElementChild!.remove();
+  log.scrollTop = log.scrollHeight;
+}
+for (const id of ["lobby", "room"]) {
+  const input = $<HTMLInputElement>(`chat-${id}-in`);
+  input.addEventListener("keydown", e => { if (e.key === "Enter" && input.value.trim()) { send({ t: "chat", text: input.value }); input.value = ""; } });
 }
 
 // ---------- login ----------

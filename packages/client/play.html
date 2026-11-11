@@ -57,6 +57,7 @@
       <button class="btn btn--ember" id="btn-create">Criar sala</button>
     </div>
   </section>
+  <div class="paper" style="display:grid; grid-template-rows:1fr auto; height:180px;"><div class="chat" id="chat-lobby" aria-live="polite" style="overflow:auto"></div><div class="chat__input field" style="padding:0 8px 8px;"><input id="chat-lobby-in" maxlength="200" placeholder="Conversa do saguão — Enter envia" autocomplete="off"></div></div>
 </section>
 
 <section id="s-wardrobe" class="screen">
@@ -76,11 +77,12 @@
     <div class="grow"></div>
     <button class="btn btn--ember btn--lg" id="btn-start">Iniciar</button>
   </div>
+  <div class="paper" style="display:grid; grid-template-rows:1fr auto; height:180px;"><div class="chat" id="chat-room" aria-live="polite" style="overflow:auto"></div><div class="chat__input field" style="padding:0 8px 8px;"><input id="chat-room-in" maxlength="200" placeholder="Conversa da sala — Enter envia" autocomplete="off"></div></div>
 </section>
 
 <section id="match" class="screen" style="max-width:1280px">
   <div class="fit"><div class="stage"><canvas id="c" width="1280" height="720"></canvas><div id="hud"></div></div></div>
-  <small class="muted">←/→ andar · ↑/↓ ângulo · <b>segure Espaço</b> e solte para atirar · 1–8 e F itens · R especial · P passar a vez</small>
+  <small class="muted">M liga/desliga o som · ←/→ andar · ↑/↓ ângulo · <b>segure Espaço</b> e solte para atirar · 1–8 e F itens · R especial · P passar a vez</small>
 </section>
 
 <div id="toast" class="chip chip--wait" hidden></div>

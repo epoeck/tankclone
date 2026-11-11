@@ -154,6 +154,29 @@ describe("aparência", () => {
   });
 });
 
+describe("chat", () => {
+  it("sala só entre quem está na sala, saguão só entre quem está fora de sala, texto limpo e sem persistência", async () => {
+    srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });
+    const [a, b, c] = [await Client.open(srv.port), await Client.open(srv.port), await Client.open(srv.port)];
+    await a.login("ana"); await b.login("beto"); await c.login("caio");
+    a.send({ t: "createRoom", mapId: "colinas", maxPlayers: 4 }); const room = (await a.waitFor("room")).room!;
+    b.send({ t: "joinRoom", roomId: room.id }); await b.waitFor("room");
+    a.send({ t: "chat", text: "  oi\u202E   sala  " });
+    expect(await b.waitFor("chat")).toEqual({ t: "chat", from: "ana", text: "oi sala", scope: "room" });
+    await a.waitFor("chat");
+    c.send({ t: "chat", text: "alguém no saguão?" });
+    expect((await c.waitFor("chat")).scope).toBe("lobby");
+    await new Promise(r => setTimeout(r, 80));
+    expect(a.msgs.some(m => m.t === "chat") || b.msgs.some(m => m.t === "chat")).toBe(false); // não vazou entre escopos
+    a.send({ t: "chat", text: "   " }); expect((await a.waitFor("error")).msg).toMatch(/vazia/);
+    a.send({ t: "chat", text: "x".repeat(900) });
+    expect((await b.waitFor("chat")).text).toHaveLength(200);
+    for (let i = 0; i < 8; i++) a.send({ t: "chat", text: "spam" + i });
+    expect((await a.waitFor("error", e => /devagar/.test(e.msg))).msg).toMatch(/devagar/);
+    a.close(); b.close(); c.close();
+  });
+});
+
 describe("carga", () => {
   it("20 conectados em 4 salas jogando ao mesmo tempo", async () => {
     srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });

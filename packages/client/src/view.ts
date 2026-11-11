@@ -3,6 +3,7 @@
  * Serve ao jogo local (game.ts) e ao jogo em rede (play.ts). O cliente só anima o que o core/servidor decidiu.
  */
 import { drawCharacter } from "./chars";
+import { sfx, toggleMute } from "./sound";
 import {
   BUILDS, DEFAULT_LOOK, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
   type Facing, type ItemKey, type Look, type MatchEvent,
@@ -23,6 +24,8 @@ export class MatchView {
   readonly order: string[] = [];
   hud = { wind: 0, turn: 0, player: "", timeLimit: 10, timeLeft: 10, over: false, winner: null as number | null };
   ui = { angle: 45, power: 0, last: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false, spent: 0, used: {} as Record<string, number> };
+  /** Quem somos (para sons de vitória/derrota e do início do nosso turno); null no jogo local. */
+  me: string | null = null;
   private bg: HTMLImageElement | null = null;
   private tc: HTMLCanvasElement;
   private tctx: CanvasRenderingContext2D;
@@ -84,6 +87,7 @@ export class MatchView {
       case "turnStart": {
         this.hud.wind = e.wind; this.hud.turn = e.turn; this.hud.player = e.playerId; this.hud.timeLimit = e.timeLimit; this.hud.timeLeft = e.timeLimit;
         if (v) { v.energy = e.energy; v.maxEnergy = Math.max(v.maxEnergy, e.energy); this.ui.angle = Math.max(this.ui.angle, 0); }
+        if (e.playerId === this.me) sfx("turn");
         this.ui.power = 0; this.ui.special = false; this.ui.turnBonus = 0; this.ui.extraShots = 0; this.ui.triple = false; this.ui.fly = false; this.ui.spent = 0; this.ui.used = {};
         break;
       }
@@ -93,20 +97,21 @@ export class MatchView {
       case "item": {
         if (v) v.energy = e.energyLeft;
         const d = own(ITEMS, e.key); if (!d) break;
-        this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
+        sfx("item"); this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
         this.ui.turnBonus += d.damageBonus ?? 0; this.ui.extraShots += d.extraShots ?? 0; this.ui.triple ||= !!d.triple; this.ui.fly ||= !!d.fly;
         break;
       }
       case "crater": {
+        sfx("boom");
         this.terrain.carveCircle(e.x, e.y, e.radius); // mesma operação determinística do core, só para desenhar e medir o chão
         this.tctx.globalCompositeOperation = "destination-out"; this.tctx.beginPath(); this.tctx.arc(e.x, e.y, e.radius, 0, 7); this.tctx.fill(); this.tctx.globalCompositeOperation = "source-over";
         break;
       }
-      case "damage": if (v) v.hp = e.hp; break;
+      case "damage": if (v) v.hp = e.hp; sfx("hit"); break;
       case "fury": if (v) v.fury = e.fury; break;
-      case "death": if (v) v.alive = false; break;
-      case "gameOver": this.hud.over = true; this.hud.winner = e.winnerTeam; break;
-      case "shot": this.anim = { points: e.points, i: 0 }; break;
+      case "death": if (v) v.alive = false; sfx("death"); break;
+      case "gameOver": { this.hud.over = true; this.hud.winner = e.winnerTeam; const mine = this.me ? this.chars.get(this.me)?.team : undefined; if (mine !== undefined) sfx(e.winnerTeam === mine ? "win" : "lose"); break; }
+      case "shot": this.anim = { points: e.points, i: 0 }; sfx("shoot"); break;
       case "turnEnd": if (v) v.delay = e.delay; break;
     }
   }
@@ -177,6 +182,7 @@ export class Controls {
     if (e.code.startsWith("Arrow")) e.preventDefault();
     if (!this.canControl() || !this.view.canAct) return;
     const k = e.key.toUpperCase();
+    if (k === "M") { this.view.ui.msg = toggleMute() ? "som desligado" : "som ligado"; return; }
     if (own(ITEMS, k)) this.send({ type: "item", key: k });
     else if (k === "P") this.send({ type: "pass" });
     else if (k === "R") this.view.ui.special = !this.view.ui.special;

@@ -11,6 +11,7 @@ export type ClientMsg =
   | { t: "leaveRoom" }
   | { t: "setLoadout"; weaponId?: string; build?: string }
   | { t: "setLook"; look: unknown }
+  | { t: "chat"; text: string }
   | { t: "start" }
   | { t: "intent"; intent: ClientIntent };
 
@@ -38,4 +39,6 @@ export type ServerMsg =
   /** Reconexão: mesmo setup + todo o log de eventos desde o início. */
   | { t: "resume"; setup: MatchSetup; events: MatchEvent[] }
   | { t: "events"; events: MatchEvent[] }
+  /** Chat efêmero: só da sala ou só do saguão; nunca vai para o banco. */
+  | { t: "chat"; from: string; text: string; scope: "room" | "lobby" }
   | { t: "end"; winnerTeam: number | null; xp: Record<string, { gained: number; level: number }> };
