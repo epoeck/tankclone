@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "notes": "ids estáveis; file relativo a /assets/. anchor em fração (0..1) do tamanho.",
+  "assets": {
+    "item-1": {
+      "file": "ui/items/item-1.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-2": {
+      "file": "ui/items/item-2.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-3": {
+      "file": "ui/items/item-3.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-4": {
+      "file": "ui/items/item-4.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-5": {
+      "file": "ui/items/item-5.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-6": {
+      "file": "ui/items/item-6.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-7": {
+      "file": "ui/items/item-7.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-8": {
+      "file": "ui/items/item-8.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-f": {
+      "file": "ui/items/item-f.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-atk": {
+      "file": "ui/stats/stat-atk.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-def": {
+      "file": "ui/stats/stat-def.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-agi": {
+      "file": "ui/stats/stat-agi.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-luck": {
+      "file": "ui/stats/stat-luck.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-hp": {
+      "file": "ui/stats/stat-hp.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-armor": {
+      "file": "ui/stats/stat-armor.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-dmg": {
+      "file": "ui/stats/stat-dmg.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-energy": {
+      "file": "ui/stats/stat-energy.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-power": {
+      "file": "ui/stats/stat-power.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-xp": {
+      "file": "ui/stats/stat-xp.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-lock": {
+      "file": "ui/stats/icon-lock.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-gear": {
+      "file": "ui/stats/icon-gear.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-crown": {
+      "file": "ui/stats/icon-crown.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-chat": {
+      "file": "ui/stats/icon-chat.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-prism": {
+      "file": "ui/weapons/weapon-prism.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-sledge": {
+      "file": "ui/weapons/weapon-sledge.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-furnace": {
+      "file": "ui/weapons/weapon-furnace.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "wind-arrow": {
+      "file": "ui/hud/wind-arrow.svg",
+      "w": 96,
+      "h": 40,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "pressure-gauge": {
+      "file": "ui/hud/pressure-gauge.svg",
+      "w": 140,
+      "h": 140,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "pressure-needle": {
+      "file": "ui/hud/pressure-needle.svg",
+      "w": 140,
+      "h": 140,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "angle-dial": {
+      "file": "ui/hud/angle-dial.svg",
+      "w": 160,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.8958333333333334
+      ]
+    },
+    "shell": {
+      "file": "ui/hud/shell.svg",
+      "w": 24,
+      "h": 24,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "turn-marker": {
+      "file": "ui/hud/turn-marker.svg",
+      "w": 24,
+      "h": 20,
+      "anchor": [
+        0.5,
+        1
+      ]
+    },
+    "tank-tracks": {
+      "file": "sprites/tank/tank-tracks.svg",
+      "w": 120,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.9583333333333334
+      ]
+    },
+    "tank-hull": {
+      "file": "sprites/tank/tank-hull.svg",
+      "w": 120,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.9583333333333334
+      ]
+    },
+    "tank-turret": {
+      "file": "sprites/tank/tank-turret.svg",
+      "w": 120,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.9583333333333334
+      ]
+    },
+    "tank-flag-blue": {
+      "file": "sprites/tank/tank-flag-blue.svg",
+      "w": 120,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.9583333333333334
+      ]
+    },
+    "tank-flag-red": {
+      "file": "sprites/tank/tank-flag-red.svg",
+      "w": 120,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.9583333333333334
+      ]
+    },
+    "tank-barrel": {
+      "file": "sprites/tank/tank-barrel.svg",
+      "w": 72,
+      "h": 24,
+      "anchor": [
+        0.1111111111111111,
+        0.5
+      ],
+      "mountOn": "tank-turret",
+      "mountAt": [
+        60,
+        46
+      ]
+    },
+    "map-colinas": {
+      "file": "maps/map-colinas.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Colinas de Latão",
+      "indestructible": false
+    },
+    "map-ferro": {
+      "file": "maps/map-ferro.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Pátio de Ferro",
+      "indestructible": true
+    },
+    "map-ilhas": {
+      "file": "maps/map-ilhas.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Ilhas Flutuantes",
+      "indestructible": false
+    },
+    "map-forja": {
+      "file": "maps/map-forja.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Forja Vulcânica",
+      "indestructible": false
+    },
+    "map-nuvens": {
+      "file": "maps/map-nuvens.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Torres de Nuvem",
+      "indestructible": true
+    },
+    "logo": {
+      "file": "brand/logo.png",
+      "w": 1200,
+      "h": 531,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "mark": {
+      "file": "brand/mark.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    }
+  },
+  "tank": {
+    "layers": [
+      "tank-tracks",
+      "tank-hull",
+      "tank-flag-{team}",
+      "tank-turret",
+      "tank-barrel"
+    ],
+    "feetY": 92,
+    "muzzleHeightPx": 30,
+    "note": "desenhar o tanque com escala tal que a boca do cano fique a MUZZLE_HEIGHT (~30 px) acima dos pés; com escala 0.7 a torre (y=46) fica a ~32 px acima dos pés"
+  }
+}
