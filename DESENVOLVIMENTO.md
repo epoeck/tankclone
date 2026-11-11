@@ -68,7 +68,7 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | `client`: visualizador de trajetória (Vite + canvas) | pronto |
 | Vento calibrado | **sim** (`windAccel 17`; regra "ângulo ± vento × 2" erra ~0,3 distância; Fase A) |
 | Colisão contínua + com jogadores (hitbox), terreno de 3 estados, faixa de ângulo | **sim** (Fase A) |
-| Turnos, energia, itens, fúria, armas, HP, queda | não começado |
+| Turnos por delay, energia, itens 1–8/F, fúria, 3 armas (dados em `data.ts`), HP, queda, vento semeado, fim de partida | **sim** (Fase B; `match.ts`, dano provisório até a Fase C) |
 | Stats e dano | não começado |
 | Servidor, salas, contas | não começado |
 | Arte, UI, som | não começado |
@@ -174,7 +174,7 @@ Ordem pensada para ter **PvP jogável o quanto antes**.
 5. Colisão do projétil com jogadores (hitbox retangular) além do terreno.
 6. Faixa de ângulo por arma, relativa ao corpo inclinado pela rampa; UI mostra o ângulo absoluto real.
 
-### Fase B — Partida local (`core/match.ts`)
+### Fase B — Partida local (`core/match.ts`) (**implementada**; abrir `game.html` no `npm run dev`)
 Máquina de estados determinística, com entrada = intenções por turno e saída = eventos para animar.
 1. Personagem no terreno: posição, inclinação, andar gastando energia, escalar rampas até um limite, **queda** quando o chão some,
    morte ao sair do mapa.
