@@ -2,6 +2,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Db, unlocksAt } from "./db";
+import { loadMaps } from "./maps";
 import { AuthLimiter, DEFAULT_LIMITS, type LimitConfig } from "./limits";
 import { Lobby, Room, XP_LOSE, XP_WIN, type Outbox } from "./rooms";
 import type { ClientMsg, ServerMsg } from "./protocol";
@@ -17,6 +18,8 @@ export interface ServerOptions {
   /** Confia no CF-Connecting-IP quando a conexão vem do loopback (cloudflared local). Padrão: true. */
   trustCloudflare?: boolean;
   log?: (...a: unknown[]) => void;
+  /** Pasta dos mapas assados (padrão: packages/client/public/maps). */
+  mapsDir?: string;
 }
 
 interface Session { ws: WebSocket; ip: string; nick?: string; authing?: boolean; lastMsg: number; burst: number }
@@ -27,6 +30,9 @@ export function startServer(opts: ServerOptions = {}) {
   const sessions = new Map<string, Session>(); // nick → sessão
   const tickMs = opts.tickMs ?? 100;
   const log = opts.log ?? ((...a: unknown[]) => console.error(...a));
+  const maps = loadMaps(opts.mapsDir);
+  if (maps.loaded.length) log(`mapas carregados: ${maps.loaded.join(", ")}`);
+  for (const k of maps.skipped) log(`mapa ignorado ${k.id}: ${k.reason}`);
   const limiter = new AuthLimiter({ ...DEFAULT_LIMITS, ...opts.limits });
   const http = createServer((_, res) => { res.writeHead(200, { "content-type": "text/plain" }); res.end("tankclone server"); });
   const wss = new WebSocketServer({ server: http, maxPayload: 4096 });

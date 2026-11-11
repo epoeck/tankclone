@@ -59,7 +59,8 @@ export class Room {
     const idx = new Map<number, number>();
     const players = [...this.members.values()].map(m => {
       const i = idx.get(m.team) ?? 0; idx.set(m.team, i + 1);
-      const x = m.team === 1 ? 150 + i * 140 : map.width - 150 - i * 140;
+      const list = map.spawns?.[m.team === 1 ? "1" : "2"];
+      const x = list?.[i] ?? (m.team === 1 ? 150 + i * 140 : map.width - 150 - i * 140);
       return { id: m.nick, team: m.team, x, weaponId: m.weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1 };
     });
     this.setup = { seed: randomInt(1, 2 ** 31), mapId: this.mapId, players };
@@ -116,7 +117,7 @@ export class Room {
 
 export function buildMatch(setup: MatchSetup): Match {
   return new Match({
-    seed: setup.seed, terrain: own(MAPS, setup.mapId)!.build(),
+    seed: setup.seed, terrain: own(MAPS, setup.mapId)!.build(), config: { windMultiplier: own(MAPS, setup.mapId)!.windMultiplier ?? 1 },
     players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, weaponId: p.weaponId, facing: p.facing, stats: own(BUILDS, p.build) })),
   });
 }

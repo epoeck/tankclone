@@ -23,6 +23,7 @@ export class MatchView {
   readonly order: string[] = [];
   hud = { wind: 0, turn: 0, player: "", timeLimit: 10, timeLeft: 10, over: false, winner: null as number | null };
   ui = { angle: 45, power: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false };
+  private bg: HTMLImageElement | null = null;
   private tc: HTMLCanvasElement;
   private tctx: CanvasRenderingContext2D;
   private queue: MatchEvent[] = [];
@@ -36,6 +37,11 @@ export class MatchView {
     this.tc = document.createElement("canvas"); this.tc.width = this.width; this.tc.height = this.height;
     this.tctx = this.tc.getContext("2d")!;
     this.paintTerrain();
+    const def = own(MAPS, mapId)!;
+    if (def.artBase && def.manifest) { // arte do mapa: recortada pela máscara (ar vira transparente) quando carregar
+      const art = new Image(); art.onload = () => this.paintArt(art); art.src = def.artBase + def.manifest.art;
+      if (def.manifest.background) { const bg = new Image(); bg.onload = () => (this.bg = bg); bg.src = def.artBase + def.manifest.background; }
+    }
     for (const p of players) {
       const st = own(BUILDS, p.build) ?? BUILDS.media!;
       const y = this.terrain.surfaceY(p.x, 0);
@@ -51,6 +57,16 @@ export class MatchView {
       if (!m[i]) continue;
       img.data.set(m[i] === 2 ? [90, 90, 105, 255] : [74, 98, 58, 255], i * 4);
     }
+    this.tctx.putImageData(img, 0, 0);
+  }
+
+  /** Pinta a arte no cache do terreno, respeitando o estado atual do terreno (crateras já abertas ficam transparentes). */
+  private paintArt(art: HTMLImageElement): void {
+    const c = document.createElement("canvas"); c.width = this.width; c.height = this.height;
+    const cx = c.getContext("2d")!; cx.drawImage(art, 0, 0, this.width, this.height);
+    const img = cx.getImageData(0, 0, this.width, this.height), m = this.terrain.getMask();
+    for (let i = 0; i < m.length; i++) if (!m[i]) img.data[i * 4 + 3] = 0;
+    this.tctx.clearRect(0, 0, this.width, this.height);
     this.tctx.putImageData(img, 0, 0);
   }
 
@@ -108,7 +124,8 @@ export class MatchView {
     const W = this.width, H = this.height;
     const target = this.anim ? this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!.x : cur?.x ?? 0;
     this.cam += (Math.max(0, Math.min(W - VIEW_W, target - VIEW_W / 2)) - this.cam) * 0.15;
-    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+    if (this.bg) ctx.drawImage(this.bg, 0, 0, VIEW_W, VIEW_H);
+    else { const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, "#7fb8ee"); g.addColorStop(1, "#dcefff"); ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     ctx.save(); ctx.translate(-Math.round(this.cam), 0);
     ctx.drawImage(this.tc, 0, 0);
     const weapon = cur ? own(WEAPONS, cur.weaponId) : undefined;

@@ -206,7 +206,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 2. Contas (apelido + senha com hash), SQLite, XP por partida, nível até 30, desbloqueios por nível (tutorial 1–9).
 3. Operação: serviço com reinício automático (systemd/Podman), Cloudflare Tunnel, backup do banco, teste com 20 conectados.
 
-### Fase E — Conteúdo da build PvP (**em andamento**: cliente de rede `play.html`, vestiário e boneco em camadas feitos; faltam mapas por máscara, sons e a arte final por camada)
+### Fase E — Conteúdo da build PvP (**em andamento**: cliente de rede `play.html`, vestiário e boneco em camadas feitos; mapas por máscara feitos (`docs/mapas.md`, `npm run maps:build`); faltam o HUD do design, sons e a arte final por camada)
 5 mapas provisórios (2 indestrutíveis, 3 tatuzáveis) via máscara; lobby, inventário/equipar, tela de partida; sons provisórios;
 boneco placeholder sobre o sistema de camadas. Trocar nomes do original por nomes próprios antes de abrir para os amigos.
 

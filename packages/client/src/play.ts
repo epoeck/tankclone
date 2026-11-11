@@ -2,6 +2,7 @@
 import { BUILDS, COUNTS, HAIR_COLORS, MAPS, SKIN_TONES, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
 import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/src/protocol";
 import { drawCharPortrait as drawPortrait } from "./chars";
+import { loadClientMaps } from "./maps";
 import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -65,7 +66,9 @@ $("login-form").addEventListener("submit", e => { e.preventDefault(); auth("logi
 $("btn-register").onclick = () => auth("register");
 
 // ---------- saguão ----------
-for (const [id, def] of Object.entries(MAPS)) { const o = el("option", def.name); o.value = id; $("new-map").append(o); }
+const fillMaps = () => { const sel = $("new-map"); sel.replaceChildren(); for (const [id, def] of Object.entries(MAPS)) { const o = el("option", def.name + (def.indestructible ? " (chão firme)" : "")); o.value = id; sel.append(o); } };
+fillMaps();
+void loadClientMaps().then(fillMaps);
 $("btn-refresh").onclick = () => send({ t: "rooms" });
 $("btn-create").onclick = () => send({ t: "createRoom", mapId: $<HTMLSelectElement>("new-map").value, maxPlayers: +$<HTMLSelectElement>("new-max").value });
 $("btn-wardrobe").onclick = () => { renderWardrobe(); show("s-wardrobe"); };

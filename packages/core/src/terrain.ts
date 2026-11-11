@@ -51,6 +51,14 @@ export class Terrain {
     return t;
   }
 
+  /** Cria a partir de estados já classificados (0 ar / 1 destrutível / 2 indestrutível), p.ex. decodificados de mask.bin. */
+  static fromStates(width: number, height: number, states: Uint8Array): Terrain {
+    if (states.length !== width * height) throw new Error("tamanho dos estados não bate com width*height");
+    const t = new Terrain(width, height);
+    t.mask.set(states);
+    return t;
+  }
+
   /** Marca um retângulo como indestrutível (útil em testes e mapas procedurais). */
   fillIndestructible(x0: number, y0: number, x1: number, y1: number): void {
     for (let y = Math.max(0, y0); y < Math.min(this.height, y1); y++)

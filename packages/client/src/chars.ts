@@ -27,7 +27,9 @@ function layer(file: string, tint?: string): HTMLImageElement | null {
     e = { img: new Image(), ok: false }; cache.set(key, e);
     const entry = e;
     fetchText(file).then(svg => {
-      const text = tint ? svg.replace(/(<svg[^>]*?)\scolor="[^"]*"/, `$1`).replace("<svg", `<svg color="${tint}"`) : svg;
+      // tinta: atributo color da raiz (currentColor) e também a cor literal padrão, caso o SVG tenha sido reexportado sem currentColor
+      const literal = file.includes("hair") ? /#6B3A1F/gi : /#F2C79F/gi;
+      const text = tint ? svg.replace(/(<svg[^>]*?)\scolor="[^"]*"/, `$1`).replace("<svg", `<svg color="${tint}"`).replace(literal, tint) : svg;
       entry.img.onload = () => { entry.ok = true; };
       entry.img.src = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
     }).catch(() => { /* arquivo ausente: a camada simplesmente não aparece */ });
