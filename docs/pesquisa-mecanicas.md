@@ -12,14 +12,14 @@ energia (fonte: guia chinês [doyo](https://www.doyo.cn/article/11674); teclas 1
 | Tecla | Item | Efeito | Energia | Confiança |
 |---|---|---|---|---|
 | 1 | +2 tiros | 2 disparos extras; −40% de dano por disparo (4399 diz −50%) | 110 | alta (dono) |
-| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil | 110 | média |
-| 3 | +1 tiro | 1 disparo extra; −20% (4399 diz −10%) | 110 | média |
+| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil | 110 | alta (dono) |
+| 3 | +1 tiro | 1 disparo extra; −20% (4399 diz −10%) | 110 | alta (dono) |
 | 4 | +50% dano | | 85 | alta (dono) |
-| 5 | +40% dano | | 80 | média |
-| 6 | +30% dano | | 70 | média |
-| 7 | +20% dano | | 55 | média |
-| 8 | +10% dano | | 50 | média |
-| F | Voar (avião de papel) | o personagem vai até onde o projétil cai; tiro sem dano | 150 | média |
+| 5 | +40% dano | | 80 | alta (dono) |
+| 6 | +30% dano | | 70 | alta (dono) |
+| 7 | +20% dano | | 55 | alta (dono) |
+| 8 | +10% dano | | 50 | alta (dono) |
+| F | Voar (avião de papel) | o personagem vai até onde o projétil cai; tiro sem dano | 150 | alta (dono) |
 
 - **Correção (dono, 2026-11-11):** a tecla 1 custa **110** e a 4 custa **85**, e com a energia inicial só dá para jogar "14". Isso bate com o guia
   [doyo](https://www.doyo.cn/article/11674): +1/+2 tiros 110, triplo 110, +50% 85, +40% 80, +30% 70, +20% 55, +10% 50, teleporte/voar 150.
@@ -66,7 +66,7 @@ quando houver forja. Queda radial e dano de queda **não encontrados** → place
 - **Delay** (fonte oficial de servidor TW, [efunfun](https://ddt.efunfun.com/guide-04.htm)): valor oculto que define a ordem; mover e usar itens
   aumentam o delay; **agilidade reduz o delay ganho por turno**. Primeiro turno: maior agilidade começa. Depois joga quem tem menor delay acumulado.
   Passar a vez gasta menos delay, então volta mais cedo.
-- **Energia (movimento)**: zera → não anda; volta ao valor inicial no próximo turno. Base 220 ≈ 2,2 distâncias (Izzy). Agilidade/equips aumentam (Izzy).
+- **Energia (movimento)**: zera → não anda; volta ao valor inicial no próximo turno. Base 220 ≈ 2,2 distâncias (Izzy). **Energia = 220 + AGI/30** (Izzy, confiança alta).
 - **Fúria**: 0–100; cheia libera o especial da arma. Enche ao atacar, ao passar e ao levar dano (Izzy). Valores por evento **não encontrados** → configurável.
 - **Tempo de turno**: 10 s; 5 s acima de um limiar de FC (Izzy).
 

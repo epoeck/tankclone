@@ -41,3 +41,4 @@
 21. Backup: repositório privado no GitHub (Izzy cria o repo vazio; Claude envia os commits).
 22. Ângulo em rampa: o valor exibido é o ângulo absoluto real; a inclinação muda o ângulo efetivo e o jogador precisa compensar.
 23. Custos confirmados: tecla 1 = 110, tecla 4 = 85. Com a energia inicial só dá "14". Demais custos: Izzy vai reinstalar o jogo para conferir.
+24. Custos da tabela doyo confirmados pelo Izzy. Energia = 220 + AGI/30 (30 de agilidade = 1 de energia).
