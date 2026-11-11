@@ -42,3 +42,5 @@
 22. Ângulo em rampa: o valor exibido é o ângulo absoluto real; a inclinação muda o ângulo efetivo e o jogador precisa compensar.
 23. Custos confirmados: tecla 1 = 110, tecla 4 = 85. Com a energia inicial só dá "14". Demais custos: Izzy vai reinstalar o jogo para conferir.
 24. Custos da tabela doyo confirmados pelo Izzy. Energia = 220 + AGI/30 (30 de agilidade = 1 de energia).
+25. Pérolas (~2022, print): 3 slots centrais = 1 ataque (topo) + 2 defesa (embaixo); ~15 slots de pérola de atributo ao redor. Ver docs/pesquisa-mecanicas.md §5.1.
+26. Print de conta forte: AGI 29551 → energia 1225 ⇒ base 240 (não 220). Atributos mágicos existem (Atq/Resist mágica). Ver pesquisa §6.

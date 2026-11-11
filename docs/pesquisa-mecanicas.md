@@ -66,7 +66,7 @@ quando houver forja. Queda radial e dano de queda **não encontrados** → place
 - **Delay** (fonte oficial de servidor TW, [efunfun](https://ddt.efunfun.com/guide-04.htm)): valor oculto que define a ordem; mover e usar itens
   aumentam o delay; **agilidade reduz o delay ganho por turno**. Primeiro turno: maior agilidade começa. Depois joga quem tem menor delay acumulado.
   Passar a vez gasta menos delay, então volta mais cedo.
-- **Energia (movimento)**: zera → não anda; volta ao valor inicial no próximo turno. Base 220 ≈ 2,2 distâncias (Izzy). **Energia = 220 + AGI/30** (Izzy, confiança alta).
+- **Energia (movimento)**: zera → não anda; volta ao valor inicial no próximo turno. **Energia = 240 + AGI/30** (regra AGI/30 do Izzy; base 240 deduzida do print §6: 240 + 29551/30 = 1225, exato; o Izzy lembrava 220).
 - **Fúria**: 0–100; cheia libera o especial da arma. Enche ao atacar, ao passar e ao levar dano (Izzy). Valores por evento **não encontrados** → configurável.
 - **Tempo de turno**: 10 s; 5 s acima de um limiar de FC (Izzy).
 
@@ -76,4 +76,28 @@ Fonte: [DDTank World](http://ddtworld7.blogspot.com/p/perolas.html) (versão ~20
 Três tipos: **ataque** (ativa ao atirar: Ataque, Sorte, Dano, Míssil, Gelo, Bomba Atômica, Perfurante, Crítico, Vampiro, Selo, Leopardo,
 Cansaço, Queimação, Algemas, Duplo Ataque, Enfraquecer), **defesa** (ativa ao levar dano: Pele de Pedra, Resistente, Recuperação,
 Evita Buraco, Diminuir Dano, Absorção, Raiva) e **atributo** (passivas: ATK, DEF, AGI, Sorte, Dano, Armadura).
-Faltam: slots, níveis, síntese/experiência e números → perguntar ao Izzy quando chegar a fase.
+### 5.1 Layout da versão de ~2022 (captura de tela do Izzy, 2026-11-11)
+- Painel "Pérolas" na mochila (abas vizinhas: Dado, Treino, Cartas, Totem).
+- **Centro (triângulo): 3 slots** — 1 pérola de **ataque** (no topo; ex.: Leopardo Nv 21) e 2 de **defesa** (embaixo; ex.: Absorção Nv 21,
+  Evita Buraco Nv 19).
+- **Anel + fileira de baixo: ~15 slots de pérola de atributo** (ex.: "Dano de ataque"), todas passivas.
+- Slots extras: "Pérola Avanço", "Atualizar Joia", "Encaixe de pérola preciosa de atributo".
+- **"Canal de Aumento de Nível de Pérolas"** com barra de % (subir nível das pérolas). Níveis vistos: 19–21.
+- Obtenção: **4 estandes** clicáveis para abrir pérolas, opção "Abertura Contínua", limite de compras ("pode comprar Pérola 6 vezes").
+- Pérolas podem ser **travadas** (cadeado) para não serem consumidas por engano.
+
+Faltam: como funciona o canal de nível (o que consome), os estandes (custo/chances) e os números por nível → perguntar ao Izzy na Fase F.
+
+## 6. Conta de referência (print do Izzy, 2026-11-11; conta de fim de jogo)
+
+| Stat | Valor | | Stat | Valor |
+|---|---|---|---|---|
+| Ataque | 33281 | | Dano | 8912 |
+| Defesa | 28663 | | Armadura | 8550 |
+| Agilidade | 29551 | | Vida | 531164 |
+| Sorte | 26078 | | Força física (energia) | 1225 |
+| Ataque mágico | 9957 | | Resistência mágica | 15048 |
+| FC | ~359 milhões (cortado no print) | | | |
+
+Uso: escala de números para testes de sanidade das fórmulas (ex.: energia confere exato com 240 + AGI/30). Abas do perfil em 2022:
+Dado, Treino, Cartas, Totem, Pérolas, Figura, Pedra, Templo, Batismo, Contramarca — só Pérolas e Cartas estão no escopo.

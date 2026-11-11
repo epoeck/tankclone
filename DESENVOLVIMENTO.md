@@ -49,9 +49,9 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50), aplicada relativa ao corpo inclinado na rampa; o valor exibido é o **ângulo absoluto real**, então numa rampa o jogador precisa compensar | dono |
 | Tempo de turno | 10 s; 5 s quando todos estão acima de um limiar de FC | dono |
 | Ordem de turno | **delay acumulado**: começa quem tem mais agilidade; depois joga quem tem menor delay; mover/itens somam delay; agilidade reduz o delay ganho; passar a vez soma pouco | pesquisa |
-| Energia | **220 + AGI/30** por turno (≈ 2,2 distâncias andando com 220, ~1 por px); volta cheia no próximo turno. Ex.: "1446" (350) exige AGI ≈ 3900 | dono |
+| Energia | **240 + AGI/30** por turno (~1 por px andando); volta cheia no próximo turno. Confere exato com a conta de referência (AGI 29551 → 1225). Com 240 só cabe "14" (195); "1446" (350) exige AGI ≈ 3300 | dono + print |
 | Itens 1–8, F | +2 tiros, triplo, +1 tiro, +50/40/30/20/10% de dano, voar; custos 110/110/110/85/80/70/55/50/150 (guia doyo, confirmados pelo dono) | dono |
-| Combos de aceitação | com a energia inicial (220) só cabe "14" (195); "124" (305) e "1446" (350) exigem a energia maior de quem tem agilidade/equips altos | dono |
+| Combos de aceitação | com a energia inicial (240) só cabe "14" (195); "124" (305) e "1446" (350) exigem a energia maior de quem tem agilidade/equips altos | dono |
 | Fúria | 0–100; enche ao atacar, ao passar a vez e ao levar dano; cheia libera o especial | dono |
 | Terreno | 3 estados: ar, chão destrutível, chão indestrutível | dono (mapas) |
 | Morte | HP 0 ou cair para fora do mapa | gênero |
@@ -175,8 +175,8 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 1. Personagem no terreno: posição, inclinação, andar gastando energia, escalar rampas até um limite, **queda** quando o chão some,
    morte ao sair do mapa.
 2. Turnos por **delay** (ordem inicial por agilidade), tempo de 10 s / 5 s, passar a vez.
-3. Energia 220 + AGI/30; itens 1–8 e F com custo, combinação e efeitos (+tiros, triplo, % de dano somado, voar).
-   Testes de aceitação: "14" cabe em 220; "124" e "1446" só com energia maior.
+3. Energia 240 + AGI/30; itens 1–8 e F com custo, combinação e efeitos (+tiros, triplo, % de dano somado, voar).
+   Testes de aceitação: "14" cabe em 240; "124" e "1446" só com energia maior.
 4. Fúria (atacar, passar, levar dano) e especial por arma.
 5. 3 armas como dados: dano base, faixa de ângulo, raio da cratera, nº de projéteis do especial, fator de vento.
    Especiais e raios são placeholders até o dono ajustar jogando.
@@ -184,7 +184,8 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 7. Cliente: força de **segurar e soltar**, régua de distância, câmera que acompanha o tiro + minimapa, barra de itens nas teclas originais.
 
 ### Fase C — Stats e dano (`core/stats.ts`)
-1. Atributos: ATK, DEF, AGI, Sorte, HP, armadura, dano. Equipamentos com stats fixos (sem forja).
+1. Atributos: ATK, DEF, AGI, Sorte, HP (Vida), Armadura, Dano; mais tarde Ataque mágico e Resistência mágica (existem no original de 2022).
+   Conta de referência para escala de números em `docs/pesquisa-mecanicas.md` §6. Equipamentos com stats fixos (sem forja).
 2. Fórmula de dano de `docs/pesquisa-mecanicas.md` §3 (ATK/10 somado ao dano base; armadura e DEF/25; redução A/(A+100);
    crítico Sorte/20 % e bônus Sorte/25), queda radial e dano de queda como placeholders. Casos de teste com tolerância explícita.
 3. FC (força de combate), usada no limiar do turno de 5 s.
