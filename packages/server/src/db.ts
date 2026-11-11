@@ -1,6 +1,10 @@
 /** Contas, XP e nível em SQLite (node:sqlite, embutido no Node ≥ 22.5; sem serviço externo). */
-import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
+import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+
+// createRequire: o vite/vitest não reconhece o builtin "node:sqlite" em import estático
+const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as typeof import("node:sqlite");
 
 export const MAX_LEVEL = 30;
 /** Sistemas liberados por nível (docs/decisoes.md item 14). */
@@ -18,7 +22,7 @@ export const unlocksAt = (level: number): string[] => Object.entries(UNLOCKS).fi
 export interface Account { nick: string; xp: number; level: number }
 
 export class Db {
-  private db: DatabaseSync;
+  private db: DatabaseSyncT;
   constructor(path = ":memory:") {
     this.db = new DatabaseSync(path);
     this.db.exec(`CREATE TABLE IF NOT EXISTS accounts (

@@ -70,7 +70,7 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | Colisão contínua + com jogadores (hitbox), terreno de 3 estados, faixa de ângulo | **sim** (Fase A) |
 | Turnos por delay, energia, itens 1–8/F, fúria, 3 armas (dados em `data.ts`), HP, queda, vento semeado, fim de partida | **sim** (Fase B; `match.ts`, dano provisório até a Fase C) |
 | Stats e dano | não começado |
-| Servidor, salas, contas | não começado |
+| Servidor WebSocket, salas até 8, contas (scrypt + SQLite), XP/nível 1–30, reconexão por log, 20 conexões testadas | **sim** (Fase D; cliente ainda joga só local) |
 | Arte, UI, som | não começado |
 
 ## 5. Localização, requisitos e comandos
@@ -199,7 +199,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 3. FC (força de combate), usada no limiar do turno de 5 s.
 4. Painel de teste no cliente: stats de atacante e alvo → dano.
 
-### Fase D — Servidor e multiplayer
+### Fase D — Servidor e multiplayer (**implementado**: `packages/server`; operação em `docs/operacao.md`; falta o cliente de rede)
 1. `packages/server`: WebSocket, várias salas simultâneas (até 8 jogadores por sala), 1v1 → 4v4, validação de intenções,
    execução autoritativa do `core`, envio de eventos, reconexão.
 2. Contas (apelido + senha com hash), SQLite, XP por partida, nível até 30, desbloqueios por nível (tutorial 1–9).

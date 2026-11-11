@@ -9,7 +9,7 @@ export type ClientMsg =
   | { t: "createRoom"; mapId: string; maxPlayers: number }
   | { t: "joinRoom"; roomId: string; team?: number }
   | { t: "leaveRoom" }
-  | { t: "setWeapon"; weaponId: string }
+  | { t: "setLoadout"; weaponId?: string; build?: string }
   | { t: "start" }
   | { t: "intent"; intent: ClientIntent };
 
@@ -18,14 +18,14 @@ export interface RoomInfo {
   mapId: string;
   maxPlayers: number;
   status: "lobby" | "playing";
-  players: Array<{ nick: string; team: number; weaponId: string; connected: boolean }>;
+  players: Array<{ nick: string; team: number; weaponId: string; build: string; connected: boolean }>;
   host: string;
 }
 
 export interface MatchSetup {
   seed: number;
   mapId: string;
-  players: Array<{ id: string; team: number; x: number; weaponId: string; facing: 1 | -1 }>;
+  players: Array<{ id: string; team: number; x: number; weaponId: string; build: string; facing: 1 | -1 }>;
 }
 
 export type ServerMsg =

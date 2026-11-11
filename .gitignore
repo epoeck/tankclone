@@ -1,2 +1,7 @@
 node_modules
 dist
+
+# banco e backups
+data/
+backup/
+*.sqlite
