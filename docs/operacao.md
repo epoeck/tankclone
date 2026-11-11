@@ -7,6 +7,22 @@ npm install
 npm run start -w @tankclone/server          # ws://localhost:8080 ; PORT e DB_PATH por variável de ambiente
 ```
 
+## Um clique pelo menu de apps (jeito mais fácil)
+`scripts/ddclank.sh` faz tudo: acha o Node do nvm, roda `npm install` e a build do cliente só quando algo mudou, e sobe o
+servidor servindo **o jogo e o WebSocket na mesma porta** (`STATIC_DIR=packages/client/dist`), com o banco em
+`data/tankclone.sqlite` e o log em `data/server.log`. Depois abre o navegador em `http://localhost:8080/play.html`.
+
+```bash
+scripts/ddclank.sh            # liga (se já estiver ligado, só abre o navegador)
+scripts/ddclank.sh parar      # desliga com calma: fecha conexões e o banco (SIGTERM)
+scripts/ddclank.sh status
+scripts/ddclank.sh log
+```
+No menu do KDE: **DDClank** liga; clique direito → **Desligar servidor** (ou o item **DDClank — desligar servidor**).
+Os atalhos ficam em `~/.local/share/applications/ddclank.desktop` e `ddclank-parar.desktop`.
+Com o servidor servindo o cliente, o mesmo túnel (`cloudflared tunnel --url http://localhost:8080`) entrega o jogo e o
+`wss://` para os amigos.
+
 ## Reinício automático (systemd de usuário)
 `~/.config/systemd/user/tankclone.service`:
 ```ini

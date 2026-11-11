@@ -7,6 +7,7 @@ import { loadMaps } from "./maps";
 import { AuthLimiter, DEFAULT_LIMITS, type LimitConfig } from "./limits";
 import { Lobby, Room, XP_LOSE, XP_WIN, type Outbox } from "./rooms";
 import type { ClientMsg, ServerMsg } from "./protocol";
+import { staticHandler } from "./static";
 
 export interface ServerOptions {
   port?: number;
@@ -21,6 +22,8 @@ export interface ServerOptions {
   log?: (...a: unknown[]) => void;
   /** Pasta dos mapas assados (padrão: packages/client/public/maps). */
   mapsDir?: string;
+  /** Pasta da build do cliente para servir por HTTP na mesma porta (ex.: packages/client/dist). */
+  staticDir?: string;
 }
 
 interface Session { ws: WebSocket; ip: string; nick?: string; authing?: boolean; lastMsg: number; burst: number; chat: ChatLimiter }
@@ -35,7 +38,11 @@ export function startServer(opts: ServerOptions = {}) {
   if (maps.loaded.length) log(`mapas carregados: ${maps.loaded.join(", ")}`);
   for (const k of maps.skipped) log(`mapa ignorado ${k.id}: ${k.reason}`);
   const limiter = new AuthLimiter({ ...DEFAULT_LIMITS, ...opts.limits });
-  const http = createServer((_, res) => { res.writeHead(200, { "content-type": "text/plain" }); res.end("tankclone server"); });
+  const serveStatic = opts.staticDir ? staticHandler(opts.staticDir) : undefined;
+  const http = createServer((req, res) => {
+    if (serveStatic) { serveStatic(req, res).catch(() => { if (!res.headersSent) res.writeHead(500); res.end(); }); return; }
+    res.writeHead(200, { "content-type": "text/plain" }); res.end("tankclone server");
+  });
   const wss = new WebSocketServer({ server: http, maxPayload: 4096 });
 
   const send = (ws: WebSocket, m: ServerMsg) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(m)); };
