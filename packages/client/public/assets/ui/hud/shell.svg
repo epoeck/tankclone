@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><defs>
-<linearGradient id="brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe98a"/><stop offset=".45" stop-color="#f5bd24"/><stop offset="1" stop-color="#b8740a"/></linearGradient>
-<linearGradient id="ember" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc061"/><stop offset=".5" stop-color="#ff6d1f"/><stop offset="1" stop-color="#b52a16"/></linearGradient>
-<linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset=".5" stop-color="#b4bec9"/><stop offset="1" stop-color="#5f6a79"/></linearGradient>
-<radialGradient id="ball" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#9aa6b8"/><stop offset=".5" stop-color="#3d4760"/><stop offset="1" stop-color="#151a2c"/></radialGradient>
-<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bcdcff"/></linearGradient>
-<linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3b17"/><stop offset=".5" stop-color="#c06a2c"/><stop offset="1" stop-color="#6b3213"/></linearGradient>
-<linearGradient id="navy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f4290"/><stop offset="1" stop-color="#18234f"/></linearGradient>
-</defs><circle cx="12" cy="12" r="9" fill="url(#ball)" stroke="#141a3a" stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5"/><ellipse cx="8.8" cy="8.4" rx="2.5" ry="1.6" fill="#fff" opacity=".75" transform="rotate(-30 8.8 8.4)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g id="projetil"><circle cx="12" cy="12" r="10.5" fill="#fff6e0" opacity=".55"/><circle cx="12" cy="12" r="9" fill="#1b1d24" stroke="#0a0b10" stroke-width="2"/><ellipse cx="9" cy="8.5" rx="2.6" ry="1.6" fill="#ffffff" opacity=".55" transform="rotate(-30 9 8.5)"/></g></svg>
