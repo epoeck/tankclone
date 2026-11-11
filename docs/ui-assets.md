@@ -60,7 +60,7 @@ packages/client/public/assets/
 - Virar para a esquerda = espelhar X do grupo inteiro.
 - Ponteiro da pressão: `rotate(-135° + pressão × 270°)` em torno do centro (70, 70).
 - Barra de força: CSS `--power` (0–100%) e `--last` (último tiro). Ângulo: `--angle` em graus absolutos.
-- Energia: barra `.bar--energy` com `.bar__cost` mostrando o custo dos itens escolhidos (posição = energia restante).
+- Energia (240 + AGI/30): barra `.bar--energy` com `.bar__cost` mostrando o custo dos itens escolhidos (posição = energia restante).
 - Texto nunca vai dentro de SVG (SVG como imagem não carrega a fonte do jogo). Número de tecla, custo e % são HTML sobre o ícone (`.slot__key`, `.slot__cost`, `.slot__tag`).
 
 ## Arquivos editáveis (ArtCraft)
