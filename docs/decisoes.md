@@ -39,3 +39,5 @@
 19. Visual do personagem: boneco placeholder na primeira build, mas código já preparado para sprites em camadas (cabelo, rosto, roupa, chapéu, arma) quando a arte chegar.
 20. Equipamentos na primeira build: stats fixos, sem forja (fortalecer/compor/gemas vêm depois).
 21. Backup: repositório privado no GitHub (Izzy cria o repo vazio; Claude envia os commits).
+22. Ângulo em rampa: o valor exibido é o ângulo absoluto real; a inclinação muda o ângulo efetivo e o jogador precisa compensar.
+23. Custos confirmados: tecla 1 = 110, tecla 4 = 85. Com a energia inicial só dá "14". Demais custos: Izzy vai reinstalar o jogo para conferir.

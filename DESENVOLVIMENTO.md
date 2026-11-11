@@ -46,12 +46,12 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | Escala | tela de 1000 px; 1 distância = 100 px; distância 10 = 1 tela | decisão (resolução do original desconhecida) |
 | Vento | 0 a 10, uma casa decimal; sorteio favorece ≤ 5; o mapa pode modificar | dono |
 | Força | barra 0–100 de **segurar e soltar** (enche com o tempo) | gênero |
-| Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50); relativo à inclinação do chão (a confirmar) | pesquisa |
+| Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50), aplicada relativa ao corpo inclinado na rampa; o valor exibido é o **ângulo absoluto real**, então numa rampa o jogador precisa compensar | dono |
 | Tempo de turno | 10 s; 5 s quando todos estão acima de um limiar de FC | dono |
 | Ordem de turno | **delay acumulado**: começa quem tem mais agilidade; depois joga quem tem menor delay; mover/itens somam delay; agilidade reduz o delay ganho; passar a vez soma pouco | pesquisa |
 | Energia | 220 por turno (≈ 2,2 distâncias andando, ~1 por px); volta cheia no próximo turno; agilidade/equips aumentam | dono |
-| Itens 1–8, F | +2 tiros, triplo, +1 tiro, +50/40/30/20/10% de dano, voar; custos 40/40/40/40/33/25/20/20/80 | pesquisa (confiança média) |
-| Combos de aceitação | "124" (tatuzar) e "1446" (dano) cabem em 220 de energia e sobra para andar | dono |
+| Itens 1–8, F | +2 tiros, triplo, +1 tiro, +50/40/30/20/10% de dano, voar; custos 110/110/110/85/80/70/55/50/150 (1 e 4 confirmados pelo dono; resto do guia doyo) | dono + pesquisa |
+| Combos de aceitação | com a energia inicial (220) só cabe "14" (195); "124" (305) e "1446" (350) exigem a energia maior de quem tem agilidade/equips altos | dono |
 | Fúria | 0–100; enche ao atacar, ao passar a vez e ao levar dano; cheia libera o especial | dono |
 | Terreno | 3 estados: ar, chão destrutível, chão indestrutível | dono (mapas) |
 | Morte | HP 0 ou cair para fora do mapa | gênero |
@@ -168,7 +168,7 @@ Ordem pensada para ter **PvP jogável o quanto antes**.
 3. Colisão contínua em `simulateShot` (varredura do segmento entre passos).
 4. `Terrain` com 3 estados (ar / destrutível / indestrutível); `fromMask` lê a máscara em tons de cinza; cratera não apaga indestrutível.
 5. Colisão do projétil com jogadores (hitbox retangular) além do terreno.
-6. Faixa de ângulo por arma; ângulo relativo à inclinação do chão sob o personagem (confirmar com o dono).
+6. Faixa de ângulo por arma, relativa ao corpo inclinado pela rampa; UI mostra o ângulo absoluto real.
 
 ### Fase B — Partida local (`core/match.ts`)
 Máquina de estados determinística, com entrada = intenções por turno e saída = eventos para animar.
@@ -176,7 +176,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
    morte ao sair do mapa.
 2. Turnos por **delay** (ordem inicial por agilidade), tempo de 10 s / 5 s, passar a vez.
 3. Energia 220; itens 1–8 e F com custo, combinação e efeitos (+tiros, triplo, % de dano somado, voar).
-   Testes de aceitação: combos "124" e "1446".
+   Testes de aceitação: "14" cabe em 220; "124" e "1446" só com energia maior.
 4. Fúria (atacar, passar, levar dano) e especial por arma.
 5. 3 armas como dados: dano base, faixa de ângulo, raio da cratera, nº de projéteis do especial, fator de vento.
    Especiais e raios são placeholders até o dono ajustar jogando.
@@ -213,8 +213,8 @@ forja (fortalecer +1..+12 com 12%/nível no dano base, compor, gemas); loja e ec
 
 ## 11. Perguntas em aberto para o dono
 
-1. O ângulo exibido muda quando o personagem está numa rampa?
-2. Depois do "1446", ainda dava para andar um pouco? (confirma os custos dos itens)
+1. Custos dos itens 2, 3, 5–8 e F (o dono vai reinstalar o original para conferir).
+2. Quanto de energia agilidade/equips somam (para "1446" caber em nível alto).
 3. Efeito do especial de cada uma das 3 armas.
 4. Pérolas de 2022: slots, níveis, síntese (na Fase F).
 5. Nome do jogo.

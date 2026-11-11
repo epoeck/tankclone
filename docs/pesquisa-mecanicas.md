@@ -7,25 +7,23 @@ Tudo aqui vira **dado configurável** (JSON) para ajustar depois sem mexer em c�
 ## 1. Itens de batalha (teclas 1–8)
 
 Mapeamento padrão das teclas 1–8 (fonte: tutorial pt-BR [i227](https://i227.blogspot.com/2012/03/tutorial-completo-ddtank.html)) e custo de
-energia (fonte: guia chinês [4399](http://web.4399.com/ddt/youxigonglue/201106/26-10089.html)).
+energia (fonte: guia chinês [doyo](https://www.doyo.cn/article/11674); teclas 1 e 4 confirmadas pelo dono).
 
 | Tecla | Item | Efeito | Energia | Confiança |
 |---|---|---|---|---|
-| 1 | +2 tiros | 2 disparos extras; −40% de dano por disparo (4399 diz −50%) | 40 | média |
-| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil | 40 | média |
-| 3 | +1 tiro | 1 disparo extra; −20% (4399 diz −10%) | 40 | média |
-| 4 | +50% dano | | 40 | média |
-| 5 | +40% dano | | ~33 | média |
-| 6 | +30% dano | | 25 | média |
-| 7 | +20% dano | | 20 | média |
-| 8 | +10% dano | | 20 | média |
-| F | Voar (avião de papel) | o personagem vai até onde o projétil cai; tiro sem dano | 80 | média |
+| 1 | +2 tiros | 2 disparos extras; −40% de dano por disparo (4399 diz −50%) | 110 | alta (dono) |
+| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil | 110 | média |
+| 3 | +1 tiro | 1 disparo extra; −20% (4399 diz −10%) | 110 | média |
+| 4 | +50% dano | | 85 | alta (dono) |
+| 5 | +40% dano | | 80 | média |
+| 6 | +30% dano | | 70 | média |
+| 7 | +20% dano | | 55 | média |
+| 8 | +10% dano | | 50 | média |
+| F | Voar (avião de papel) | o personagem vai até onde o projétil cai; tiro sem dano | 150 | média |
 
-Checagem com a memória do Izzy (energia base 220):
-- "124" (tatuzar) = +2 tiros + triplo + 50% = 120 de energia → sobra ~100 (≈1 distância de caminhada). Coerente.
-- "1446" (dano) = +2 tiros + 50% + 50% + 30% = 145 → sobra ~75. Coerente.
-- Um guia de outra versão ([doyo](https://www.doyo.cn/article/11674), energia 240) lista custos bem maiores (+1/+2 = 110, +50% = 85).
-  Com esses números o "1446" não caberia em 220, então **adotamos os custos do 4399**.
+- **Correção (dono, 2026-11-11):** a tecla 1 custa **110** e a 4 custa **85**, e com a energia inicial só dá para jogar "14". Isso bate com o guia
+  [doyo](https://www.doyo.cn/article/11674): +1/+2 tiros 110, triplo 110, +50% 85, +40% 80, +30% 70, +20% 55, +10% 50, teleporte/voar 150.
+  **Adotamos os custos do doyo**; os do 4399 eram de outra versão. "124" e "1446" só cabem com a energia maior de fim de jogo.
 
 Regras que se deduzem dos combos (a confirmar): itens de dano **somam** (+50 +50 +30 = +130%); vários itens podem ser usados no mesmo turno;
 +2 tiros e triplo combinam.
