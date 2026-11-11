@@ -105,4 +105,3 @@ describe("3 estados e máscara em tons de cinza", () => {
     expect(flat().slopeDeg(100, 60, 1)).toBeCloseTo(0);
   });
 });
-});
