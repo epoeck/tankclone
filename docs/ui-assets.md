@@ -10,13 +10,14 @@ Guia de formato entre a arte e o código. Nome do jogo, pela logo do Izzy: **DDC
 
 ## Telas de referência
 
-`packages/client/design.html` (abra com `npm run dev -w @tankclone/client` e vá em `/design.html`). São 5 telas 1280×720 em HTML estático com as classes prontas:
+`packages/client/design.html` (abra com `npm run dev -w @tankclone/client` e vá em `/design.html`). São 6 telas 1280×720 em HTML estático com as classes prontas:
 
 1. Entrada (apelido + senha)
 2. Saguão (lista de salas, quem está online, conversa geral)
 3. Sala (times azul/vermelho com 4 vagas, mapa, tempo de turno, arma, Iniciar)
 4. Partida (HUD: ordem de turno, vento + relógio, minimapa, console com vida/energia, força, itens 1–8/F, ângulo, pressão)
 5. Oficina (perfil, slots de equipamento, atributos, inventário)
+6. Visual (pele, cabelo, cor do cabelo, rosto)
 
 Menus e HUD são **HTML/CSS por cima do canvas**. O canvas desenha só mapa, tanques, projéteis e efeitos.
 
@@ -48,7 +49,7 @@ packages/client/public/assets/
   ui/stats/    stat-atk, -def, -agi, -luck, -hp, -armor, -dmg, -energy, -power, -xp, icon-lock, -gear, -crown, -chat   32×32
   ui/weapons/  weapon-prism, -sledge, -furnace   96×48
   ui/hud/      wind-arrow, pressure-gauge + pressure-needle (mesmo centro), angle-dial, shell, turn-marker
-  sprites/tank/ tank-tracks, tank-hull, tank-flag-blue|red, tank-turret (120×96), tank-barrel (72×24)
+  chars/<camada>/<camada>-<n>.svg   boneco em camadas, 96×128, pés em (48,124), olhando para a direita
   maps/        miniaturas 160×90 dos 5 mapas provisórios
 ```
 
@@ -56,7 +57,11 @@ packages/client/public/assets/
 
 - Carregue sempre pelo `manifest.json` (ids estáveis). Arte nova troca o arquivo, não o id.
 - SVG no canvas: carregue como `Image` e rasterize no tamanho do manifest × devicePixelRatio (ou `this.load.svg(id, file, { width, height })` no Phaser).
-- **Tanque em camadas**, de trás para frente: `tank-tracks`, `tank-hull`, `tank-flag-{team}`, `tank-barrel`, `tank-turret`. Âncora das camadas de 120×96: pés em `(60, 92)`. O cano gira em torno de `(8, 12)` do próprio arquivo, montado no centro da torre `(60, 46)`. Com escala 0,7 o centro da torre fica ~32 px acima dos pés, perto do `MUZZLE_HEIGHT` de 30 px da física.
+- **Boneco em camadas** (placeholder; o sistema é o que importa). Todas as camadas têm canvas 96×128 com os pés em (48,124), então empilham sem ajuste. Ordem de trás para frente: `wings`, `hair-back`, `body`, `outfit`, `face`, `hair-front`, `glasses`, `hat`, `weapon`, `arm`. Opções hoje: body 1, face 3, hair 3 (cada um em `hair-back-n` + `hair-front-n`), outfit 3, hat 2, glasses 1, wings 1. Em hat, glasses e wings o índice 0 = sem item.
+- Aparência base (escolhida pelo jogador): pele, rosto, cabelo, cor do cabelo. Equipamento (vem do item): roupa, chapéu, óculos, asas, arma.
+- **Cor de pele e de cabelo por tinta:** `body`, `arm` e `hair-*` usam `currentColor`, e a raiz do SVG tem `color="#..."` com a cor padrão. Carregue o SVG como texto, troque esse atributo pelo hex escolhido e rasterize. Paletas em `manifest.json > character.tint` (6 peles, 8 cores de cabelo). Sombras e brilhos são pretos/brancos translúcidos, então funcionam com qualquer cor.
+- **Braço + arma giram juntos** em torno do ombro (56,82). O braço (`arm-1`, 48×20) aponta para a direita com pivô em (8,10) do arquivo; a mão fica em (38,10). A arma (`ui/weapons/*`, 96×48) tem o cabo em (10,27) e vai presa na mão, escalada para ~55%.
+- Escala no jogo: boneco com ~52 px de altura → escala 0,433. O projétil nasce no ponto da física (`MUZZLE_HEIGHT` = 30 px acima dos pés); visualmente fica perto da ponta da arma entre 30° e 60°.
 - Virar para a esquerda = espelhar X do grupo inteiro.
 - Ponteiro da pressão: `rotate(-135° + pressão × 270°)` em torno do centro (70, 70).
 - Barra de força: CSS `--power` (0–100%) e `--last` (último tiro). Ângulo: `--angle` em graus absolutos.
