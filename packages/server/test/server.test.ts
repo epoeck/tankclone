@@ -272,4 +272,26 @@ describe("segurança", () => {
     expect((await b.waitFor("room")).room!.players).toHaveLength(1);
     a.close(); b.close();
   });
+
+  it("bot dummy: só o dono adiciona, entra no time oposto, passa a vez e não ganha XP", async () => {
+    srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });
+    const a = await Client.open(srv.port), b = await Client.open(srv.port);
+    await a.login("alice"); await b.login("bruno");
+    a.send({ t: "createRoom", mapId: "colinas", maxPlayers: 4 });
+    const room = (await a.waitFor("room")).room!;
+    b.send({ t: "joinRoom", roomId: room.id }); await b.waitFor("room");
+    b.send({ t: "addBot" });
+    expect((await b.waitFor("error")).msg).toMatch(/dono/);
+    a.send({ t: "addBot", team: 2 });
+    const r = (await a.waitFor("room", m => m.room!.players.some(p => p.bot))).room!;
+    const bot = r.players.find(p => p.bot)!;
+    expect(bot.nick).toBe("[Bot] 1"); expect(bot.team).toBe(2);
+    a.send({ t: "removeBot", nick: bot.nick });
+    expect((await a.waitFor("room", m => !m.room!.players.some(p => p.bot))).room!.players.length).toBe(2);
+    a.send({ t: "addBot", team: 2 }); await a.waitFor("room", m => m.room!.players.some(p => p.bot));
+    a.send({ t: "start" });
+    const st = await a.waitFor("start");
+    expect(st.setup.players.some(p => p.id === "[Bot] 1")).toBe(true);
+    a.close(); b.close();
+  });
 });

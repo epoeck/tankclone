@@ -6,7 +6,7 @@ import type { ClientIntent, MatchSetup, RoomInfo } from "./protocol";
 export const MAX_ROOM_PLAYERS = 8;
 export const XP_WIN = 50, XP_LOSE = 20;
 
-export interface Member { nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean }
+export interface Member { nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean; bot?: boolean }
 
 export type Outbox = {
   /** Envia a todos os membros conectados da sala. */
@@ -38,6 +38,28 @@ export class Room {
     for (const m of this.members.values()) counts.set(m.team, (counts.get(m.team) ?? 0) + 1);
     const t = team === 1 || team === 2 ? team : (counts.get(1) ?? 0) <= (counts.get(2) ?? 0) ? 1 : 2;
     this.members.set(nick, { nick, team: t, weaponId: "sledge", build: DEFAULT_BUILD, look, connected: true });
+    return null;
+  }
+
+  /** Bot dummy de testes: fica parado e passa a vez sozinho (conectado=false). Só o dono, no saguão. */
+  addBot(nick: string, team?: number): string | null {
+    if (nick !== this.host) return "só o dono da sala adiciona bot";
+    if (this.status !== "lobby") return "partida em andamento";
+    if (this.members.size >= this.maxPlayers) return "sala cheia";
+    let n = 1; while (this.members.has(`[Bot] ${n}`)) n++;
+    const name = `[Bot] ${n}`;
+    const counts = new Map<number, number>();
+    for (const m of this.members.values()) counts.set(m.team, (counts.get(m.team) ?? 0) + 1);
+    const t = team === 1 || team === 2 ? team : (counts.get(1) ?? 0) <= (counts.get(2) ?? 0) ? 1 : 2;
+    this.members.set(name, { nick: name, team: t, weaponId: "sledge", build: DEFAULT_BUILD, look: DEFAULT_LOOK, connected: false, bot: true });
+    return null;
+  }
+
+  removeBot(nick: string, botNick: string): string | null {
+    if (nick !== this.host) return "só o dono da sala remove bot";
+    if (this.status !== "lobby") return "partida em andamento";
+    if (!this.members.get(botNick)?.bot) return "bot não encontrado";
+    this.members.delete(botNick);
     return null;
   }
 
@@ -109,7 +131,7 @@ export class Room {
   /** Encerra a partida (já `over`): concede XP e volta ao saguão. */
   finish(out: Outbox): { winnerTeam: number | null; xp: Record<string, { gained: number; level: number }> } {
     const winner = this.match!.winnerTeam ?? null;
-    const xp = out.awardXp([...this.members.values()].map(m => ({ nick: m.nick, won: winner !== null && m.team === winner })));
+    const xp = out.awardXp([...this.members.values()].filter(m => !m.bot).map(m => ({ nick: m.nick, won: winner !== null && m.team === winner })));
     this.status = "lobby"; this.match = null; this.setup = null; this.log = [];
     return { winnerTeam: winner, xp };
   }

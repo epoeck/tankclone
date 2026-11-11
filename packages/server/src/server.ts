@@ -122,6 +122,8 @@ export function startServer(opts: ServerOptions = {}) {
       case "createRoom": { const r = lobby.create(nick, String(m.mapId), Number(m.maxPlayers), db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
       case "joinRoom": { const r = lobby.join(nick, String(m.roomId), m.team, db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
       case "leaveRoom": { const r = lobby.leave(nick, true); send(s.ws, { t: "room", room: null }); if (r && lobby.rooms.has(r.id)) pushRoom(r); return; }
+      case "addBot": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.addBot(nick, m.team); return e ? err(e) : pushRoom(r); }
+      case "removeBot": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.removeBot(nick, String(m.nick)); return e ? err(e) : pushRoom(r); }
       case "setLook": {
         const look = db.setLook(nick, m.look);
         const r = lobby.roomOf(nick);

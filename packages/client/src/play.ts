@@ -145,6 +145,7 @@ function renderRoom() {
     const cv = el("canvas"); cv.width = 48; cv.height = 64; drawPortrait(cv, p.look, p.weaponId);
     const name = el("div", "", "grow"); name.append(el("b", p.nick + (p.nick === room.host ? " ★" : "")), el("br"), el("small", `${WEAPONS[p.weaponId]?.name ?? p.weaponId} · build ${p.build}`, "muted"));
     row.append(cv, name, el("span", p.team === 1 ? "Time Azul" : "Time Vermelho", "chip"));
+    if (p.bot && room.host === me.nick) { const x = el("button", "Remover", "btn btn--sm btn--steel"); x.onclick = () => send({ t: "removeBot", nick: p.nick }); row.append(x); }
     box.append(row);
   }
   const w = $("weapons"); w.replaceChildren();
@@ -152,7 +153,9 @@ function renderRoom() {
   const bl = $("builds"); bl.replaceChildren();
   for (const k of Object.keys(BUILDS)) { const b = el("button", k, "btn btn--sm btn--steel"); b.onclick = () => send({ t: "setLoadout", build: k }); bl.append(b); }
   $<HTMLButtonElement>("btn-start").hidden = room.host !== me.nick;
+  $<HTMLButtonElement>("btn-bot").hidden = room.host !== me.nick;
 }
+$("btn-bot").onclick = () => send({ t: "addBot" });
 $("btn-leave").onclick = () => send({ t: "leaveRoom" });
 $("btn-start").onclick = () => send({ t: "start" });
 handlers.push(m => { if (m.t === "room" && m.room && !view) renderRoom(); });

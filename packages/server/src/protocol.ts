@@ -9,6 +9,8 @@ export type ClientMsg =
   | { t: "createRoom"; mapId: string; maxPlayers: number }
   | { t: "joinRoom"; roomId: string; team?: number }
   | { t: "leaveRoom" }
+  | { t: "addBot"; team?: number }
+  | { t: "removeBot"; nick: string }
   | { t: "setLoadout"; weaponId?: string; build?: string }
   | { t: "setLook"; look: unknown }
   | { t: "chat"; text: string }
@@ -20,7 +22,7 @@ export interface RoomInfo {
   mapId: string;
   maxPlayers: number;
   status: "lobby" | "playing";
-  players: Array<{ nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean }>;
+  players: Array<{ nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean; bot?: boolean }>;
   host: string;
 }
 
