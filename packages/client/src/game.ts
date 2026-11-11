@@ -1,6 +1,7 @@
 /** Partida local (hot-seat) sobre o Match do core, usando a mesma visão do jogo em rede. */
 import { BUILDS, Match, MAPS, sanitizeLook, type Intent } from "@tankclone/core";
 import { loadClientMaps } from "./maps";
+import { Hud } from "./hud";
 import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
 
 const canvas = document.getElementById("c") as HTMLCanvasElement;
@@ -26,6 +27,7 @@ async function main() {
   const view = new MatchView(mapId, players);
   view.push(match.startEvents);
 
+  const hud = new Hud(document.getElementById("hud")!, view, () => null, k => { if (view.canAct) controls.send({ type: "item", key: k }); });
   const controls = new Controls(view, () => true, i => {
     const o = match.submit({ ...i, playerId: match.currentId } as Intent);
     if (!o.ok) view.ui.msg = o.error; else { view.ui.msg = ""; view.push(o.events); }
@@ -36,7 +38,7 @@ async function main() {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (view.canAct) { const t = match.tick(dt); if (t.length) view.push(t); }
     controls.update(dt); view.update(dt);
-    view.draw(ctx, null);
+    view.draw(ctx, null); hud.update();
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

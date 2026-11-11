@@ -3,6 +3,7 @@ import { BUILDS, COUNTS, HAIR_COLORS, MAPS, SKIN_TONES, WEAPONS, type Look, type
 import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/src/protocol";
 import { drawCharPortrait as drawPortrait } from "./chars";
 import { loadClientMaps } from "./maps";
+import { Hud } from "./hud";
 import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -30,6 +31,7 @@ let me: { nick: string; level: number; xp: number; unlocks: string[]; look: Look
 let room: RoomInfo | null = null;
 let view: MatchView | null = null;
 let controls: Controls | null = null;
+let hud: Hud | null = null;
 let endInfo: Record<string, { gained: number; level: number }> | null = null;
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
@@ -38,6 +40,7 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   show("match");
   controls ??= new Controls(view, () => view?.hud.player === me?.nick, i => send({ t: "intent", intent: i } as unknown as ClientMsg));
   controls.view = view;
+  hud = new Hud($("hud"), view, () => me?.nick ?? null, k => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "item", key: k } } as unknown as ClientMsg); });
 }
 
 function onMsg(m: ServerMsg) {
@@ -145,7 +148,7 @@ const ctx = canvas.getContext("2d")!;
 let last = performance.now();
 function frame(now: number) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (view) { controls?.update(dt); view.update(dt); view.draw(ctx, me?.nick ?? null); }
+  if (view) { controls?.update(dt); view.update(dt); view.draw(ctx, me?.nick ?? null); hud?.update(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

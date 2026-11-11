@@ -4,15 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Partida local</title>
+<link rel="stylesheet" href="/src/ui/tokens.css">
+<link rel="stylesheet" href="/src/ui/components.css">
+<link rel="stylesheet" href="/src/ui/stage.css">
 <style>
   :root { color-scheme: dark; }
   body { margin: 0; background: #14161a; color: #dde; font: 14px system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px; }
-  canvas { background: #1d2230; border: 1px solid #333; max-width: 100%; }
+  
   small { color: #99a; max-width: 1000px; text-align: center; }
 </style>
 </head>
-<body>
-<canvas id="c" width="1000" height="600"></canvas>
+<body class="dd">
+<div class="fit" style="max-width:1280px;width:100%"><div class="stage"><canvas id="c" width="1280" height="720"></canvas><div id="hud"></div></div></div>
 <small>←/→ andar · ↑/↓ ângulo · <b>segure Espaço</b> para encher a força e solte para atirar · 1–8 e F itens · R especial (fúria cheia) · P passar a vez</small>
 <script type="module" src="/src/game.ts"></script>
 </body>

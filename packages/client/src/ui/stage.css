@@ -1,0 +1,12 @@
+/* Palco 1280×720 que escala para caber na largura (como nas telas de referência do design). */
+.fit { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; position: relative; container-type: inline-size; margin: 0 auto; }
+.stage { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; transform-origin: 0 0; transform: scale(calc(100cqw / 1280px)); overflow: hidden; border-radius: 14px; border: 3px solid var(--ink); }
+@supports not (transform: scale(calc(100cqw / 1280px))) { .stage { position: relative; } }
+.stage canvas { position: absolute; inset: 0; width: 1280px; height: 720px; }
+.hud .banner { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); text-align: center; padding: 18px 40px; }
+.hud .turns__item .portrait canvas { position: static; width: 42px; height: 42px; }
+.hud .minimap canvas { position: absolute; left: 6px; top: 6px; width: 208px; height: 76px; border-radius: 4px; }
+.hud .slot { cursor: pointer; }
+.hud .slot.is-off { filter: grayscale(1) brightness(.6); }
+.hud .slot__count { position: absolute; bottom: 3px; left: 5px; font-weight: 900; font-size: 11px; color: var(--ember-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.hud .nameplates { position: absolute; inset: 0; pointer-events: none; }

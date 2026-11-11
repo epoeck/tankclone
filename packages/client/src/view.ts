@@ -12,17 +12,17 @@ export interface PlayerInfo { id: string; team: number; weaponId: string; build:
 
 export interface CharView {
   id: string; team: number; weaponId: string; x: number; y: number; hp: number; maxHp: number;
-  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number;
+  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number;
 }
 
-export const VIEW_W = 1000, VIEW_H = 600;
+export const VIEW_W = 1280, VIEW_H = 720;
 const TEAM = { 1: { color: "#6aa7ff" }, 2: { color: "#ff8a6a" } } as const;
 export class MatchView {
   readonly terrain: Terrain;
   readonly chars = new Map<string, CharView>();
   readonly order: string[] = [];
   hud = { wind: 0, turn: 0, player: "", timeLimit: 10, timeLeft: 10, over: false, winner: null as number | null };
-  ui = { angle: 45, power: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false };
+  ui = { angle: 45, power: 0, last: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false, spent: 0, used: {} as Record<string, number> };
   private bg: HTMLImageElement | null = null;
   private tc: HTMLCanvasElement;
   private tctx: CanvasRenderingContext2D;
@@ -46,7 +46,7 @@ export class MatchView {
       const st = own(BUILDS, p.build) ?? BUILDS.media!;
       const y = this.terrain.surfaceY(p.x, 0);
       const maxEnergy = 240 + Math.floor(st.agi / 30);
-      this.chars.set(p.id, { id: p.id, team: p.team, weaponId: p.weaponId, x: p.x, y, hp: st.hp, maxHp: st.hp, fury: 0, alive: true, facing: p.facing, energy: maxEnergy, maxEnergy, look: p.look ?? DEFAULT_LOOK, walk: 0 });
+      this.chars.set(p.id, { id: p.id, team: p.team, weaponId: p.weaponId, x: p.x, y, hp: st.hp, maxHp: st.hp, fury: 0, alive: true, facing: p.facing, energy: maxEnergy, maxEnergy, look: p.look ?? DEFAULT_LOOK, walk: 0, delay: 0 });
       this.order.push(p.id);
     }
   }
@@ -70,6 +70,10 @@ export class MatchView {
     this.tctx.putImageData(img, 0, 0);
   }
 
+  /** Cache do terreno (para o minimapa do HUD). */
+  get terrainCanvas(): HTMLCanvasElement { return this.tc; }
+  get camX(): number { return this.cam; }
+
   get busy(): boolean { return !!this.anim || this.queue.length > 0; }
   push(events: MatchEvent[]): void { this.queue.push(...events); }
   get current(): CharView | undefined { return this.chars.get(this.hud.player); }
@@ -80,7 +84,7 @@ export class MatchView {
       case "turnStart": {
         this.hud.wind = e.wind; this.hud.turn = e.turn; this.hud.player = e.playerId; this.hud.timeLimit = e.timeLimit; this.hud.timeLeft = e.timeLimit;
         if (v) { v.energy = e.energy; v.maxEnergy = Math.max(v.maxEnergy, e.energy); this.ui.angle = Math.max(this.ui.angle, 0); }
-        this.ui.power = 0; this.ui.special = false; this.ui.turnBonus = 0; this.ui.extraShots = 0; this.ui.triple = false; this.ui.fly = false;
+        this.ui.power = 0; this.ui.special = false; this.ui.turnBonus = 0; this.ui.extraShots = 0; this.ui.triple = false; this.ui.fly = false; this.ui.spent = 0; this.ui.used = {};
         break;
       }
       case "move": if (v) { const p = e.path[e.path.length - 1]; if (p) { v.x = p.x; v.y = p.y; } v.energy = e.energyLeft; if (e.path.length) { const a = e.path[0]!; if (p) v.facing = (p.x >= a.x ? 1 : -1) as Facing; } v.walk += 0.9; } break;
@@ -89,6 +93,7 @@ export class MatchView {
       case "item": {
         if (v) v.energy = e.energyLeft;
         const d = own(ITEMS, e.key); if (!d) break;
+        this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
         this.ui.turnBonus += d.damageBonus ?? 0; this.ui.extraShots += d.extraShots ?? 0; this.ui.triple ||= !!d.triple; this.ui.fly ||= !!d.fly;
         break;
       }
@@ -102,7 +107,7 @@ export class MatchView {
       case "death": if (v) v.alive = false; break;
       case "gameOver": this.hud.over = true; this.hud.winner = e.winnerTeam; break;
       case "shot": this.anim = { points: e.points, i: 0 }; break;
-      case "turnEnd": break;
+      case "turnEnd": if (v) v.delay = e.delay; break;
     }
   }
 
@@ -126,9 +131,8 @@ export class MatchView {
     this.cam += (Math.max(0, Math.min(W - VIEW_W, target - VIEW_W / 2)) - this.cam) * 0.15;
     if (this.bg) ctx.drawImage(this.bg, 0, 0, VIEW_W, VIEW_H);
     else { const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, "#7fb8ee"); g.addColorStop(1, "#dcefff"); ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
-    ctx.save(); ctx.translate(-Math.round(this.cam), 0);
+    ctx.save(); ctx.translate(-Math.round(this.cam), VIEW_H - H);
     ctx.drawImage(this.tc, 0, 0);
-    const weapon = cur ? own(WEAPONS, cur.weaponId) : undefined;
 
     if (cur?.alive && !this.hud.over) { // régua de distância (1 un = 100 px)
       ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.font = "11px Nunito, system-ui"; ctx.lineWidth = 1;
@@ -145,35 +149,6 @@ export class MatchView {
     if (this.anim) { const p = this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!; ctx.fillStyle = "#ffd24a"; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill(); }
     ctx.restore();
 
-    // HUD de canvas (mínimo; o HUD final do design entra por HTML)
-    ctx.fillStyle = "#0008"; ctx.fillRect(0, 0, VIEW_W, 44);
-    ctx.fillStyle = "#fff"; ctx.font = "14px Nunito, system-ui";
-    ctx.fillText(`${this.hud.player} · ${weapon?.name ?? ""}  turno ${this.hud.turn}  ${Math.ceil(this.hud.timeLeft)}s`, 12, 18);
-    const w = this.hud.wind;
-    ctx.fillText(`vento ${w === 0 ? "·" : w > 0 ? "→" : "←"} ${Math.abs(w).toFixed(1)}`, 12, 37);
-    ctx.fillText(`ângulo ${Math.round(this.ui.angle)}°${this.ui.special ? "  [ESPECIAL]" : ""}`, 250, 18);
-    ctx.fillText(`energia ${cur?.energy ?? 0}`, 250, 37);
-    ctx.fillText("fúria", 380, 18); bar(ctx, 425, 8, 100, 10, (cur?.fury ?? 0) / 100, "#e8a33a");
-    ctx.fillText("força", 380, 37); bar(ctx, 425, 28, 100, 10, this.ui.power / 100, "#e55");
-    if (this.ui.msg) { ctx.fillStyle = "#fc8"; ctx.fillText(this.ui.msg, 540, 18); }
-    const keys: ItemKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "F"];
-    keys.forEach((k, i) => {
-      const x = 12 + i * 52, y = VIEW_H - 50, can = (cur?.id === me || me === null) && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && this.ui.triple);
-      ctx.fillStyle = can ? "#2b3550" : "#2228"; ctx.fillRect(x, y, 46, 40);
-      ctx.fillStyle = can ? "#fff" : "#888"; ctx.font = "bold 15px Nunito, system-ui"; ctx.fillText(k, x + 6, y + 18);
-      ctx.font = "11px Nunito, system-ui"; ctx.fillText(String(ITEMS[k].cost), x + 6, y + 34);
-    });
-    ctx.fillStyle = "#fff"; ctx.font = "12px Nunito, system-ui";
-    ctx.fillText(`dano +${Math.round(this.ui.turnBonus * 100)}%${this.ui.extraShots ? `  +${this.ui.extraShots} tiros` : ""}${this.ui.triple ? "  triplo" : ""}${this.ui.fly ? "  VOAR" : ""}`, 12, VIEW_H - 58);
-    const mw = 200, mh = (H / W) * mw, mx = VIEW_W - mw - 10, my = 52;
-    ctx.fillStyle = "#000a"; ctx.fillRect(mx, my, mw, mh); ctx.drawImage(this.tc, 0, 0, W, H, mx, my, mw, mh);
-    for (const c of this.chars.values()) if (c.alive) { ctx.fillStyle = (TEAM[c.team as 1 | 2] ?? TEAM[1]).color; ctx.fillRect(mx + (c.x / W) * mw - 2, my + (c.y / H) * mh - 4, 4, 4); }
-    ctx.strokeStyle = "#fff"; ctx.strokeRect(mx + (this.cam / W) * mw, my, (VIEW_W / W) * mw, mh);
-    if (this.hud.over) {
-      ctx.fillStyle = "#000b"; ctx.fillRect(0, 230, VIEW_W, 100);
-      ctx.fillStyle = "#fff"; ctx.font = "bold 32px Nunito, system-ui"; ctx.textAlign = "center";
-      ctx.fillText(this.hud.winner === null ? "Empate" : `Time ${this.hud.winner} venceu!`, VIEW_W / 2, 290); ctx.textAlign = "left";
-    }
   }
 
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
@@ -191,7 +166,7 @@ export class Controls {
   private keys = new Set<string>();
   charging = false;
   private walkAcc = 0; private angleAcc = 0;
-  constructor(public view: MatchView, private canControl: () => boolean, private send: (i: Record<string, unknown>) => void) {
+  constructor(public view: MatchView, private canControl: () => boolean, readonly send: (i: Record<string, unknown>) => void) {
     addEventListener("keydown", e => this.down(e));
     addEventListener("keyup", e => this.up(e));
   }
@@ -210,7 +185,7 @@ export class Controls {
     this.keys.delete(e.code);
     if (e.code === "Space" && this.charging) {
       this.charging = false;
-      if (this.view.ui.power > 1 && this.canControl()) this.send({ type: "shoot", angleDeg: this.view.ui.angle, power: this.view.ui.power, special: this.view.ui.special });
+      if (this.view.ui.power > 1 && this.canControl()) { this.view.ui.last = this.view.ui.power; } if (this.view.ui.power > 1 && this.canControl()) this.send({ type: "shoot", angleDeg: this.view.ui.angle, power: this.view.ui.power, special: this.view.ui.special });
       this.view.ui.power = 0;
     }
   }
@@ -219,7 +194,7 @@ export class Controls {
     if (!this.canControl() || !this.view.canAct) { if (this.charging && !this.view.canAct) { this.charging = false; ui.power = 0; } return; }
     if (this.charging) {
       ui.power = Math.min(100, ui.power + 70 * dt);
-      if (ui.power >= 100) { this.charging = false; this.send({ type: "shoot", angleDeg: ui.angle, power: 100, special: ui.special }); ui.power = 0; }
+      if (ui.power >= 100) { this.charging = false; ui.last = 100; this.send({ type: "shoot", angleDeg: ui.angle, power: 100, special: ui.special }); ui.power = 0; }
       return;
     }
     const dir = (this.keys.has("ArrowRight") ? 1 : 0) - (this.keys.has("ArrowLeft") ? 1 : 0);
