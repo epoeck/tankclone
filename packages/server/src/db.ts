@@ -1,4 +1,5 @@
 /** Contas, XP e nível em SQLite (node:sqlite, embutido no Node ≥ 22.5; sem serviço externo). */
+import { DEFAULT_LOOK, sanitizeLook, type Look } from "@tankclone/core";
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
@@ -19,9 +20,13 @@ export function levelForXp(xp: number): number {
 }
 export const unlocksAt = (level: number): string[] => Object.entries(UNLOCKS).filter(([l]) => level >= +l).map(([, v]) => v);
 
-export interface Account { nick: string; xp: number; level: number }
+export interface Account { nick: string; xp: number; level: number; look: Look }
 
 const hashPw = (pw: string, salt: Uint8Array) => new Promise<Buffer>((res, rej) => scrypt(pw, salt, 64, (e, k) => (e ? rej(e) : res(k))));
+
+function parseLook(s: string | null): Look {
+  try { return sanitizeLook(s ? JSON.parse(s) : null); } catch { return DEFAULT_LOOK; }
+}
 
 export class Db {
   private db: DatabaseSyncT;
@@ -30,6 +35,8 @@ export class Db {
     this.db.exec(`CREATE TABLE IF NOT EXISTS accounts (
       nick TEXT PRIMARY KEY COLLATE NOCASE, salt BLOB NOT NULL, hash BLOB NOT NULL,
       xp INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL)`);
+    const cols = this.db.prepare("PRAGMA table_info(accounts)").all() as Array<{ name: string }>;
+    if (!cols.some(c => c.name === "look")) this.db.exec("ALTER TABLE accounts ADD COLUMN look TEXT"); // migração de bancos antigos
   }
 
   /** scrypt assíncrono: não bloqueia o laço de eventos (~60 ms de CPU fora da thread principal). */
@@ -40,21 +47,35 @@ export class Db {
     try {
       this.db.prepare("INSERT INTO accounts (nick, salt, hash, created) VALUES (?, ?, ?, ?)").run(nick, salt, await hashPw(password, salt), Date.now());
     } catch { return "apelido já existe"; }
-    return { nick, xp: 0, level: 1 };
+    return { nick, xp: 0, level: 1, look: DEFAULT_LOOK };
   }
 
   async login(nick: string, password: string): Promise<Account | string> {
-    const row = this.db.prepare("SELECT nick, salt, hash, xp FROM accounts WHERE nick = ?").get(nick) as { nick: string; salt: Uint8Array; hash: Uint8Array; xp: number } | undefined;
+    const row = this.db.prepare("SELECT nick, salt, hash, xp, look FROM accounts WHERE nick = ?").get(nick) as { nick: string; salt: Uint8Array; hash: Uint8Array; xp: number; look: string | null } | undefined;
     if (!row) return "apelido ou senha incorretos";
     const h = await hashPw(password, row.salt);
     if (!timingSafeEqual(h, row.hash)) return "apelido ou senha incorretos";
-    return { nick: row.nick, xp: row.xp, level: levelForXp(row.xp) };
+    return { nick: row.nick, xp: row.xp, level: levelForXp(row.xp), look: parseLook(row.look) };
   }
 
   addXp(nick: string, amount: number): Account | null {
     this.db.prepare("UPDATE accounts SET xp = xp + ? WHERE nick = ?").run(amount, nick);
-    const row = this.db.prepare("SELECT nick, xp FROM accounts WHERE nick = ?").get(nick) as { nick: string; xp: number } | undefined;
-    return row ? { nick: row.nick, xp: row.xp, level: levelForXp(row.xp) } : null;
+    const row = this.db.prepare("SELECT nick, xp, look FROM accounts WHERE nick = ?").get(nick) as { nick: string; xp: number; look: string | null } | undefined;
+    return row ? { nick: row.nick, xp: row.xp, level: levelForXp(row.xp), look: parseLook(row.look) } : null;
+  }
+
+  getXp(nick: string): number { return (this.db.prepare("SELECT xp FROM accounts WHERE nick = ?").get(nick) as { xp: number } | undefined)?.xp ?? 0; }
+  getLevel(nick: string): number { return levelForXp(this.getXp(nick)); }
+
+  setLook(nick: string, raw: unknown): Look {
+    const look = sanitizeLook(raw);
+    this.db.prepare("UPDATE accounts SET look = ? WHERE nick = ?").run(JSON.stringify(look), nick);
+    return look;
+  }
+
+  getLook(nick: string): Look {
+    const row = this.db.prepare("SELECT look FROM accounts WHERE nick = ?").get(nick) as { look: string | null } | undefined;
+    return parseLook(row?.look ?? null);
   }
 
   /** Cópia consistente do banco (para backup agendado). */

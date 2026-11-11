@@ -1,5 +1,5 @@
 /** Protocolo JSON sobre WebSocket. O servidor é autoritativo: o cliente só envia intenções e só anima eventos. */
-import type { Intent, MatchEvent } from "@tankclone/core";
+import type { Intent, Look, MatchEvent } from "@tankclone/core";
 
 export type ClientIntent = Exclude<Intent, never> extends infer I ? (I extends { playerId: string } ? Omit<I, "playerId"> : never) : never;
 
@@ -10,6 +10,7 @@ export type ClientMsg =
   | { t: "joinRoom"; roomId: string; team?: number }
   | { t: "leaveRoom" }
   | { t: "setLoadout"; weaponId?: string; build?: string }
+  | { t: "setLook"; look: unknown }
   | { t: "start" }
   | { t: "intent"; intent: ClientIntent };
 
@@ -18,18 +19,18 @@ export interface RoomInfo {
   mapId: string;
   maxPlayers: number;
   status: "lobby" | "playing";
-  players: Array<{ nick: string; team: number; weaponId: string; build: string; connected: boolean }>;
+  players: Array<{ nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean }>;
   host: string;
 }
 
 export interface MatchSetup {
   seed: number;
   mapId: string;
-  players: Array<{ id: string; team: number; x: number; weaponId: string; build: string; facing: 1 | -1 }>;
+  players: Array<{ id: string; team: number; x: number; weaponId: string; build: string; look: Look; facing: 1 | -1 }>;
 }
 
 export type ServerMsg =
-  | { t: "authOk"; nick: string; level: number; xp: number; unlocks: string[] }
+  | { t: "authOk"; nick: string; level: number; xp: number; unlocks: string[]; look: Look }
   | { t: "error"; msg: string }
   | { t: "rooms"; rooms: RoomInfo[] }
   | { t: "room"; room: RoomInfo | null }

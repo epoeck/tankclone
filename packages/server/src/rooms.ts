@@ -1,12 +1,12 @@
 /** Salas e partidas. Lógica pura de servidor: recebe intenções, roda o Match do core e devolve eventos. Sem rede aqui. */
 import { randomInt } from "node:crypto";
-import { BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
+import { DEFAULT_LOOK, type Look, BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
 import type { ClientIntent, MatchSetup, RoomInfo } from "./protocol";
 
 export const MAX_ROOM_PLAYERS = 8;
 export const XP_WIN = 50, XP_LOSE = 20;
 
-export interface Member { nick: string; team: number; weaponId: string; build: string; connected: boolean }
+export interface Member { nick: string; team: number; weaponId: string; build: string; look: Look; connected: boolean }
 
 export type Outbox = {
   /** Envia a todos os membros conectados da sala. */
@@ -31,13 +31,13 @@ export class Room {
       players: [...this.members.values()].map(m => ({ ...m })) };
   }
 
-  add(nick: string, team?: number): string | null {
+  add(nick: string, team?: number, look: Look = DEFAULT_LOOK): string | null {
     if (this.status !== "lobby") return "partida em andamento";
     if (this.members.size >= this.maxPlayers) return "sala cheia";
     const counts = new Map<number, number>();
     for (const m of this.members.values()) counts.set(m.team, (counts.get(m.team) ?? 0) + 1);
     const t = team === 1 || team === 2 ? team : (counts.get(1) ?? 0) <= (counts.get(2) ?? 0) ? 1 : 2;
-    this.members.set(nick, { nick, team: t, weaponId: "sledge", build: DEFAULT_BUILD, connected: true });
+    this.members.set(nick, { nick, team: t, weaponId: "sledge", build: DEFAULT_BUILD, look, connected: true });
     return null;
   }
 
@@ -60,7 +60,7 @@ export class Room {
     const players = [...this.members.values()].map(m => {
       const i = idx.get(m.team) ?? 0; idx.set(m.team, i + 1);
       const x = m.team === 1 ? 150 + i * 140 : map.width - 150 - i * 140;
-      return { id: m.nick, team: m.team, x, weaponId: m.weaponId, build: m.build, facing: (m.team === 1 ? 1 : -1) as 1 | -1 };
+      return { id: m.nick, team: m.team, x, weaponId: m.weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1 };
     });
     this.setup = { seed: randomInt(1, 2 ** 31), mapId: this.mapId, players };
     this.match = buildMatch(this.setup);
@@ -137,22 +137,22 @@ export class Lobby {
   private byNick = new Map<string, string>();
   private n = 0;
 
-  create(host: string, mapId: string, maxPlayers: number): Room | string {
+  create(host: string, mapId: string, maxPlayers: number, look?: Look): Room | string {
     if (this.byNick.has(host)) return "você já está em uma sala";
     if (!own(MAPS, mapId)) return "mapa desconhecido";
     if (!Number.isInteger(maxPlayers) || maxPlayers < 2 || maxPlayers > MAX_ROOM_PLAYERS) return `máximo de jogadores: 2 a ${MAX_ROOM_PLAYERS}`;
     const room = new Room(`S${++this.n}`, mapId, maxPlayers, host);
-    room.add(host, 1);
+    room.add(host, 1, look);
     this.rooms.set(room.id, room);
     this.byNick.set(host, room.id);
     return room;
   }
 
-  join(nick: string, roomId: string, team?: number): Room | string {
+  join(nick: string, roomId: string, team?: number, look?: Look): Room | string {
     if (this.byNick.has(nick)) return "você já está em uma sala";
     const room = this.rooms.get(roomId);
     if (!room) return "sala não encontrada";
-    const err = room.add(nick, team);
+    const err = room.add(nick, team, look);
     if (err) return err;
     this.byNick.set(nick, roomId);
     return room;

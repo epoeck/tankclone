@@ -124,6 +124,7 @@ e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 - `angle.ts`: faixa de ângulo por arma relativa ao corpo; `allowedAbsoluteRange`, `clampAbsoluteAngle`, `relativeAngle`. O ângulo usado no tiro e exibido é o absoluto.
 
 - **Cliente só anima eventos**: nunca re-simula o tiro. `Math.hypot`, `atan2`, `sin` e `cos` não são garantidos bit a bit entre motores (V8, Safari); só o servidor (core) decide, o cliente desenha os `points` recebidos. Antes do servidor existir, o `game.html` roda o core localmente (um motor só).
+- **Personagem = boneco customizável em camadas (não tanque).** `core/appearance.ts`: `Appearance` (pele, rosto, cabelo, cor do cabelo; escolha livre) e `EquippedLook` (roupa e chapéu vêm de equipamentos; placeholder na 1ª build). Salvo na conta (`look`), enviado no setup da partida. Desenho em `client/src/doll.ts` (procedural, placeholder); a arte final entra por camada (`public/assets/chars/<camada>/<camada>-<n>.svg`).
 - Pendência: a parede do `doMove` só testa 1 px acima do degrau; o boneco de 52 px atravessa saliências na altura da cabeça.
 - Pendência (Fase C): a escala da fórmula de dano não fecha com a conta de referência (ver `docs/pesquisa-mecanicas.md` §3); tetos de crítico provisórios.
 
@@ -205,7 +206,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 2. Contas (apelido + senha com hash), SQLite, XP por partida, nível até 30, desbloqueios por nível (tutorial 1–9).
 3. Operação: serviço com reinício automático (systemd/Podman), Cloudflare Tunnel, backup do banco, teste com 20 conectados.
 
-### Fase E — Conteúdo da build PvP
+### Fase E — Conteúdo da build PvP (**em andamento**: cliente de rede `play.html`, vestiário e boneco em camadas feitos; faltam mapas por máscara, sons e a arte final por camada)
 5 mapas provisórios (2 indestrutíveis, 3 tatuzáveis) via máscara; lobby, inventário/equipar, tela de partida; sons provisórios;
 boneco placeholder sobre o sistema de camadas. Trocar nomes do original por nomes próprios antes de abrir para os amigos.
 

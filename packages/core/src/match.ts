@@ -54,7 +54,7 @@ export type Intent =
 
 export type MatchEvent =
   | { type: "turnStart"; playerId: string; wind: number; timeLimit: number; energy: number; turn: number }
-  | { type: "move"; playerId: string; path: Array<{ x: number; y: number }> }
+  | { type: "move"; playerId: string; path: Array<{ x: number; y: number }>; energyLeft: number }
   | { type: "fall"; playerId: string; fromY: number; toY: number }
   | { type: "item"; playerId: string; key: ItemKey; energyLeft: number }
   | { type: "shot"; playerId: string; index: number; points: Array<{ x: number; y: number }>; hit: { x: number; y: number } | null;
@@ -220,12 +220,12 @@ export class Match {
       if (g >= 0 && g - c.y <= cfg.maxStepDown) { c.y = g; path.push({ x: c.x, y: c.y }); continue; }
       // sem chão logo abaixo: queda livre
       path.push({ x: c.x, y: c.y });
-      events.push({ type: "move", playerId: c.id, path: [...path] });
+      events.push({ type: "move", playerId: c.id, path: [...path], energyLeft: c.energy });
       path.length = 0;
       this.settle(c, events);
       if (!c.alive) break;
     }
-    if (path.length) events.push({ type: "move", playerId: c.id, path });
+    if (path.length) events.push({ type: "move", playerId: c.id, path, energyLeft: c.energy });
     this.checkOver(events);
     if (!c.alive && !this.over) events.push(...this.endTurn(false)); // o da vez morreu andando: passa o turno
     return { ok: true, events };

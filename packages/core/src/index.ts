@@ -8,3 +8,4 @@ export * from "./match";
 export * from "./stats";
 export * from "./maps";
 export * from "./builds";
+export * from "./appearance";

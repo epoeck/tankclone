@@ -138,6 +138,22 @@ describe("servidor", () => {
   });
 });
 
+describe("aparência", () => {
+  it("setLook é salvo, sanitizado e vai no setup da partida para todos", async () => {
+    const { a, b } = await twoPlayers();
+    a.send({ t: "setLook", look: { appearance: { skin: 3, face: 4, hair: 5, hairColor: 6 }, equipped: { outfit: 2, hat: 4 } } });
+    const ok = await a.waitFor("authOk");
+    expect(ok.look.appearance).toEqual({ skin: 3, face: 4, hair: 5, hairColor: 6 });
+    b.send({ t: "setLook", look: "lixo" });
+    expect((await b.waitFor("authOk")).look.appearance.skin).toBe(1);
+    a.send({ t: "start" });
+    const st = await b.waitFor("start");
+    const alice = st.setup.players.find(p => p.id === "alice")!;
+    expect(alice.look.equipped.hat).toBe(4);
+    a.close(); b.close();
+  });
+});
+
 describe("carga", () => {
   it("20 conectados em 4 salas jogando ao mesmo tempo", async () => {
     srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });

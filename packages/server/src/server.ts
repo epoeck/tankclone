@@ -90,7 +90,7 @@ export function startServer(opts: ServerOptions = {}) {
       const old = sessions.get(r.nick);
       if (old && old.ws !== s.ws) { send(old.ws, { t: "error", msg: "login em outro lugar" }); old.nick = undefined; old.ws.close(); }
       s.nick = r.nick; sessions.set(r.nick, s);
-      send(s.ws, { t: "authOk", nick: r.nick, level: r.level, xp: r.xp, unlocks: unlocksAt(r.level) });
+      send(s.ws, { t: "authOk", nick: r.nick, level: r.level, xp: r.xp, unlocks: unlocksAt(r.level), look: r.look });
       const room = lobby.roomOf(r.nick); // reconexão no meio da partida
       if (room) {
         const mem = room.members.get(r.nick)!; mem.connected = true;
@@ -105,9 +105,15 @@ export function startServer(opts: ServerOptions = {}) {
 
     switch (m.t) {
       case "rooms": return send(s.ws, { t: "rooms", rooms: [...lobby.rooms.values()].filter(r => r.status === "lobby").map(r => r.info()) });
-      case "createRoom": { const r = lobby.create(nick, String(m.mapId), Number(m.maxPlayers)); return typeof r === "string" ? err(r) : pushRoom(r); }
-      case "joinRoom": { const r = lobby.join(nick, String(m.roomId), m.team); return typeof r === "string" ? err(r) : pushRoom(r); }
+      case "createRoom": { const r = lobby.create(nick, String(m.mapId), Number(m.maxPlayers), db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
+      case "joinRoom": { const r = lobby.join(nick, String(m.roomId), m.team, db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
       case "leaveRoom": { const r = lobby.leave(nick, true); send(s.ws, { t: "room", room: null }); if (r && lobby.rooms.has(r.id)) pushRoom(r); return; }
+      case "setLook": {
+        const look = db.setLook(nick, m.look);
+        const r = lobby.roomOf(nick);
+        if (r && r.status === "lobby") { r.members.get(nick)!.look = look; pushRoom(r); }
+        return send(s.ws, { t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), unlocks: unlocksAt(db.getLevel(nick)), look });
+      }
       case "setLoadout": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.setLoadout(nick, m.weaponId, m.build); return e ? err(e) : pushRoom(r); }
       case "start": {
         const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
