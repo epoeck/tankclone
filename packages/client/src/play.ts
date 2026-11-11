@@ -41,7 +41,8 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   show("match");
   controls ??= new Controls(view, () => view?.hud.player === me?.nick, i => send({ t: "intent", intent: i } as unknown as ClientMsg));
   controls.view = view;
-  hud = new Hud($("hud"), view, () => me?.nick ?? null, k => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "item", key: k } } as unknown as ClientMsg); });
+  hud = new Hud($("hud"), view, () => me?.nick ?? null, k => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "item", key: k } } as unknown as ClientMsg); }, () => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "pass" } } as unknown as ClientMsg); });
+  hud.bindChat(text => send({ t: "chat", text }));
 }
 
 function onMsg(m: ServerMsg) {
@@ -54,7 +55,7 @@ function onMsg(m: ServerMsg) {
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
     case "events": view?.push(m.events); break;
-    case "chat": addChat(m.scope, m.from, m.text); break;
+    case "chat": addChat(m.scope, m.from, m.text); if (m.scope === "room") hud?.addChat(m.from, m.text); break;
     case "end": {
       endInfo = m.xp;
       const mine = me ? m.xp[me.nick] : undefined;

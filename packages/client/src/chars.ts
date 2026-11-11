@@ -8,6 +8,7 @@ import { drawDoll, type DollPose } from "./doll";
 
 const CANVAS = { w: 96, h: 128 }, FEET = { x: 48, y: 124 }, SHOULDER = { x: 56, y: 82 }, ARM_PIVOT = { x: 8, y: 10 }, HAND = { x: 38, y: 10 }, GRIP = { x: 10, y: 27 };
 export const CHAR_SCALE = 0.433;
+const CROUCH_Y = 0.72, CROUCH_DROP = 34, SHOULDER_DROP = 12;
 
 type Entry = { img: HTMLImageElement; ok: boolean };
 const cache = new Map<string, Entry>();
@@ -61,14 +62,22 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, look: Look, pose: D
   if (imgs.some(i => !i)) { drawDoll(ctx, look, pose, x, y, scale / CHAR_SCALE); return; }
   const bob = pose.walk ? Math.abs(Math.sin(pose.walk)) * 3 : 0;
   ctx.save(); ctx.translate(x, y - bob * scale); ctx.scale(pose.facing * scale, scale); ctx.translate(-FEET.x, -FEET.y);
+  const crouch = !!pose.crouch, sway = x * 0.013;
   const ang = pose.aiming ? (pose.angleDeg * Math.PI) / 180 : 0.35;
   parts.forEach((p, i) => {
     const img = imgs[i]!;
     if (p.weapon || p.arm) return;
+    const head = /hair-|face|glasses|hat/.test(p.f);
+    if (!crouch) { ctx.drawImage(img, 0, 0, CANVAS.w, CANVAS.h); return; }
+    // em partida: corpo achatado e só a cabeça chibi balança
+    ctx.save();
+    if (head) { ctx.translate(0, CROUCH_DROP + Math.sin(performance.now() / 260 + sway) * 2.2); ctx.translate(CANVAS.w / 2, 40); ctx.rotate(Math.sin(performance.now() / 330 + sway) * 0.05); ctx.translate(-CANVAS.w / 2, -40); }
+    else { ctx.translate(0, FEET.y * (1 - CROUCH_Y)); ctx.scale(1, CROUCH_Y); }
     ctx.drawImage(img, 0, 0, CANVAS.w, CANVAS.h);
+    ctx.restore();
   });
   // arma e braço giram juntos em torno do ombro; o cabo da arma fica na mão
-  ctx.save(); ctx.translate(SHOULDER.x, SHOULDER.y); ctx.rotate(-ang);
+  ctx.save(); ctx.translate(SHOULDER.x, SHOULDER.y + (crouch ? SHOULDER_DROP : 0)); ctx.rotate(-ang);
   parts.forEach((p, i) => {
     if (p.weapon) ctx.drawImage(imgs[i]!, HAND.x - ARM_PIVOT.x - GRIP.x, HAND.y - ARM_PIVOT.y - GRIP.y, 96, 48);
   });

@@ -10,51 +10,70 @@ const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 
 const el = <T extends HTMLElement>(root: ParentNode, sel: string) => root.querySelector(sel) as T;
 
+let chatKey: ((e: KeyboardEvent) => void) | null = null;
 export class Hud {
   private turns: HTMLElement; private wind: HTMLElement; private windVal: HTMLElement; private timer: HTMLElement; private timerNum: HTMLElement;
   private mini: HTMLCanvasElement; private name: HTMLElement; private hpBar: HTMLElement; private hpText: HTMLElement; private enBar: HTMLElement; private enText: HTMLElement;
   private power: HTMLElement; private angle: HTMLElement; private angleVal: HTMLElement; private gauge: HTMLElement; private gaugeLabel: HTMLElement; private banner: HTMLElement;
   private slots = new Map<string, HTMLElement>(); private counts = new Map<string, HTMLElement>();
   private portraits = new Map<string, HTMLCanvasElement>();
-  private lastOrder = "";
+  private lastOrder = ""; private meCanvas!: HTMLCanvasElement;
 
-  constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void) {
+  constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void, private onPass: () => void = () => {}) {
     root.className = "hud";
     root.innerHTML = `
+      <div class="me"><canvas width="96" height="120"></canvas><div class="me__name"><span class="title title--sm title--cream" data-k="name"></span><span class="chip chip--lvl" data-k="weapon"></span></div></div>
+      <div class="chatbox"><div class="chatbox__log" aria-live="polite"></div><input class="chatbox__in" maxlength="200" placeholder="Enter para conversar" autocomplete="off" hidden></div>
       <div class="turns panel" style="padding:10px 12px;"></div>
       <div class="windbox panel" style="padding:8px 16px;">
         <div class="wind"><span class="label">Vento</span><div class="wind__arrow" data-dir="right"></div><span class="wind__value num">0,0</span></div>
-        <div class="timer" style="--t:100%"><span class="num">10</span></div>
       </div>
+      <div class="timer" style="--t:100%"><span class="num">10</span></div>
+      <button class="btn btn--steel btn--sm passbtn" type="button">PASSAR (P)</button>
       <div class="minimap well"><canvas width="208" height="76"></canvas></div>
-      <div class="console panel">
-        <div class="vitals">
-          <div class="vitals__name"><span class="title title--sm title--cream" data-k="name"></span><span class="chip chip--lvl" data-k="weapon"></span></div>
-          <div class="vitals__row"><img src="/assets/ui/stats/stat-hp.svg" alt="Vida"><div class="bar bar--hp" style="--value:100%"><span class="bar__text num"></span></div></div>
-          <div class="vitals__row"><img src="/assets/ui/stats/stat-energy.svg" alt="Energia"><div class="bar bar--energy" style="--value:100%"><span class="bar__text num"></span></div></div>
-        </div>
-        <div class="aim">
-          <div><div class="power" style="--power:0%; --last:0%"><span class="power__last"></span></div>
-            <div class="power__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div></div>
-          <div class="items"></div>
-        </div>
-        <div class="angle" style="--angle:45deg"><img class="angle__dial" src="/assets/ui/hud/angle-dial.svg" alt=""><span class="angle__needle"></span><span class="angle__value num">45°</span></div>
-        <div class="gauge" style="--pressure:0"><img src="/assets/ui/hud/pressure-gauge.svg" alt=""><img class="gauge__needle" src="/assets/ui/hud/pressure-needle.svg" alt=""><span class="gauge__label">Pressão 0%</span></div>
+      <div class="items"></div>
+      <div class="vitals panel">
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-hp.svg" alt="Vida"><div class="bar bar--hp" style="--value:100%"><span class="bar__text num"></span></div></div>
+        <div class="vitals__row"><img src="/assets/ui/stats/stat-energy.svg" alt="Energia"><div class="bar bar--energy" style="--value:100%"><span class="bar__text num"></span></div></div>
       </div>
+      <div class="powerwrap"><span class="label powerwrap__label">Força</span><div class="power" style="--power:0%; --last:0%"><span class="power__last"></span></div>
+        <div class="power__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div></div>
+      <div class="angle" style="--angle:45deg"><img class="angle__dial" src="/assets/ui/hud/angle-dial.svg" alt=""><span class="angle__needle"></span><span class="angle__value num">45°</span></div>
+      <div class="gauge" style="--pressure:0"><img src="/assets/ui/hud/pressure-gauge.svg" alt=""><img class="gauge__needle" src="/assets/ui/hud/pressure-needle.svg" alt=""><span class="gauge__label">Pressão 0%</span></div>
       <div class="banner panel" hidden><span class="title title--lg title--cream"></span></div>`;
     this.turns = el(root, ".turns"); this.wind = el(root, ".wind__arrow"); this.windVal = el(root, ".wind__value"); this.timer = el(root, ".timer"); this.timerNum = el(root, ".timer span");
     this.mini = el(root, ".minimap canvas"); this.name = el(root, '[data-k="name"]');
     this.hpBar = el(root, ".bar--hp"); this.hpText = el(this.hpBar, ".bar__text"); this.enBar = el(root, ".bar--energy"); this.enText = el(this.enBar, ".bar__text");
     this.power = el(root, ".power"); this.angle = el(root, ".angle"); this.angleVal = el(root, ".angle__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
+    el<HTMLButtonElement>(root, ".passbtn").onclick = () => this.onPass();
+    this.meCanvas = el(root, ".me canvas");
     const items = el(root, ".items");
     KEYS.forEach(k => {
-      if (k === "F") { const sep = document.createElement("span"); sep.className = "items__sep"; items.append(sep); }
       const d = document.createElement("div"); d.className = "slot"; d.title = ITEM_NAMES[k]!;
       const tag = TAGS[k] ? `<span class="slot__tag">${TAGS[k]}</span>` : "";
       d.innerHTML = `<img src="/assets/ui/items/item-${k.toLowerCase()}.svg" alt="${ITEM_NAMES[k]}"><span class="slot__key">${k}</span>${tag}<span class="slot__cost">${ITEMS[k].cost}</span><span class="slot__count"></span>`;
       d.onclick = () => this.onItem(k);
       items.append(d); this.slots.set(k, d); this.counts.set(k, el(d, ".slot__count"));
     });
+  }
+
+  /** Linha de chat da sala durante a partida (só textContent). */
+  addChat(from: string, text: string): void {
+    const log = el(this.root, ".chatbox__log"), line = document.createElement("div");
+    const b = document.createElement("b"); b.textContent = from + ": "; line.append(b, document.createTextNode(text));
+    log.append(line); while (log.children.length > 6) log.firstChild!.remove();
+    setTimeout(() => line.classList.add("old"), 12000);
+  }
+  /** Liga o campo de conversa: Enter abre/envia. */
+  bindChat(send: (text: string) => void): void {
+    const inp = el<HTMLInputElement>(this.root, ".chatbox__in");
+    if (chatKey) removeEventListener("keydown", chatKey);
+    chatKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || !this.root.isConnected) return;
+      if (document.activeElement === inp) { if (inp.value.trim()) send(inp.value); inp.value = ""; inp.hidden = true; inp.blur(); }
+      else if ((e.target as HTMLElement | null)?.tagName !== "INPUT") { inp.hidden = false; inp.focus(); e.preventDefault(); }
+    };
+    addEventListener("keydown", chatKey);
   }
 
   private portrait(id: string): HTMLCanvasElement {
@@ -91,6 +110,7 @@ export class Hud {
     // console: mostra o jogador que você controla (ou o da vez, no jogo local)
     const who = (me ? v.chars.get(me) : undefined) ?? cur;
     if (who) {
+      drawCharPortrait(this.meCanvas, who.look, who.weaponId);
       this.name.textContent = who.id; el(this.root, '[data-k="weapon"]').textContent = own(WEAPONS, who.weaponId)?.name ?? "";
       this.hpBar.style.setProperty("--value", `${(who.hp / who.maxHp) * 100}%`); this.hpText.textContent = `${fmt(who.hp)} / ${fmt(who.maxHp)}`;
       const en = who === cur ? who.energy : who.maxEnergy;

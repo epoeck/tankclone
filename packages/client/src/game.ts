@@ -27,7 +27,7 @@ async function main() {
   const view = new MatchView(mapId, players);
   view.push(match.startEvents);
 
-  const hud = new Hud(document.getElementById("hud")!, view, () => null, k => { if (view.canAct) controls.send({ type: "item", key: k }); });
+  const hud = new Hud(document.getElementById("hud")!, view, () => null, k => { if (view.canAct) controls.send({ type: "item", key: k }); }, () => { if (view.canAct) controls.send({ type: "pass" }); });
   const controls = new Controls(view, () => true, i => {
     const o = match.submit({ ...i, playerId: match.currentId } as Intent);
     if (!o.ok) view.ui.msg = o.error; else { view.ui.msg = ""; view.push(o.events); }

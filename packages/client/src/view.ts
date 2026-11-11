@@ -151,13 +151,13 @@ export class MatchView {
       ctx.fillStyle = "#fff"; ctx.font = "bold 11px Nunito, system-ui"; ctx.textAlign = "center"; ctx.fillText(c.id, c.x, by - 3); ctx.textAlign = "left";
       if (c.id === me) { ctx.fillStyle = "#ffe98a"; ctx.beginPath(); ctx.moveTo(c.x, by - 16); ctx.lineTo(c.x - 5, by - 24); ctx.lineTo(c.x + 5, by - 24); ctx.fill(); }
     }
-    if (this.anim) { const p = this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!; ctx.fillStyle = "#ffd24a"; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill(); }
+    if (this.anim) { const p = this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!; ctx.fillStyle = "#101010"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, 7); ctx.fill(); ctx.stroke(); }
     ctx.restore();
 
   }
 
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
-    drawCharacter(ctx, c.look, { facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming }, c.x, c.y);
+    drawCharacter(ctx, c.look, { facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
     if (!aiming) c.walk = 0;
   }
 }
@@ -169,7 +169,7 @@ function bar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: 
 /** Entrada de teclado compartilhada: andar, ângulo, força de segurar/soltar, itens, especial, passar. */
 export class Controls {
   private keys = new Set<string>();
-  charging = false;
+  charging = false; private chargeDir = 1;
   private walkAcc = 0; private angleAcc = 0;
   constructor(public view: MatchView, private canControl: () => boolean, readonly send: (i: Record<string, unknown>) => void) {
     addEventListener("keydown", e => this.down(e));
@@ -177,7 +177,7 @@ export class Controls {
   }
   private down(e: KeyboardEvent) {
     if ((e.target as HTMLElement | null)?.tagName === "INPUT") return;
-    if (e.code === "Space") { e.preventDefault(); if (e.repeat) return; if (this.canControl() && this.view.canAct) { this.charging = true; this.view.ui.power = 0; } return; }
+    if (e.code === "Space") { e.preventDefault(); if (e.repeat) return; if (this.canControl() && this.view.canAct) { this.charging = true; this.chargeDir = 1; this.view.ui.power = 0; } return; }
     this.keys.add(e.code);
     if (e.code.startsWith("Arrow")) e.preventDefault();
     if (!this.canControl() || !this.view.canAct) return;
@@ -199,8 +199,10 @@ export class Controls {
     const ui = this.view.ui;
     if (!this.canControl() || !this.view.canAct) { if (this.charging && !this.view.canAct) { this.charging = false; ui.power = 0; } return; }
     if (this.charging) {
-      ui.power = Math.min(100, ui.power + 70 * dt);
-      if (ui.power >= 100) { this.charging = false; ui.last = 100; this.send({ type: "shoot", angleDeg: ui.angle, power: 100, special: ui.special }); ui.power = 0; }
+      // a barra sobe até 100 e desce; se voltar a 0 sem soltar Espaço, passa a vez
+      ui.power += this.chargeDir * 80 * dt;
+      if (ui.power >= 100) { ui.power = 100; this.chargeDir = -1; }
+      else if (ui.power <= 0) { ui.power = 0; this.charging = false; this.chargeDir = 1; this.send({ type: "pass" }); }
       return;
     }
     const dir = (this.keys.has("ArrowRight") ? 1 : 0) - (this.keys.has("ArrowLeft") ? 1 : 0);
