@@ -1,7 +1,7 @@
 /** Contas, XP e nível em SQLite (node:sqlite, embutido no Node ≥ 22.5; sem serviço externo). */
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
 // createRequire: o vite/vitest não reconhece o builtin "node:sqlite" em import estático
 const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as typeof import("node:sqlite");
@@ -21,6 +21,8 @@ export const unlocksAt = (level: number): string[] => Object.entries(UNLOCKS).fi
 
 export interface Account { nick: string; xp: number; level: number }
 
+const hashPw = (pw: string, salt: Uint8Array) => new Promise<Buffer>((res, rej) => scrypt(pw, salt, 64, (e, k) => (e ? rej(e) : res(k))));
+
 export class Db {
   private db: DatabaseSyncT;
   constructor(path = ":memory:") {
@@ -30,20 +32,21 @@ export class Db {
       xp INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL)`);
   }
 
-  register(nick: string, password: string): Account | string {
+  /** scrypt assíncrono: não bloqueia o laço de eventos (~60 ms de CPU fora da thread principal). */
+  async register(nick: string, password: string): Promise<Account | string> {
     if (!/^[\p{L}\p{N}_-]{3,16}$/u.test(nick)) return "apelido inválido (3–16 letras, números, _ ou -)";
     if (password.length < 6 || password.length > 128) return "senha deve ter de 6 a 128 caracteres";
     const salt = randomBytes(16);
     try {
-      this.db.prepare("INSERT INTO accounts (nick, salt, hash, created) VALUES (?, ?, ?, ?)").run(nick, salt, scryptSync(password, salt, 64), Date.now());
+      this.db.prepare("INSERT INTO accounts (nick, salt, hash, created) VALUES (?, ?, ?, ?)").run(nick, salt, await hashPw(password, salt), Date.now());
     } catch { return "apelido já existe"; }
     return { nick, xp: 0, level: 1 };
   }
 
-  login(nick: string, password: string): Account | string {
+  async login(nick: string, password: string): Promise<Account | string> {
     const row = this.db.prepare("SELECT nick, salt, hash, xp FROM accounts WHERE nick = ?").get(nick) as { nick: string; salt: Uint8Array; hash: Uint8Array; xp: number } | undefined;
     if (!row) return "apelido ou senha incorretos";
-    const h = scryptSync(password, row.salt, 64);
+    const h = await hashPw(password, row.salt);
     if (!timingSafeEqual(h, row.hash)) return "apelido ou senha incorretos";
     return { nick: row.nick, xp: row.xp, level: levelForXp(row.xp) };
   }

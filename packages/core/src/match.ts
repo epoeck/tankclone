@@ -4,7 +4,7 @@
  * saída = lista de eventos para o cliente animar. Sem DOM, rede, relógio ou Math.random.
  */
 import { clampAbsoluteAngle } from "./angle";
-import { DEFAULT_MATCH, ITEMS, WEAPONS, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
+import { DEFAULT_MATCH, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
 import { combatPower, statDamage, withStats, critChancePct, type Stats } from "./stats";
@@ -129,7 +129,7 @@ export class Match {
     this.combatRng = new Rng((opts.seed ^ 0x9e3779b9) >>> 0);
     this.damageFn = opts.damageFn ?? defaultDamage;
     for (const p of opts.players) {
-      if (!WEAPONS[p.weaponId]) throw new Error(`arma desconhecida: ${p.weaponId}`);
+      if (!own(WEAPONS, p.weaponId)) throw new Error(`arma desconhecida: ${p.weaponId}`);
       const stats = withStats({ ...p.stats, ...(p.agi !== undefined ? { agi: p.agi } : {}), ...(p.hp !== undefined ? { hp: p.hp } : {}), ...(p.stats?.hp === undefined && p.hp === undefined ? { hp: this.cfg.defaultHp } : {}) });
       const agi = stats.agi;
       const y = this.terrain.surfaceY(p.x, 0);
@@ -245,7 +245,7 @@ export class Match {
   // ---------- itens ----------
 
   private doItem(key: ItemKey): Outcome {
-    const def = ITEMS[key], c = this.current;
+    const def = own(ITEMS, key), c = this.current;
     if (!def) return { ok: false, error: "item desconhecido" };
     if (c.energy < def.cost) return { ok: false, error: "energia insuficiente" };
     if (def.triple && this.ts.triple) return { ok: false, error: "tiro triplo só uma vez por turno" };
@@ -267,7 +267,7 @@ export class Match {
   }
 
   private doShoot(angleDeg: number, power: number, special: boolean): Outcome {
-    const c = this.current, cfg = this.cfg, T = this.terrain, weapon = WEAPONS[c.weaponId]!;
+    const c = this.current, cfg = this.cfg, T = this.terrain, weapon = own(WEAPONS, c.weaponId)!;
     if (!Number.isFinite(angleDeg) || !Number.isFinite(power)) return { ok: false, error: "valores inválidos" };
     if (special && c.fury < 100) return { ok: false, error: "fúria insuficiente" };
     const events: MatchEvent[] = [];

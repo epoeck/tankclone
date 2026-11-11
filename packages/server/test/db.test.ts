@@ -2,26 +2,34 @@ import { describe, it, expect } from "vitest";
 import { Db, levelForXp, xpForLevel, unlocksAt, MAX_LEVEL } from "../src/db";
 
 describe("contas", () => {
-  it("registra, loga e rejeita senha errada/apelido repetido (sem diferenciar maiúsculas)", () => {
+  it("registra, loga e rejeita senha errada/apelido repetido (sem diferenciar maiúsculas)", async () => {
     const db = new Db();
-    expect(db.register("Izzy", "segredo1")).toMatchObject({ nick: "Izzy", level: 1 });
-    expect(typeof db.register("izzy", "outra123")).toBe("string");
-    expect(db.login("IZZY", "segredo1")).toMatchObject({ nick: "Izzy" });
-    expect(db.login("Izzy", "errada")).toBe("apelido ou senha incorretos");
-    expect(db.login("ninguem", "segredo1")).toBe("apelido ou senha incorretos");
+    expect(await db.register("Izzy", "segredo1")).toMatchObject({ nick: "Izzy", level: 1 });
+    expect(typeof await db.register("izzy", "outra123")).toBe("string");
+    expect(await db.login("IZZY", "segredo1")).toMatchObject({ nick: "Izzy" });
+    expect(await db.login("Izzy", "errada")).toBe("apelido ou senha incorretos");
+    expect(await db.login("ninguem", "segredo1")).toBe("apelido ou senha incorretos");
   });
-  it("valida apelido e senha", () => {
+  it("valida apelido e senha", async () => {
     const db = new Db();
-    expect(typeof db.register("a", "segredo1")).toBe("string");
-    expect(typeof db.register("nome com espaço", "segredo1")).toBe("string");
-    expect(typeof db.register("valido", "123")).toBe("string");
+    expect(typeof await db.register("a", "segredo1")).toBe("string");
+    expect(typeof await db.register("nome com espaço", "segredo1")).toBe("string");
+    expect(typeof await db.register("valido", "123")).toBe("string");
   });
-  it("XP soma e sobe de nível, com teto em 30", () => {
+  it("o hash não bloqueia o laço de eventos (scrypt assíncrono)", async () => {
     const db = new Db();
-    db.register("jogador", "segredo1");
+    let ticks = 0;
+    const t = setInterval(() => ticks++, 5);
+    await Promise.all(Array.from({ length: 6 }, (_, i) => db.register(`user${i}`, "segredo1")));
+    clearInterval(t);
+    expect(ticks).toBeGreaterThan(3);
+  });
+  it("XP soma e sobe de nível, com teto em 30", async () => {
+    const db = new Db();
+    await db.register("jogador", "segredo1");
     expect(db.addXp("jogador", 100)).toMatchObject({ xp: 100, level: 2 });
     expect(db.addXp("jogador", 1_000_000)!.level).toBe(MAX_LEVEL);
-    expect(db.login("jogador", "segredo1")).toMatchObject({ level: MAX_LEVEL });
+    expect(await db.login("jogador", "segredo1")).toMatchObject({ level: MAX_LEVEL });
   });
   it("níveis e desbloqueios", () => {
     expect(levelForXp(0)).toBe(1);

@@ -3,6 +3,7 @@ import WebSocket from "ws";
 import { startServer } from "../src/server";
 import type { ClientMsg, ServerMsg } from "../src/protocol";
 
+const LOOSE = { registerPerHour: 1000, loginFailures: 1000 };
 type Srv = Awaited<ReturnType<typeof startServer>>;
 let srv: Srv | undefined;
 afterEach(async () => { await srv?.close(); srv = undefined; });
@@ -33,7 +34,7 @@ class Client {
 }
 
 async function twoPlayers() {
-  srv = await startServer({ tickMs: 20 });
+  srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });
   const a = await Client.open(srv.port), b = await Client.open(srv.port);
   await a.login("alice"); await b.login("bruno");
   a.send({ t: "createRoom", mapId: "colinas", maxPlayers: 4 });
@@ -45,7 +46,7 @@ async function twoPlayers() {
 
 describe("servidor", () => {
   it("exige login e rejeita senha errada e JSON inválido", async () => {
-    srv = await startServer();
+    srv = await startServer({ limits: LOOSE, log: () => {} });
     const c = await Client.open(srv.port);
     c.send({ t: "rooms" });
     expect((await c.waitFor("error")).msg).toMatch(/login/);
@@ -100,7 +101,7 @@ describe("servidor", () => {
   });
 
   it("tempo de turno estourado passa a vez e reconexão recebe o log (resume)", async () => {
-    srv = await startServer({ tickMs: 20 });
+    srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });
     const a = await Client.open(srv.port), b = await Client.open(srv.port);
     await a.login("alice"); await b.login("bruno");
     a.send({ t: "createRoom", mapId: "planalto", maxPlayers: 2 });
@@ -139,7 +140,7 @@ describe("servidor", () => {
 
 describe("carga", () => {
   it("20 conectados em 4 salas jogando ao mesmo tempo", async () => {
-    srv = await startServer({ tickMs: 20 });
+    srv = await startServer({ tickMs: 20, limits: LOOSE, log: () => {} });
     const clients: Client[] = [];
     for (let i = 0; i < 20; i++) { const c = await Client.open(srv.port); await c.login(`jogador${i}`); clients.push(c); }
     const hosts = [0, 5, 10, 15].map(i => clients[i]!);
@@ -162,4 +163,74 @@ describe("carga", () => {
     }
     clients.forEach(c => c.close());
   }, 15000);
+});
+
+describe("segurança", () => {
+  it("chaves de protótipo e tipos errados são rejeitados sem derrubar o servidor", async () => {
+    const { a, b } = await twoPlayers();
+    for (const build of ["constructor", "__proto__", "toString"]) { a.ws.send(JSON.stringify({ t: "setLoadout", build })); expect((await a.waitFor("error")).msg).toMatch(/desconhecida/); }
+    a.ws.send(JSON.stringify({ t: "setLoadout", weaponId: { x: 1 } })); expect((await a.waitFor("error")).msg).toMatch(/desconhecida/);
+    a.ws.send(JSON.stringify({ t: "createRoom", mapId: "constructor", maxPlayers: 4 })); await a.waitFor("error");
+    a.send({ t: "start" }); await a.waitFor("start"); await b.waitFor("start");
+    const first = srv!.lobby.rooms.values().next().value!.match!.currentId;
+    const active = first === "alice" ? a : b;
+    for (const key of ["constructor", "__proto__", "toString", 7, null]) {
+      active.ws.send(JSON.stringify({ t: "intent", intent: { type: "item", key } }));
+      expect((await active.waitFor("error")).msg).toMatch(/item/);
+    }
+    for (const junk of [{ t: "intent" }, { t: "joinRoom", roomId: {} }, { t: "createRoom" }, { t: "intent", intent: null }, []]) active.ws.send(JSON.stringify(junk));
+    await new Promise(r => setTimeout(r, 100));
+    active.send({ t: "intent", intent: { type: "move", dir: 1, px: 3 } });
+    expect((await active.waitFor("events")).events[0]!.type).toBe("move"); // continua vivo
+    a.close(); b.close();
+  });
+
+  it("5 senhas erradas bloqueiam o login, inclusive com a senha certa", async () => {
+    srv = await startServer({ log: () => {}, limits: { registerPerHour: 1000 } });
+    const c = await Client.open(srv.port); await c.login("vitima"); c.close();
+    const x = await Client.open(srv.port);
+    for (let i = 0; i < 5; i++) { x.send({ t: "auth", mode: "login", nick: "vitima", password: "errada" + i }); expect((await x.waitFor("error")).msg).toMatch(/incorretos/); }
+    x.send({ t: "auth", mode: "login", nick: "vitima", password: "segredo1" });
+    expect((await x.waitFor("error")).msg).toMatch(/tentativas demais/);
+    x.close();
+  });
+
+  it("limita cadastros por IP (3/hora)", async () => {
+    srv = await startServer({ log: () => {} });
+    const msgs: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const c = await Client.open(srv.port);
+      c.send({ t: "auth", mode: "register", nick: `novo${i}`, password: "segredo1" });
+      const m = await Promise.race([c.waitFor("authOk").then(() => "ok"), c.waitFor("error").then(e => e.msg)]);
+      msgs.push(m); c.close();
+    }
+    expect(msgs.slice(0, 3)).toEqual(["ok", "ok", "ok"]);
+    expect(msgs[3]).toMatch(/limite de cadastros/);
+  });
+
+  it("CF-Connecting-IP só vale vindo do loopback e separa os limites por cliente", async () => {
+    srv = await startServer({ log: () => {}, limits: { registerPerHour: 1, loginFailures: 1000 } });
+    const open = (ip: string) => new Promise<Client>((res, rej) => {
+      const c = new Client(); c.ws = new WebSocket(`ws://localhost:${srv!.port}`, { headers: { "cf-connecting-ip": ip } });
+      c.ws.on("message", d => c.msgs.push(JSON.parse(d.toString()))); c.ws.once("open", () => res(c)); c.ws.once("error", rej);
+    });
+    const a = await open("9.9.9.1"), b = await open("9.9.9.2");
+    await a.login("cliente1"); await b.login("cliente2"); // IPs diferentes: cada um usa seu 1 cadastro
+    const a2 = await open("9.9.9.1");
+    a2.send({ t: "auth", mode: "register", nick: "cliente3", password: "segredo1" });
+    expect((await a2.waitFor("error")).msg).toMatch(/limite de cadastros/);
+    a.close(); b.close(); a2.close();
+  });
+
+  it("desistir no meio da partida mantém o boneco no jogo e libera o jogador", async () => {
+    const { a, b } = await twoPlayers();
+    a.send({ t: "start" }); await a.waitFor("start"); await b.waitFor("start");
+    b.send({ t: "leaveRoom" }); await b.waitFor("room", r => r.room === null);
+    const room = srv!.lobby.rooms.values().next().value!;
+    expect(room.match!.getChar("bruno")).toBeDefined();
+    expect(room.members.get("bruno")!.connected).toBe(false);
+    b.send({ t: "createRoom", mapId: "colinas", maxPlayers: 2 }); // já pode entrar em outra sala
+    expect((await b.waitFor("room")).room!.players).toHaveLength(1);
+    a.close(); b.close();
+  });
 });

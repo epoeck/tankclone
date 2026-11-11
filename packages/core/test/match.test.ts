@@ -237,3 +237,14 @@ describe("morte do jogador da vez", () => {
     expect(m.submit({ type: "move", playerId: "a", dir: -1, px: 10 }).ok).toBe(false);
   });
 });
+
+describe("chaves de protótipo", () => {
+  it("item 'constructor' é rejeitado e não corrompe a energia", () => {
+    const m = mk();
+    for (const key of ["constructor", "__proto__", "toString", "hasOwnProperty"]) expect(m.submit({ type: "item", playerId: "a", key: key as ItemKey }).ok).toBe(false);
+    expect(m.getChar("a")!.energy).toBe(m.getChar("a")!.maxEnergy);
+  });
+  it("arma '__proto__' ou 'constructor' é recusada ao criar a partida", () => {
+    for (const weaponId of ["__proto__", "constructor", "toString"]) expect(() => mk(duo({ weaponId }))).toThrow();
+  });
+});

@@ -4,6 +4,11 @@
  */
 import type { AngleRange } from "./angle";
 
+/** Busca segura em tabela de dados: só chaves próprias (rejeita "constructor", "__proto__" etc.) e só strings. */
+export function own<T>(table: Record<string, T>, key: unknown): T | undefined {
+  return typeof key === "string" && Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 export type ItemKey = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "F";
 
 export interface ItemDef {

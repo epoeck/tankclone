@@ -1,6 +1,6 @@
 /** Salas e partidas. Lógica pura de servidor: recebe intenções, roda o Match do core e devolve eventos. Sem rede aqui. */
 import { randomInt } from "node:crypto";
-import { BUILDS, DEFAULT_BUILD, MAPS, Match, WEAPONS, type Intent, type MatchEvent } from "@tankclone/core";
+import { BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
 import type { ClientIntent, MatchSetup, RoomInfo } from "./protocol";
 
 export const MAX_ROOM_PLAYERS = 8;
@@ -45,8 +45,8 @@ export class Room {
     const m = this.members.get(nick);
     if (!m) return "você não está nesta sala";
     if (this.status !== "lobby") return "partida em andamento";
-    if (weaponId !== undefined) { if (!WEAPONS[weaponId]) return "arma desconhecida"; m.weaponId = weaponId; }
-    if (build !== undefined) { if (!BUILDS[build]) return "build desconhecida"; m.build = build; }
+    if (weaponId !== undefined) { if (!own(WEAPONS, weaponId)) return "arma desconhecida"; m.weaponId = weaponId; }
+    if (build !== undefined) { if (!own(BUILDS, build)) return "build desconhecida"; m.build = build; }
     return null;
   }
 
@@ -55,7 +55,7 @@ export class Room {
     if (this.status !== "lobby") return { error: "partida já iniciada" };
     const teams = new Set([...this.members.values()].map(m => m.team));
     if (teams.size < 2) return { error: "é preciso ao menos um jogador em cada time" };
-    const map = MAPS[this.mapId]!;
+    const map = own(MAPS, this.mapId)!;
     const idx = new Map<number, number>();
     const players = [...this.members.values()].map(m => {
       const i = idx.get(m.team) ?? 0; idx.set(m.team, i + 1);
@@ -97,8 +97,10 @@ export class Room {
 
   private record(events: MatchEvent[], now: number): void {
     this.log.push(...events);
-    const shots = events.filter(e => e.type === "shot").length;
-    if (shots) this.pausedUntil = now + 1500 + shots * 900;
+    // pausa o relógio pelo tempo real da animação: trajetória a 60 passos/s + 0,5 s por tiro
+    let pause = 0;
+    for (const e of events) if (e.type === "shot") pause += e.points.length / 60 + 0.5;
+    if (pause) this.pausedUntil = now + pause * 1000;
   }
 
   get over(): boolean { return !!this.match?.over; }
@@ -114,8 +116,8 @@ export class Room {
 
 export function buildMatch(setup: MatchSetup): Match {
   return new Match({
-    seed: setup.seed, terrain: MAPS[setup.mapId]!.build(),
-    players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, weaponId: p.weaponId, facing: p.facing, stats: BUILDS[p.build] })),
+    seed: setup.seed, terrain: own(MAPS, setup.mapId)!.build(),
+    players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, weaponId: p.weaponId, facing: p.facing, stats: own(BUILDS, p.build) })),
   });
 }
 
@@ -123,7 +125,7 @@ export function validateIntent(i: ClientIntent): string | null {
   if (typeof i !== "object" || i === null) return "intenção inválida";
   switch (i.type) {
     case "move": return (i.dir === 1 || i.dir === -1) && Number.isFinite(i.px) && i.px >= 0 && i.px <= 1000 ? null : "movimento inválido";
-    case "item": return typeof i.key === "string" ? null : "item inválido";
+    case "item": return own(ITEMS, i.key) ? null : "item inválido";
     case "shoot": return Number.isFinite(i.angleDeg) && Number.isFinite(i.power) ? null : "tiro inválido";
     case "pass": return null;
     default: return "intenção desconhecida";
@@ -137,7 +139,7 @@ export class Lobby {
 
   create(host: string, mapId: string, maxPlayers: number): Room | string {
     if (this.byNick.has(host)) return "você já está em uma sala";
-    if (!MAPS[mapId]) return "mapa desconhecido";
+    if (!own(MAPS, mapId)) return "mapa desconhecido";
     if (!Number.isInteger(maxPlayers) || maxPlayers < 2 || maxPlayers > MAX_ROOM_PLAYERS) return `máximo de jogadores: 2 a ${MAX_ROOM_PLAYERS}`;
     const room = new Room(`S${++this.n}`, mapId, maxPlayers, host);
     room.add(host, 1);
@@ -163,17 +165,26 @@ export class Lobby {
     const room = this.roomOf(nick);
     if (!room) return undefined;
     const m = room.members.get(nick)!;
-    if (room.status === "playing" && !hard) { m.connected = false; return room; }
+    if (room.status === "playing") {
+      m.connected = false; // o boneco continua no Match e passa a vez sozinho
+      if (hard) this.byNick.delete(nick); // desistência: libera o jogador para outras salas, sem reconexão
+      return room;
+    }
     room.members.delete(nick); this.byNick.delete(nick);
-    if (![...room.members.values()].some(x => x.connected)) { this.rooms.delete(room.id); for (const k of room.members.keys()) this.byNick.delete(k); return room; }
+    if (![...room.members.values()].some(x => x.connected)) { this.rooms.delete(room.id); this.forget(room); return room; }
     if (room.host === nick) room.host = [...room.members.values()].find(x => x.connected)!.nick;
     return room;
+  }
+
+  /** Solta o vínculo apelido→sala, só se ainda apontar para esta sala. */
+  private forget(room: Room): void {
+    for (const k of room.members.keys()) if (this.byNick.get(k) === room.id) this.byNick.delete(k);
   }
 
   /** Remove salas de partida em que ninguém está conectado. */
   prune(): void {
     for (const r of [...this.rooms.values()]) {
-      if (![...r.members.values()].some(m => m.connected)) { this.rooms.delete(r.id); for (const k of r.members.keys()) this.byNick.delete(k); }
+      if (![...r.members.values()].some(m => m.connected)) { this.rooms.delete(r.id); this.forget(r); }
     }
   }
 }

@@ -1,7 +1,8 @@
 /** Servidor WebSocket. Autoritativo: roda o core, valida intenções, transmite eventos. */
-import { createServer } from "node:http";
+import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Db, unlocksAt } from "./db";
+import { AuthLimiter, DEFAULT_LIMITS, type LimitConfig } from "./limits";
 import { Lobby, Room, XP_LOSE, XP_WIN, type Outbox } from "./rooms";
 import type { ClientMsg, ServerMsg } from "./protocol";
 
@@ -12,15 +13,21 @@ export interface ServerOptions {
   tickMs?: number;
   /** Máximo de conexões simultâneas. */
   maxConnections?: number;
+  limits?: Partial<LimitConfig>;
+  /** Confia no CF-Connecting-IP quando a conexão vem do loopback (cloudflared local). Padrão: true. */
+  trustCloudflare?: boolean;
+  log?: (...a: unknown[]) => void;
 }
 
-interface Session { ws: WebSocket; nick?: string; lastMsg: number; burst: number }
+interface Session { ws: WebSocket; ip: string; nick?: string; authing?: boolean; lastMsg: number; burst: number }
 
 export function startServer(opts: ServerOptions = {}) {
   const db = new Db(opts.dbPath ?? ":memory:");
   const lobby = new Lobby();
   const sessions = new Map<string, Session>(); // nick → sessão
   const tickMs = opts.tickMs ?? 100;
+  const log = opts.log ?? ((...a: unknown[]) => console.error(...a));
+  const limiter = new AuthLimiter({ ...DEFAULT_LIMITS, ...opts.limits });
   const http = createServer((_, res) => { res.writeHead(200, { "content-type": "text/plain" }); res.end("tankclone server"); });
   const wss = new WebSocketServer({ server: http, maxPayload: 4096 });
 
@@ -46,15 +53,18 @@ export function startServer(opts: ServerOptions = {}) {
 
   const timer = setInterval(() => {
     const now = Date.now();
-    for (const room of lobby.rooms.values()) {
+    for (const room of [...lobby.rooms.values()]) {
       if (room.status !== "playing") continue;
-      const events = room.tick(tickMs / 1000, now);
-      if (events.length) { outbox.broadcast(room, { t: "events", events }); afterEvents(room); }
+      try {
+        const events = room.tick(tickMs / 1000, now);
+        if (events.length) { outbox.broadcast(room, { t: "events", events }); afterEvents(room); }
+      } catch (e) { log("erro no tick da sala", room.id, e); }
     }
     lobby.prune();
   }, tickMs);
+  const pruneTimer = setInterval(() => limiter.prune(), 60_000);
 
-  function onMessage(s: Session, raw: string) {
+  async function onMessage(s: Session, raw: string) {
     // limite simples de taxa: ~30 mensagens/s com rajada de 60
     const now = Date.now();
     s.burst = Math.max(0, s.burst - (now - s.lastMsg) * 0.03) + 1; s.lastMsg = now;
@@ -65,8 +75,18 @@ export function startServer(opts: ServerOptions = {}) {
 
     if (m.t === "auth") {
       if (s.nick) return send(s.ws, { t: "error", msg: "já autenticado" });
-      const r = m.mode === "register" ? db.register(String(m.nick), String(m.password)) : db.login(String(m.nick), String(m.password));
-      if (typeof r === "string") return send(s.ws, { t: "error", msg: r });
+      if (s.authing) return send(s.ws, { t: "error", msg: "aguarde" });
+      const nickIn = String(m.nick).slice(0, 64).toLowerCase(), kIp = `ip:${s.ip}`, kNick = `nick:${nickIn}`;
+      const wait = Math.max(limiter.blockedFor(kIp), limiter.blockedFor(kNick));
+      if (wait > 0) return send(s.ws, { t: "error", msg: `tentativas demais; aguarde ${wait}s` });
+      if (m.mode === "register" && !limiter.allowRegister(s.ip)) return send(s.ws, { t: "error", msg: "limite de cadastros por hora atingido" });
+      s.authing = true;
+      let r: Awaited<ReturnType<Db["login"]>>;
+      try { r = m.mode === "register" ? await db.register(String(m.nick), String(m.password)) : await db.login(String(m.nick), String(m.password)); }
+      finally { s.authing = false; }
+      if (typeof r === "string") { if (m.mode !== "register") { limiter.fail(kIp); limiter.fail(kNick); } return send(s.ws, { t: "error", msg: r }); }
+      limiter.success(kNick);
+      if (s.ws.readyState !== s.ws.OPEN) return; // desconectou durante o hash
       const old = sessions.get(r.nick);
       if (old && old.ws !== s.ws) { send(old.ws, { t: "error", msg: "login em outro lugar" }); old.nick = undefined; old.ws.close(); }
       s.nick = r.nick; sessions.set(r.nick, s);
@@ -108,10 +128,19 @@ export function startServer(opts: ServerOptions = {}) {
     }
   }
 
-  wss.on("connection", ws => {
+  const clientIp = (req: IncomingMessage): string => {
+    const remote = req.socket.remoteAddress ?? "?";
+    const loopback = remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
+    const cf = req.headers["cf-connecting-ip"];
+    return (opts.trustCloudflare ?? true) && loopback && typeof cf === "string" && cf ? cf : remote;
+  };
+
+  wss.on("connection", (ws, req) => {
     if (wss.clients.size > (opts.maxConnections ?? 200)) { ws.close(1013); return; }
-    const s: Session = { ws, lastMsg: Date.now(), burst: 0 };
-    ws.on("message", d => onMessage(s, d.toString()));
+    const s: Session = { ws, ip: clientIp(req), lastMsg: Date.now(), burst: 0 };
+    ws.on("message", d => {
+      onMessage(s, d.toString()).catch(e => { log("erro interno", e); send(ws, { t: "error", msg: "erro interno" }); });
+    });
     ws.on("close", () => {
       if (s.nick && sessions.get(s.nick) === s) {
         sessions.delete(s.nick);
@@ -127,7 +156,7 @@ export function startServer(opts: ServerOptions = {}) {
       const addr = http.address();
       resolve({
         port: typeof addr === "object" && addr ? addr.port : 0, db, lobby,
-        close: () => new Promise<void>(res => { clearInterval(timer); for (const c of wss.clients) c.terminate(); wss.close(() => http.close(() => { db.close(); res(); })); }),
+        close: () => new Promise<void>(res => { clearInterval(timer); clearInterval(pruneTimer); for (const c of wss.clients) c.terminate(); wss.close(() => http.close(() => { db.close(); res(); })); }),
       });
     });
   });
