@@ -37,6 +37,7 @@ export const DEFAULT_PHYSICS: PhysicsConfig = {
 };
 
 /** Altura (px) do ponto de saída do tiro acima do chão onde o tanque está. Resultado do ajuste. */
+// Mantida em 30.18: a calibração das tabelas de tiro depende dela (com 25.2, o teste de 20° estoura). O cano agachado fica ~5 px mais baixo no desenho; é só visual.
 export const MUZZLE_HEIGHT = 30.18;
 
 export type Facing = 1 | -1;
@@ -92,7 +93,7 @@ export interface Hitbox {
 }
 
 /** Tamanho provisório do boneco (px). Ajustar quando a arte chegar. */
-export const PLAYER_HITBOX = { w: 36, h: 52 } as const;
+export const PLAYER_HITBOX = { w: 36, h: 42 } as const;
 
 export function hitboxContains(b: Hitbox, x: number, y: number): boolean {
   return x >= b.x - b.w / 2 && x <= b.x + b.w / 2 && y >= b.y - b.h && y <= b.y;
