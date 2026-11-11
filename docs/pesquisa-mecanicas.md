@@ -58,6 +58,10 @@ dano_final = dano_bruto × (1 − redução) × queda_radial(distância ao centr
 crítico:   chance = SORTE / 20 (%)   bônus de dano crítico = SORTE / 25
 ```
 
+**Implementado** em `core/src/stats.ts` (`DamageConfig` guarda os divisores). Suposições minhas: o stat "Dano" dos equipamentos soma ao dano base da arma;
+FC (placeholder) = (ATK+DEF+AGI+Sorte+Dano+Armadura) × Vida / 200, que dá ≈ 359,0 milhões na conta de referência (forma suposta, 1 ponto).
+**Problema de escala:** com a conta de referência atacando outra igual, bruto ≈ (200+8912+3328) = 12 440 e armadura ≈ 8550+28663/25 ≈ 9 700 → redução 99% → ~124 de dano contra 531 164 de vida (~4 300 tiros). O jogo real não é assim; a constante K = 100 de A/(A+K) ou a própria forma devem ser de outra escala. **Perguntar ao dono** quanto dano/vida vê no fim de jogo. Crítico: com Sorte 26 078 as fórmulas cruas dão 1 300% de chance; usei tetos provisórios (100% de chance, +100% de dano).
+
 Exemplo do 4399 (Fogo Intenso +8, ATK somado 560, +50+50+30 e fúria +50%): (205 × 1,96 + 56) × 2,8 = 1281,8. Vira teste de regressão
 quando houver forja. Queda radial e dano de queda **não encontrados** → placeholders.
 

@@ -5,3 +5,4 @@ export * from "./angle";
 export * from "./rng";
 export * from "./data";
 export * from "./match";
+export * from "./stats";

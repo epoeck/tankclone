@@ -123,6 +123,10 @@ e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 - `Terrain`: 3 estados (`AIR`/`DESTRUCTIBLE`/`INDESTRUCTIBLE`); laterais e fundo indestrutíveis, topo vazio; `carveCircle` só apaga destrutível; `fromMask` lê RGBA (preto = ar, branco = destrutível, vermelho puro = indestrutível; classificação por canal, ver `terrain.ts`); `slopeDeg(x, feetY, facing)` dá a inclinação do chão sob o personagem.
 - `angle.ts`: faixa de ângulo por arma relativa ao corpo; `allowedAbsoluteRange`, `clampAbsoluteAngle`, `relativeAngle`. O ângulo usado no tiro e exibido é o absoluto.
 
+- **Cliente só anima eventos**: nunca re-simula o tiro. `Math.hypot`, `atan2`, `sin` e `cos` não são garantidos bit a bit entre motores (V8, Safari); só o servidor (core) decide, o cliente desenha os `points` recebidos. Antes do servidor existir, o `game.html` roda o core localmente (um motor só).
+- Pendência: a parede do `doMove` só testa 1 px acima do degrau; o boneco de 52 px atravessa saliências na altura da cabeça.
+- Pendência (Fase C): a escala da fórmula de dano não fecha com a conta de referência (ver `docs/pesquisa-mecanicas.md` §3); tetos de crítico provisórios.
+
 ## 8. Calibração da física
 
 ### 8.1 Dados
@@ -187,7 +191,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 6. Vento semeado por turno, HP, fim de partida (time eliminado), limite de turnos opcional.
 7. Cliente: força de **segurar e soltar**, régua de distância, câmera que acompanha o tiro + minimapa, barra de itens nas teclas originais.
 
-### Fase C — Stats e dano (`core/stats.ts`)
+### Fase C — Stats e dano (`core/stats.ts`) (**implementada**; painel em `damage.html`)
 1. Atributos: ATK, DEF, AGI, Sorte, HP (Vida), Armadura, Dano; mais tarde Ataque mágico e Resistência mágica (existem no original de 2022).
    Conta de referência para escala de números em `docs/pesquisa-mecanicas.md` §6. Equipamentos com stats fixos (sem forja).
 2. Fórmula de dano de `docs/pesquisa-mecanicas.md` §3 (ATK/10 somado ao dano base; armadura e DEF/25; redução A/(A+100);

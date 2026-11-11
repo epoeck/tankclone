@@ -209,3 +209,16 @@ describe("tiro, dano e fúria", () => {
     expect(run()).toEqual(run());
   });
 });
+
+describe("morte do jogador da vez", () => {
+  it("cair do mapa andando encerra o turno e o morto não age mais", () => {
+    const t = Terrain.fromHeightFn(1000, 600, x => (x >= 230 && x <= 240 ? 600 : 450));
+    const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge", agi: 100 }, { id: "c", team: 1, x: 100, weaponId: "sledge" }, { id: "b", team: 2, x: 800, weaponId: "sledge" }], t);
+    expect(m.currentId).toBe("a");
+    const es = ok(m.submit({ type: "move", playerId: "a", dir: 1, px: 100 }));
+    expect(ev(es, "death")[0]).toMatchObject({ playerId: "a" });
+    expect(ev(es, "turnStart")).toHaveLength(1);
+    expect(m.currentId).not.toBe("a");
+    expect(m.submit({ type: "move", playerId: "a", dir: -1, px: 10 }).ok).toBe(false);
+  });
+});

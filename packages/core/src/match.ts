@@ -7,6 +7,7 @@ import { clampAbsoluteAngle } from "./angle";
 import { DEFAULT_MATCH, ITEMS, WEAPONS, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
+import { combatPower, statDamage, withStats, critChancePct, type Stats } from "./stats";
 import type { Terrain } from "./terrain";
 
 export interface PlayerSetup {
@@ -15,9 +16,12 @@ export interface PlayerSetup {
   /** Posição horizontal inicial; o personagem nasce em cima do chão. */
   x: number;
   weaponId: string;
+  /** Atalho para stats.agi. */
   agi?: number;
   hp?: number;
-  /** Força de combate (define o tempo de turno de 5 s). */
+  /** Atributos (Fase C). O que faltar vira 0 (hp = defaultHp). */
+  stats?: Partial<Stats>;
+  /** Força de combate (define o tempo de turno de 5 s). Se omitida, calculada dos stats. */
   fc?: number;
   facing?: Facing;
 }
@@ -32,6 +36,7 @@ export interface Character {
   hp: number;
   maxHp: number;
   agi: number;
+  stats: Stats;
   fc: number;
   weaponId: string;
   energy: number;
@@ -55,7 +60,7 @@ export type MatchEvent =
   | { type: "shot"; playerId: string; index: number; points: Array<{ x: number; y: number }>; hit: { x: number; y: number } | null;
       hitKind: "terrain" | "player" | null; targetId: string | null; damageMult: number }
   | { type: "crater"; x: number; y: number; radius: number }
-  | { type: "damage"; playerId: string; amount: number; hp: number }
+  | { type: "damage"; playerId: string; amount: number; hp: number; crit: boolean }
   | { type: "fly"; playerId: string; x: number; y: number }
   | { type: "fury"; playerId: string; fury: number }
   | { type: "death"; playerId: string; reason: "hp" | "out_of_map" }
@@ -66,18 +71,19 @@ export type Outcome = { ok: true; events: MatchEvent[] } | { ok: false; error: s
 
 export interface DamageInput {
   weapon: WeaponDef;
+  attacker: Stats;
+  target: Stats;
   /** Soma dos bônus de dano (+50% = 0.5). */
   bonus: number;
   /** Multiplicador do projétil (itens de tiro múltiplo, especial). */
   shotMult: number;
   /** 1 no centro, cai até 1 − falloffEdge na borda do raio. */
   falloff: number;
+  crit: boolean;
 }
 
-/** Dano provisório até a Fase C (stats e fórmula completa). */
-export function placeholderDamage(d: DamageInput): number {
-  return Math.round(d.weapon.baseDamage * (1 + d.bonus) * d.shotMult * d.falloff);
-}
+/** Dano padrão da partida: fórmula de stats.ts. */
+export const defaultDamage = (d: DamageInput): number => statDamage(d);
 
 export interface MatchOptions {
   seed: number;
@@ -104,6 +110,8 @@ export class Match {
   readonly physics: PhysicsConfig;
   readonly chars: Character[] = [];
   private rng: Rng;
+  /** Sorteio de críticos, separado do vento para um não mexer na sequência do outro. */
+  private combatRng: Rng;
   private damageFn: (d: DamageInput) => number;
   turn = 0;
   wind = 0;
@@ -118,16 +126,18 @@ export class Match {
     this.cfg = { ...DEFAULT_MATCH, ...opts.config };
     this.physics = opts.physics ?? DEFAULT_PHYSICS;
     this.rng = new Rng(opts.seed);
-    this.damageFn = opts.damageFn ?? placeholderDamage;
+    this.combatRng = new Rng((opts.seed ^ 0x9e3779b9) >>> 0);
+    this.damageFn = opts.damageFn ?? defaultDamage;
     for (const p of opts.players) {
       if (!WEAPONS[p.weaponId]) throw new Error(`arma desconhecida: ${p.weaponId}`);
-      const agi = p.agi ?? 0;
+      const stats = withStats({ ...p.stats, ...(p.agi !== undefined ? { agi: p.agi } : {}), ...(p.hp !== undefined ? { hp: p.hp } : {}), ...(p.stats?.hp === undefined && p.hp === undefined ? { hp: this.cfg.defaultHp } : {}) });
+      const agi = stats.agi;
       const y = this.terrain.surfaceY(p.x, 0);
       if (y < 0) throw new Error(`sem chão em x=${p.x}`);
       const maxEnergy = this.energyFor(agi);
       this.chars.push({
-        id: p.id, team: p.team, x: p.x, y, facing: p.facing ?? 1, hp: p.hp ?? this.cfg.defaultHp, maxHp: p.hp ?? this.cfg.defaultHp,
-        agi, fc: p.fc ?? 0, weaponId: p.weaponId, energy: maxEnergy, maxEnergy, fury: 0, delay: 0, alive: true,
+        id: p.id, team: p.team, x: p.x, y, facing: p.facing ?? 1, hp: stats.hp, maxHp: stats.hp,
+        agi, stats, fc: p.fc ?? combatPower(stats), weaponId: p.weaponId, energy: maxEnergy, maxEnergy, fury: 0, delay: 0, alive: true,
       });
     }
     if (this.chars.length < 2) throw new Error("a partida precisa de ao menos 2 jogadores");
@@ -182,6 +192,7 @@ export class Match {
   submit(intent: Intent): Outcome {
     if (this.over) return { ok: false, error: "partida encerrada" };
     if (intent.playerId !== this.current.id) return { ok: false, error: "não é a vez deste jogador" };
+    if (!this.current.alive) return { ok: false, error: "jogador morto" };
     switch (intent.type) {
       case "move": return this.doMove(intent.dir, intent.px);
       case "item": return this.doItem(intent.key);
@@ -216,6 +227,7 @@ export class Match {
     }
     if (path.length) events.push({ type: "move", playerId: c.id, path });
     this.checkOver(events);
+    if (!c.alive && !this.over) events.push(...this.endTurn(false)); // o da vez morreu andando: passa o turno
     return { ok: true, events };
   }
 
@@ -322,9 +334,10 @@ export class Match {
       const d = Math.hypot(dx, dy);
       if (d > dmgRadius) continue;
       const falloff = 1 - cfg.falloffEdge * (d / dmgRadius);
-      const amount = this.damageFn({ weapon, bonus: this.ts.bonus, shotMult: mult, falloff });
+      const crit = this.combatRng.next() * 100 < critChancePct(shooter.stats.luck);
+      const amount = this.damageFn({ weapon, attacker: shooter.stats, target: t.stats, bonus: this.ts.bonus, shotMult: mult, falloff, crit });
       t.hp = Math.max(0, t.hp - amount);
-      events.push({ type: "damage", playerId: t.id, amount, hp: t.hp });
+      events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit });
       t.fury = Math.min(100, t.fury + cfg.furyOnHit);
       events.push({ type: "fury", playerId: t.id, fury: t.fury });
       if (t.hp <= 0) { t.alive = false; events.push({ type: "death", playerId: t.id, reason: "hp" }); }
