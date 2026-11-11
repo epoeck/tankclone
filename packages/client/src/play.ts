@@ -1,7 +1,7 @@
 /** Cliente de rede: login → saguão → sala → partida. O servidor decide tudo; aqui só enviamos intenções e animamos eventos. */
 import { BUILDS, COUNTS, HAIR_COLORS, MAPS, SKIN_TONES, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
 import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/src/protocol";
-import { drawPortrait } from "./doll";
+import { drawCharPortrait as drawPortrait } from "./chars";
 import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -92,9 +92,9 @@ function renderWardrobe() {
   if (!me) return;
   const host = $("wardrobe-opts"); host.replaceChildren();
   const apply = (mut: (l: Look) => void) => { const l = structuredClone(me!.look); mut(l); me!.look = l; send({ t: "setLook", look: l }); renderWardrobe(); renderMe(); };
-  const numbers = (label: string, n: number, cur: number, set: (l: Look, i: number) => void) => {
+  const numbers = (label: string, n: number, cur: number, set: (l: Look, i: number) => void, optional = false) => {
     const row = el("div", "", "opts"); row.append(el("span", label, "label"));
-    for (let i = 0; i < n; i++) { const b = el("button", String(i + 1), "btn btn--sm btn--steel"); b.setAttribute("aria-pressed", String(i === cur)); b.onclick = () => apply(l => set(l, i)); row.append(b); }
+    for (let i = 0; i < n; i++) { const b = el("button", optional ? (i === 0 ? "—" : String(i)) : String(i + 1), "btn btn--sm btn--steel"); b.setAttribute("aria-pressed", String(i === cur)); b.onclick = () => apply(l => set(l, i)); row.append(b); }
     host.append(row);
   };
   const colors = (label: string, list: readonly string[], cur: number, set: (l: Look, i: number) => void) => {
@@ -108,7 +108,9 @@ function renderWardrobe() {
   numbers("Cabelo", COUNTS.hair, a.hair, (l, i) => (l.appearance.hair = i));
   colors("Cor do cabelo", HAIR_COLORS, a.hairColor, (l, i) => (l.appearance.hairColor = i));
   numbers("Roupa", COUNTS.outfit, e.outfit, (l, i) => (l.equipped.outfit = i));
-  numbers("Chapéu", COUNTS.hat, e.hat, (l, i) => (l.equipped.hat = i));
+  numbers("Chapéu", COUNTS.hat, e.hat, (l, i) => (l.equipped.hat = i), true);
+  numbers("Óculos", COUNTS.glasses, e.glasses, (l, i) => (l.equipped.glasses = i), true);
+  numbers("Asas", COUNTS.wings, e.wings, (l, i) => (l.equipped.wings = i), true);
   drawPortrait($("portrait") as HTMLCanvasElement, me.look);
 }
 

@@ -6,19 +6,20 @@
  * Tudo são índices; a arte final entra como um arquivo por opção de cada camada.
  */
 
-export const SKIN_TONES = ["#ffe0c2", "#f8cfa6", "#e7b27e", "#c98d5c", "#a06a42", "#6f4528"] as const;
-export const HAIR_COLORS = ["#2b2118", "#6b4a2b", "#d9a441", "#e8e0c8", "#c0392b", "#3b6fd6", "#8e5bd6", "#2fa36b"] as const;
-export const COUNTS = { skin: SKIN_TONES.length, face: 6, hair: 8, hairColor: HAIR_COLORS.length, outfit: 6, hat: 5 } as const;
+export const SKIN_TONES = ["#FFE0C7", "#F2C79F", "#D9A066", "#B97A4B", "#8A5530", "#5E3A22"] as const;
+export const HAIR_COLORS = ["#6B3A1F", "#1F1F2B", "#F5C542", "#E0372A", "#3B6FD1", "#4FC263", "#F28FC2", "#E8ECF2"] as const;
+/** Opções por camada (batem com a arte em public/assets/chars). hat/glasses/wings: 0 = sem item, 1..n = arquivo n. */
+export const COUNTS = { skin: SKIN_TONES.length, face: 3, hair: 3, hairColor: HAIR_COLORS.length, outfit: 3, hat: 3, glasses: 2, wings: 2 } as const;
 
 export interface Appearance { skin: number; face: number; hair: number; hairColor: number }
-/** Índice do item equipado em cada slot visual; hat 0 = sem chapéu. */
-export interface EquippedLook { outfit: number; hat: number }
+/** Índice do item equipado em cada slot visual; outfit 0..2 (arquivo n+1); hat/glasses/wings 0 = nenhum. */
+export interface EquippedLook { outfit: number; hat: number; glasses: number; wings: number }
 export interface Look { appearance: Appearance; equipped: EquippedLook }
 
 /** Camadas de trás para frente (o braço com a arma é desenhado à parte, para girar com o ângulo). */
-export const LAYER_ORDER = ["hair-back", "body", "outfit", "face", "hair-front", "hat"] as const;
+export const LAYER_ORDER = ["wings", "hair-back", "body", "outfit", "face", "hair-front", "glasses", "hat", "weapon", "arm"] as const;
 
-export const DEFAULT_LOOK: Look = { appearance: { skin: 1, face: 0, hair: 0, hairColor: 1 }, equipped: { outfit: 0, hat: 0 } };
+export const DEFAULT_LOOK: Look = { appearance: { skin: 1, face: 0, hair: 0, hairColor: 1 }, equipped: { outfit: 0, hat: 0, glasses: 0, wings: 0 } };
 
 const int = (v: unknown, max: number, fallback: number): number =>
   typeof v === "number" && Number.isInteger(v) && v >= 0 && v < max ? v : fallback;
@@ -31,6 +32,6 @@ export function sanitizeLook(raw: unknown): Look {
   return {
     appearance: { skin: int(a.skin, COUNTS.skin, d.appearance.skin), face: int(a.face, COUNTS.face, d.appearance.face),
       hair: int(a.hair, COUNTS.hair, d.appearance.hair), hairColor: int(a.hairColor, COUNTS.hairColor, d.appearance.hairColor) },
-    equipped: { outfit: int(e.outfit, COUNTS.outfit, d.equipped.outfit), hat: int(e.hat, COUNTS.hat, d.equipped.hat) },
+    equipped: { outfit: int(e.outfit, COUNTS.outfit, d.equipped.outfit), hat: int(e.hat, COUNTS.hat, 0), glasses: int(e.glasses, COUNTS.glasses, 0), wings: int(e.wings, COUNTS.wings, 0) },
   };
 }

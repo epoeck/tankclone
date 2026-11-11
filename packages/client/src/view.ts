@@ -2,7 +2,7 @@
  * Visão da partida: aplica os EVENTOS do core (nunca re-simula física) e desenha no canvas.
  * Serve ao jogo local (game.ts) e ao jogo em rede (play.ts). O cliente só anima o que o core/servidor decidiu.
  */
-import { drawDoll } from "./doll";
+import { drawCharacter } from "./chars";
 import {
   BUILDS, DEFAULT_LOOK, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
   type Facing, type ItemKey, type Look, type MatchEvent,
@@ -160,7 +160,7 @@ export class MatchView {
   }
 
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
-    drawDoll(ctx, c.look, { facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming }, c.x, c.y);
+    drawCharacter(ctx, c.look, { facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming }, c.x, c.y);
     if (!aiming) c.walk = 0;
   }
 }
