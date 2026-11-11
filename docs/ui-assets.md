@@ -75,3 +75,28 @@ Fonte editável de cada asset fica em `art/fontes/` no formato do ArtCraft (`.ve
 1. Abrir o `.vectorcraft` no VectorCraft e editar (uma camada por peça, com nome).
 2. Exportar SVG por cima do arquivo correspondente em `public/assets/` (ou: `vectorcraft-cli convert art/fontes/ui/items/item-1.vectorcraft packages/client/public/assets/ui/items/item-1.svg`).
 3. Manter o tamanho (viewBox) e a âncora do manifest; se mudar, atualizar o `manifest.json`.
+
+## HUD da partida (disposição v2, pedida pelo Izzy em 2026-11-11)
+
+Posições na tela 1280×720, seguindo a disposição do original (arte e nomes próprios):
+
+| Onde | O quê | Classe |
+|---|---|---|
+| canto sup. esquerdo | meu boneco **em pé** num anel, nome, arma, nível | `.me` |
+| abaixo dele | conversa e registro da partida, sem fundo | `.feed` |
+| topo, à esquerda do centro | ordem de turno compacta | `.turns` |
+| topo central | vento (seta + valor) | `.windbox` |
+| abaixo do vento | relógio grande + botão Passar | `.clock` |
+| canto sup. direito | minimapa com Opções e Sair | `.minimap` |
+| abaixo do minimapa | rodada e vivos por time | `.roundinfo` |
+| borda direita | itens 1–8 em coluna | `.itemcol` |
+| canto inf. esquerdo | mostrador redondo de ângulo | `.dial` |
+| embaixo, quase toda a largura | barra de força com régua 0–100 e dica | `.powerbar` |
+| acima da barra | F (voo), Q (escudo, depois) e Estouro | `.skills` |
+| canto inf. direito | Z/X/C (depois), energia, vida, manômetro de pressão | `.zxc`, `.vitals2`, `.gauge` |
+
+- Nome, nível e vida de cada boneco ficam **abaixo** dele no mapa (`.nameplate--below`).
+- Dentro da partida o boneco fica **agachado** e só a cabeça balança (`.char--crouch`; números em `manifest.json > character.poses`). Em pé só no inventário, no saguão, na sala e no retrato `.me`.
+- Para poder balançar a cabeça, o corpo foi separado: `chars/body/body-1` (corpo) e `chars/head/head-1` (cabeça, tinta de pele).
+- Projétil escuro para contraste (`ui/hud/shell.svg`, quase preto com halo claro). Se o projétil for desenhado no canvas, use `#1b1d24` com contorno claro.
+- Força: segurando Espaço, a barra vai de 0 a 100 e volta; soltar atira; se voltar a 0 sem soltar, passa a vez.

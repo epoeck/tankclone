@@ -212,6 +212,11 @@
 .char__arm { position: absolute; left: -8px; top: -10px; width: 48px; height: 20px; }
 .char__weapon { position: absolute; left: 24px; top: -15px; width: 53px; height: 26px; }
 .char--flip { scale: -1 1; }
+/* Pose agachada (dentro da partida): corpo e roupa achatados a partir dos pés, cabeça desce e balança. */
+.char--crouch > .char__body { transform-origin: 48px 124px; transform: scaleY(.72); }
+.char--crouch > .char__head { transform: translateY(14px); animation: char-bob 1.2s ease-in-out infinite; }
+.char--crouch > .char__aim { translate: 0 12px; }
+@keyframes char-bob { 0%, 100% { transform: translateY(14px); } 50% { transform: translateY(12px); } }
 
 /* ---------- Seletores de aparência ---------- */
 .swatch { width: 40px; height: 40px; border-radius: 50%; border: var(--line) solid var(--ink); background: var(--c); cursor: pointer; box-shadow: var(--inset-shine), var(--drop-sm); }
@@ -238,103 +243,137 @@
 .list .muted { color: #8a6f3c; }
 
 /* =================================================================
-   HUD da partida
+   HUD da partida — disposição pedida pelo Izzy (referência do original):
+   eu no canto sup. esquerdo + conversa; vento e relógio no topo central;
+   minimapa e rodada no canto sup. direito; itens 1–8 em coluna na direita;
+   ângulo no canto inf. esquerdo; barra de força embaixo em toda a largura;
+   vida, energia, Z/X/C e manômetro de pressão no canto inf. direito.
    ================================================================= */
 .hud { position: absolute; inset: 0; pointer-events: none; }
-.hud > * { pointer-events: auto; }
+.hud > * { pointer-events: auto; position: absolute; }
+.hud .outline { -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
 
-/* Ordem de turno (delay) */
-.turns { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; padding: 8px 10px; }
+/* Eu (boneco em pé) */
+.me { left: 10px; top: 8px; width: 230px; display: grid; justify-items: start; gap: 4px; }
+.me__name { display: flex; gap: 6px; align-items: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--brass-300); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+.me__ring {
+  position: relative; width: 150px; height: 150px; border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background: radial-gradient(circle, var(--sky-100) 0 55%, var(--sky-500) 56% 64%, var(--brass-500) 65% 100%);
+  box-shadow: inset 0 0 0 4px var(--brass-700), var(--drop);
+  overflow: hidden;
+}
+.me__ring > * { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); }
+.me__name .chip { -webkit-text-stroke: 0; font-family: var(--font-body); }
+.me .lvl { position: absolute; left: 118px; top: 128px; width: 48px; height: 48px; font-size: var(--fs-lg); }
+
+/* Conversa / registro da partida (sem fundo, texto com contorno) */
+.feed { left: 10px; top: 214px; width: 380px; display: grid; grid-template-columns: 34px 1fr; gap: 8px; }
+.feed__tools { display: grid; gap: 6px; align-content: start; }
+.feed__tools .btn { width: 32px; height: 32px; padding: 0; }
+.feed__lines { display: grid; gap: 2px; font-size: var(--fs-sm); color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.feed__lines .sys { color: var(--brass-300); }
+.feed__lines b { color: var(--sky-300); }
+
+/* Ordem de turno (compacta) */
+.turns { left: 360px; top: 10px; display: flex; gap: 6px; }
 .turns__item { position: relative; display: grid; justify-items: center; gap: 2px; }
-.turns__item .portrait { width: 42px; height: 42px; }
-.turns__item small { font-size: 10px; font-weight: 900; color: var(--text-dim); }
+.turns__item .portrait { width: 40px; height: 40px; }
+.turns__item small { font-size: 10px; font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
 .turns__item[aria-current="true"] .portrait { outline: 3px solid var(--brass-300); outline-offset: 2px; }
-.turns__item[aria-current="true"]::before { content: ""; position: absolute; top: -14px; width: 18px; height: 14px; background: url("/assets/ui/hud/turn-marker.svg") center / contain no-repeat; }
 
-/* Vento + relógio */
-.windbox { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--gap-3); padding: 8px 16px; }
-.wind { display: grid; justify-items: center; gap: 2px; min-width: 120px; }
+/* Vento */
+.windbox { left: 50%; top: 6px; transform: translateX(-50%); display: grid; justify-items: center; }
+.wind { display: flex; align-items: center; gap: 4px; }
+.wind__label { font-size: var(--fs-sm); color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
 .wind__arrow { width: 96px; height: 40px; background: url("/assets/ui/hud/wind-arrow.svg") center / contain no-repeat; }
 .wind__arrow[data-dir="left"] { transform: scaleX(-1); }
 .wind__value { font-family: var(--font-display); font-size: var(--fs-xl); color: var(--sky-100); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; line-height: 1; }
-.timer {
-  --t: 70%;
-  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
-  border: var(--line) solid var(--ink);
-  background: conic-gradient(var(--brass-500) var(--t), var(--navy-950) 0);
-  box-shadow: var(--drop-sm);
-}
-.timer span { width: 46px; height: 46px; border-radius: 50%; background: var(--navy-800); border: 2px solid var(--ink); display: grid; place-items: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); }
-.timer[data-urgent] { background: conic-gradient(var(--ember-500) var(--t), var(--navy-950) 0); }
 
-/* Minimapa */
-.minimap { position: absolute; top: 12px; right: 12px; width: 220px; height: 88px; padding: 6px; }
+/* Relógio grande + Passar */
+.clock { left: 50%; top: 66px; transform: translateX(-50%); display: grid; justify-items: center; gap: 4px; }
+.clock__num { font-family: var(--font-display); font-size: 96px; line-height: .9; color: var(--brass-500); -webkit-text-stroke: 8px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--purple-shadow); }
+.clock[data-urgent] .clock__num { color: var(--ember-500); }
+
+/* Minimapa + botões */
+.minimap { right: 10px; top: 10px; width: 300px; height: 130px; padding: 0; overflow: hidden; }
+.minimap canvas, .minimap svg { width: 100%; height: 100%; display: block; }
 .minimap__view { position: absolute; border: 2px solid var(--cream); border-radius: 3px; }
-.minimap__dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); transform: translate(-50%, -50%); }
+.minimap__dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); transform: translate(-50%, -50%); }
+.minimap__tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; }
+.minimap__tools .btn { width: 30px; height: 30px; padding: 0; font-size: var(--fs-md); }
 
-/* Console inferior */
-.console {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
-  display: grid; grid-template-columns: 250px 1fr 150px 150px; gap: var(--gap-4); align-items: center;
-  padding: 14px 20px 16px;
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+/* Rodada / placar */
+.roundinfo { right: 76px; top: 150px; width: 234px; padding: 10px 14px; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.roundinfo div { display: flex; justify-content: space-between; }
+
+/* Itens 1–8 em coluna na direita */
+.itemcol { right: 10px; top: 150px; display: grid; gap: 4px; }
+.itemcol .slot { width: 50px; height: 50px; }
+.itemcol .slot img { width: 40px; height: 40px; }
+.slot.is-off { filter: grayscale(1) brightness(.7); }
+
+/* Ângulo (mostrador redondo no canto inferior esquerdo). --angle em graus absolutos. */
+.dial { left: 8px; bottom: 8px; width: 150px; height: 150px; border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background:
+    repeating-conic-gradient(from 0deg, var(--ink) 0 1deg, transparent 1deg 10deg) center / 100% 100%,
+    radial-gradient(circle, var(--navy-800) 0 62%, var(--steel-300) 63% 100%);
+  box-shadow: inset 0 0 0 3px var(--brass-500), var(--drop);
 }
-.vitals { display: grid; gap: 6px; }
-.vitals__name { display: flex; align-items: center; gap: var(--gap-2); }
-.vitals__row { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 6px; }
-.vitals__row img { width: 22px; height: 22px; }
+.dial::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, var(--navy-800) 0 70%, var(--navy-700) 71%); }
+.dial__needle { position: absolute; left: 50%; top: 50%; width: 62px; height: 5px; margin-top: -2.5px; background: var(--ember-500); border: 1px solid var(--ink); border-radius: 3px; transform-origin: 0 50%; transform: rotate(calc(var(--angle, 45deg) * -1)); }
+.dial__value { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; font-family: var(--font-display); font-size: var(--fs-xl); color: var(--brass-300); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; }
+.dial__hub { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: var(--g-brass); border: 2px solid var(--ink); }
 
-.aim { display: grid; gap: 10px; }
-/* Barra de força: segurar e soltar. --power = força atual, --last = último tiro. */
+/* Barra de força: vai de 0 a 100 e volta enquanto Espaço está seguro. --power, --last. */
+.powerbar { left: 168px; right: 380px; bottom: 10px; display: grid; gap: 2px; }
+.powerbar .power { height: 30px; }
+.powerbar__ruler { display: flex; justify-content: space-between; font-size: 11px; font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; padding: 0 1px; }
+.power__hint { position: absolute; inset: 0; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; z-index: 1; }
+.powerbar__label { position: absolute; left: -2px; top: -40px; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+
 .power {
   --power: 0%; --last: 0%;
-  position: relative; height: 28px;
+  position: relative; height: 30px;
   border: var(--line) solid var(--ink); border-radius: var(--r-sm);
   background:
     repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(255,255,255,.18) calc(10% - 2px) 10%),
     var(--navy-950);
-  overflow: visible;
 }
 .power::before {
   content: ""; position: absolute; inset: 0 auto 0 0; width: var(--power);
   background: linear-gradient(180deg, rgba(255,255,255,.5), transparent 50%), linear-gradient(90deg, var(--brass-500), var(--ember-500) 70%, var(--ember-700));
 }
-.power__last { position: absolute; top: -8px; bottom: -8px; left: var(--last); width: 3px; background: var(--sky-300); border: 1px solid var(--ink); transform: translateX(-50%); }
-.power__last::after { content: "último"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 900; color: var(--sky-300); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
-.power__ruler { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: var(--text-dim); padding: 0 1px; margin-top: 2px; }
-.items { display: flex; gap: 6px; }
-.items .slot { width: 54px; height: 54px; }
-.items .slot img { width: 42px; height: 42px; }
-.items__sep { width: 2px; background: var(--brass-700); margin: 4px 2px; border-radius: 2px; }
+.power__last { position: absolute; top: -6px; bottom: -6px; left: var(--last); width: 3px; background: var(--sky-300); border: 1px solid var(--ink); transform: translateX(-50%); z-index: 2; }
 
-/* Transferidor de ângulo: --angle (graus absolutos), --min/--max = faixa da arma */
-.angle { position: relative; width: 150px; height: 112px; justify-self: center; }
-.angle__dial { position: absolute; left: 0; top: 0; width: 150px; height: 90px; }
-.angle__range {
-  --min: 20deg; --max: 65deg;
-  position: absolute; left: 11px; top: 11px; width: 128px; height: 128px; border-radius: 50%;
-  background: conic-gradient(from calc(270deg + var(--min) * 0) , transparent 0);
-}
-.angle__needle {
-  position: absolute; left: 75px; top: 79px; width: 62px; height: 4px; margin-top: -2px;
-  background: var(--ember-500); border: 1px solid var(--ink); border-radius: 2px;
-  transform-origin: 0 50%; transform: rotate(calc(var(--angle, 45deg) * -1));
-}
-.angle__value { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+/* Habilidades acima da barra (F voo, Q escudo…) e o Estouro */
+.skills { left: 230px; bottom: 66px; display: flex; gap: 6px; align-items: end; }
+.skills .slot { width: 54px; height: 54px; }
+.skills .slot img { width: 42px; height: 42px; }
+.skills__gap { width: 24px; }
 
-/* Manômetro de pressão (a "fúria"): --pressure 0..1 gira o ponteiro de -135° a +135° */
-.gauge { position: relative; width: 120px; height: 120px; justify-self: center; }
-.gauge img { position: absolute; inset: 0; width: 120px; height: 120px; }
+/* Canto inferior direito: Z/X/C, energia, vida, pressão */
+.zxc { right: 140px; bottom: 82px; display: flex; gap: 6px; }
+.zxc .slot { width: 48px; height: 48px; }
+.vitals2 { right: 140px; bottom: 10px; width: 230px; display: grid; gap: 6px; }
+.vitals2__row { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.gauge { right: 8px; bottom: 8px; width: 124px; height: 124px; }
+.gauge img { position: absolute; inset: 0; width: 124px; height: 124px; }
 .gauge__needle { transform: rotate(calc(-135deg + var(--pressure, 0) * 270deg)); transition: transform .3s; }
-.gauge__label { position: absolute; left: 0; right: 0; bottom: -6px; text-align: center; font-family: var(--font-display); font-size: var(--fs-sm); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.gauge__label { position: absolute; left: 0; right: 0; bottom: -4px; text-align: center; font-family: var(--font-display); font-size: var(--fs-sm); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
 .gauge[data-full] .gauge__label { color: var(--ember-300); }
 
-/* Rótulos flutuantes no mapa */
+.banner { left: 50%; top: 40%; transform: translate(-50%, -50%); }
+
+/* Rótulos no mapa: nome e vida ficam ABAIXO do boneco */
+.nameplate .lv { font-family: var(--font-display); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; margin-right: 4px; }
 .nameplate { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; gap: 3px; pointer-events: none; }
 .nameplate b { font-size: var(--fs-sm); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
 .nameplate .bar { width: 70px; height: 9px; }
 .nameplate--blue b { color: var(--sky-300); }
 .nameplate--red b { color: #ffb1a6; }
+.nameplate--below { transform: translate(-50%, 0); }
 .dmgpop { position: absolute; font-family: var(--font-display); font-size: var(--fs-xl); color: var(--ember-300); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; transform: translate(-50%, -50%) rotate(-6deg); }
 .dmgpop--crit { color: var(--brass-300); font-size: var(--fs-2xl); }
 
