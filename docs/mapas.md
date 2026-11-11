@@ -53,3 +53,6 @@ npm run maps:build -w @tankclone/core
 Ele lê cada pasta, confere (tamanhos, % de ar/destrutível/indestrutível, bordas cinza/vermelho suave, chão sob os spawns), grava o `mask.bin` e o `index.json`. **✓** = ok, **!** = aviso (funciona, mas confira), **✗** = erro (o mapa não entra). Reinicie o servidor e o mapa aparece na lista de salas.
 
 `npm run maps:generate -w @tankclone/core` recria os 5 provisórios que **ainda não existirem** (`-- --force` sobrescreve; cuidado, apaga a sua arte).
+
+## Trava de segurança
+O `npm test` compara cada `mask.png` com o `mask.bin`. Se você trocou a máscara e esqueceu o comando acima, o teste falha com a mensagem **"rode npm run maps:build"**. Sempre faça commit do `mask.bin` junto com o `mask.png`.
