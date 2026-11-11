@@ -1,220 +1,228 @@
 # tankclone — documento de desenvolvimento
 
-Documento de handoff: descreve o objetivo, o que já foi feito, as decisões, as suposições em aberto e o plano
-detalhado das próximas fases. Escrito para que outro agente (ou pessoa) continue sem depender do histórico da conversa.
-Idioma do projeto e da comunicação com o dono: **português (pt-BR)**.
+Documento de handoff: objetivo, decisões do dono, estado atual e plano das próximas fases. Escrito para que outro agente
+(ou pessoa) continue sem depender do histórico da conversa. Idioma do projeto e da comunicação com o dono: **português (pt-BR)**.
+
+Documentos relacionados:
+- `docs/pesquisa-mecanicas.md`: o que se sabe do original (itens, armas, dano, turnos, pérolas), com fontes e confiança.
+- `docs/decisoes.md`: respostas do dono no refinamento de 2026-11-11 (fonte da verdade para escopo).
 
 ---
 
 ## 1. Objetivo e restrições
 
-Clone **jogável por ~20 pessoas** do jogo **DDTank** (artilharia por turnos 2D, estilo Gunbound), com o servidor
-hospedado no PC do dono do projeto.
+Jogo de artilharia 2D por turnos **com a jogabilidade o mais próxima possível do DDTank**, para ~20 amigos, com o
+servidor rodando no PC do dono.
 
-- **Idêntico ao original:** jogabilidade (mira por ângulo + força, vento, terreno destrutível, turnos) e o **cálculo de
-  stats** (ATK, dano, armadura, DEF, agilidade, stamina/HP, sorte, etc.).
-- **Original / diferente:** toda a arte, nomes, sons, UI. Será feita pelo dono e pelos amigos (só eles fazem arte; **só o dono programa**).
-- Fidelidade **não precisa ser exata**: "mesmos stats e sensação de jogo", não bit-a-bit.
-- **Não copiar código vazado do DDTank** (o código do servidor circula em fóruns/GitHub). É propriedade da 7Road;
-  copiar para o clone é violação de direitos autorais. Fórmulas/números vindos de wikis, guias de jogadores e
-  medições são aceitáveis; trechos de código vazado não. Se o dono sugerir usar o código vazado, avisar do risco e
-  preferir reimplementar a partir de descrições.
-- Não usar nome, logo, sprites, sons ou textos do DDTank no produto.
+- **Igual ao original:** mira por ângulo + força, vento, terreno destrutível, turnos por delay, energia, itens de turno,
+  fúria/especial, stats e fórmula de dano. Fidelidade = "mesma sensação e mesmos números aproximados", não bit a bit.
+- **Próprio:** nome do jogo, arte, sons, UI e nomes de armas/pets/itens. Nomes do original podem ser usados como
+  **placeholder interno** durante o desenvolvimento, mas são trocados antes de abrir para os amigos.
+- **Não copiar código vazado do DDTank** (circula em fóruns/GitHub; é propriedade da 7Road). Fórmulas e números vindos de
+  guias de jogadores, wikis e medições são aceitáveis. Se alguém sugerir usar código vazado, avisar do risco e reimplementar.
+- Só o dono programa; os amigos fazem arte.
 
-## 2. Estado atual (o que existe e funciona)
+## 2. Escopo da primeira build ("build PvP")
+
+| Entra | Fica para depois |
+|---|---|
+| PvP 1v1 e times até 4v4; várias salas ao mesmo tempo | PvE / instâncias (nível 10) |
+| 3 armas: inspiradas no Canhão Arco-Íris (200), Quebra-Tijolos (200) e Fogo Intenso (205) | armas secundárias (só importam no PvE) |
+| Itens de turno nas teclas **1–8** e **F** (voar) | **Q** (escudo / dom de anjo), **Z/X/C** (C = invisibilidade) |
+| Barra de fúria + especial de cada arma | cartas (nível 30, vindas das instâncias) |
+| Equipamentos com **stats fixos**, todos liberados | forja (fortalecer, compor, gemas), loja e economia |
+| Contas (apelido + senha), XP e nível até **30**; tutorial do 1 ao 9 | hazards de mapa que aumentam o vento |
+| 5 mapas provisórios: 2 com chão indestrutível, 3 tatuzáveis | mapas definitivos |
+| Boneco placeholder (código pronto para sprites em camadas) | arte final em camadas |
+| Depois do PvP estável: **pérolas** (nível 18) e **pets** (nível 25; formiga e plantinha, 1 passiva + 2 skills) | demais pets |
+
+O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equipamento e funções da UI aos poucos),
+10 instâncias, 18 pérolas, 25 pets, 30 cartas.
+
+## 3. Regras de jogo definidas (valores iniciais, todos em arquivo de dados)
+
+| Regra | Valor | Fonte |
+|---|---|---|
+| Escala | tela de 1000 px; 1 distância = 100 px; distância 10 = 1 tela | decisão (resolução do original desconhecida) |
+| Vento | 0 a 10, uma casa decimal; sorteio favorece ≤ 5; o mapa pode modificar | dono |
+| Força | barra 0–100 de **segurar e soltar** (enche com o tempo) | gênero |
+| Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50); relativo à inclinação do chão (a confirmar) | pesquisa |
+| Tempo de turno | 10 s; 5 s quando todos estão acima de um limiar de FC | dono |
+| Ordem de turno | **delay acumulado**: começa quem tem mais agilidade; depois joga quem tem menor delay; mover/itens somam delay; agilidade reduz o delay ganho; passar a vez soma pouco | pesquisa |
+| Energia | 220 por turno (≈ 2,2 distâncias andando, ~1 por px); volta cheia no próximo turno; agilidade/equips aumentam | dono |
+| Itens 1–8, F | +2 tiros, triplo, +1 tiro, +50/40/30/20/10% de dano, voar; custos 40/40/40/40/33/25/20/20/80 | pesquisa (confiança média) |
+| Combos de aceitação | "124" (tatuzar) e "1446" (dano) cabem em 220 de energia e sobra para andar | dono |
+| Fúria | 0–100; enche ao atacar, ao passar a vez e ao levar dano; cheia libera o especial | dono |
+| Terreno | 3 estados: ar, chão destrutível, chão indestrutível | dono (mapas) |
+| Morte | HP 0 ou cair para fora do mapa | gênero |
+
+## 4. Estado atual (2026-11-11)
 
 | Item | Estado |
 |---|---|
-| Monorepo TypeScript (npm workspaces) | pronto |
-| `core`: física do projétil (gravidade + arrasto linear + vento) | pronto, **calibrada** contra tabelas da comunidade |
-| `core`: terreno destrutível (máscara de bits + crateras circulares) | pronto |
-| `core`: ferramenta de calibração (ajuste por Nelder-Mead, erro em pontos de força) | pronto |
-| `core`: testes (vitest) | **23 passando**, typecheck limpo |
-| `client`: visualizador web de trajetória (Vite + canvas 2D) | pronto, testado no navegador |
-| Calibração do **vento** | **NÃO feita** (`windAccel: 8` é chute) |
-| Stats / dano / defesa / agilidade | **não começado** |
-| Turnos / partida / HP / queda de personagens | **não começado** |
-| Servidor (rede, salas, contas) | **não começado** |
-| Arte, UI, som | **não começado** |
-| Git | **não inicializado** (`git init` ainda não rodou) |
+| Monorepo TypeScript (npm workspaces), git, GitHub privado `epoeck/tankclone` | pronto |
+| `core`: física do projétil (gravidade + arrasto linear + vento), **calibrada** contra as tabelas da comunidade | pronto |
+| `core`: terreno destrutível (máscara 1 byte/pixel, crateras circulares) | pronto, mas só 2 estados |
+| `core`: calibração (Nelder-Mead, erro em pontos de força) | pronto |
+| `core`: testes (vitest) | 23 passando, typecheck limpo |
+| `client`: visualizador de trajetória (Vite + canvas) | pronto |
+| Vento calibrado | **não** (`windAccel: 8` é chute; ver Fase A) |
+| Colisão do projétil com jogadores | **não** |
+| Turnos, energia, itens, fúria, armas, HP, queda | não começado |
+| Stats e dano | não começado |
+| Servidor, salas, contas | não começado |
+| Arte, UI, som | não começado |
 
-## 3. Localização, requisitos e comandos
+## 5. Localização, requisitos e comandos
 
-- Pasta: `/run/media/bazzite/5c30424f-a21c-4799-94ee-89c1ba8949f0/tankclone` (SSD SATA secundário do dono, ext4,
-  ~74 GB livres). O NVMe do sistema está quase cheio e instável sob carga pesada — **mantenha I/O pesado no SATA**.
-- Máquina: Linux (Bazzite/Fedora Atomic), Node v24, npm 11.
-- Instalar: `npm install` na raiz. (O npm avisa que o script de instalação do `esbuild` não foi aprovado; tudo roda sem isso.)
+- Pasta: `/run/media/bazzite/5c30424f-a21c-4799-94ee-89c1ba8949f0/tankclone` (SSD SATA, ext4). O NVMe do sistema está
+  quase cheio e instável sob carga — **mantenha I/O pesado no SATA**.
+- Remoto: `https://github.com/epoeck/tankclone` (privado), branch `main`.
+- Máquina: Linux (Bazzite/Fedora Atomic), Node v24, npm 11. Mapas provisórios: ArtCraft (guias) + Qwen Image (ComfyUI local).
 
 ```bash
+npm install                                       # na raiz (o aviso do script do esbuild pode ser ignorado)
 npm test                                          # testes do core (vitest)
-npm run typecheck -w @tankclone/core              # tsc --noEmit
+npm run typecheck -w @tankclone/core
 npm run typecheck -w @tankclone/client
-npm run calibrate -w @tankclone/core              # reajusta a física contra as tabelas e imprime os erros
-npm run dev -w @tankclone/client                  # visualizador em http://localhost:5173 (também na rede, --host)
-npm run build -w @tankclone/client                # build de produção (Vite)
+npm run calibrate -w @tankclone/core              # reajusta a física contra as tabelas
+npm run dev -w @tankclone/client                  # visualizador em http://localhost:5173
+npm run build -w @tankclone/client
 ```
 
-## 4. Estrutura do repositório
+## 6. Estrutura do repositório
 
 ```
 tankclone/
-  package.json              workspaces: packages/*; script "test" delega ao core
+  package.json              workspaces: packages/*; "test" delega ao core
   tsconfig.base.json        strict, noUncheckedIndexedAccess, resolveJsonModule, moduleResolution Bundler
   DESENVOLVIMENTO.md        este arquivo
+  docs/                     pesquisa-mecanicas.md, decisoes.md
   packages/
-    core/                   REGRAS PURAS (sem DOM, sem rede, sem Math.random). Roda igual no cliente e no servidor.
+    core/                   REGRAS PURAS (sem DOM, rede ou Math.random). Roda igual no cliente e no servidor.
       src/physics.ts        PhysicsConfig, DEFAULT_PHYSICS, MUZZLE_HEIGHT, launch(), step(), simulateShot()
-      src/terrain.ts        classe Terrain (máscara 1 byte/pixel)
-      src/calibration.ts    predictDx, evaluate, loss, samplesFromTables, fitPhysics, requiredPower, powerScalingCheck
-      src/index.ts          reexporta tudo
-      calibration/ddtank-tables.json   tabelas de tiro da comunidade (dados de verdade para o ajuste)
-      scripts/calibrate.ts  CLI de calibração (roda com tsx)
-      test/*.test.ts        physics, terrain, calibration
-    client/                 visualizador (hoje); virará o cliente do jogo
-      index.html, src/main.ts, vite.config.ts
+      src/terrain.ts        classe Terrain
+      src/calibration.ts    predictDx, evaluate, loss, samplesFromTables, fitPhysics, requiredPower
+      calibration/ddtank-tables.json   tabelas de tiro da comunidade (renomear antes de publicar)
+      scripts/calibrate.ts
+      test/*.test.ts
+    client/                 visualizador hoje; vira o cliente do jogo
 ```
 
-Regra de arquitetura: **nada de DOM, rede, tempo real ou aleatoriedade não-semeada em `core`**. O servidor é
-autoritativo e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`), para que ambos cheguem ao mesmo resultado.
+Regra de arquitetura: **nada de DOM, rede, tempo real ou aleatoriedade não semeada em `core`**. O servidor é autoritativo
+e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 
-## 5. Convenções do `core`
+## 7. Convenções do `core`
 
-- Unidades: **pixels e segundos**. Eixo **Y cresce para baixo** (como na tela).
-- Ângulo em graus: `0° = direita`, `90° = para cima`. `facing: 1 | -1` espelha o eixo X (quem mira para a esquerda).
-- Força (`power`): 0–100 (barra do jogo). Velocidade inicial = `power * speedPerPower`.
-- Vento: número com sinal; positivo = sopra para a direita. Aceleração horizontal = `wind * windAccel`.
-- Integração: Euler semi-implícito (velocidade primeiro, depois posição), passo fixo.
-  `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
-- `simulateShot(shot, isSolid, cfg)` detecta colisão **no fim de cada passo** (sem interpolação sub-passo; a velocidade
-  máxima ≈ 1700 px/s → ~28 px por passo). **Melhoria futura:** colisão contínua para evitar atravessar terreno fino.
-- `Terrain`: laterais e fundo contam como sólidos; acima do topo é vazio. `carveCircle` é determinístico
-  (mesma sequência de crateras → mesma máscara). `fromHeightFn` e `fromMask` criam o terreno; este último serve para mapas
-  desenhados (PNG com alfa = sólido).
+- Unidades: **pixels e segundos**. Eixo **Y para baixo**.
+- Ângulo em graus: `0° = direita`, `90° = para cima`; `facing: 1 | -1` espelha o eixo X.
+- Força 0–100; velocidade inicial = `power * speedPerPower`.
+- Vento com sinal (positivo = para a direita); aceleração = `wind * windAccel`.
+- Integração Euler semi-implícita, passo fixo: `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
+- `simulateShot` testa colisão só no fim de cada passo (até ~28 px por passo) → colisão contínua está na Fase A.
+- `Terrain`: laterais e fundo sólidos, acima do topo vazio; `carveCircle` determinístico; `fromHeightFn` e `fromMask`.
 
-## 6. Calibração da física (parte mais importante até agora)
+## 8. Calibração da física
 
-### 6.1 Dados de entrada
-O dono forneceu (em imagem) as **tabelas de tiro da comunidade DDTank**: para os ângulos **20°, 30°, 50° e 65°**, a
-**força necessária para cada distância 1..20**, em chão plano, sem vento. Transcritas em
-`packages/core/calibration/ddtank-tables.json`. Também forneceu as regras de uso:
+### 8.1 Dados
+Tabelas da comunidade: força necessária por distância 1..20 a 20°, 30°, 50° e 65°, chão plano, sem vento
+(`packages/core/calibration/ddtank-tables.json`). Regras de uso:
+- Vento: ângulo ± **vento × 2** a 50° e 65° (a favor +, contra −); a 30° "(+)(−)", provavelmente × 1.
+- **Tiro médio**: força ≈ 62–63, ângulo = 90 − distância × 2 (± vento × 2).
+- **Tiro alto**: força 95, ângulo = 90 − distância (± vento × 2).
 
-- Vento: ângulo final = ângulo base **±** correção (vento a favor +, contra −). Correção = **força do vento × 2** para
-  50° e 65°; para 30° a tabela diz só "(+)(−)" (provavelmente × 1 — **não confirmado**). Para 20° não há correção listada.
-- **Tiro médio / "semifull"**: força **sempre ≈ 60** (a segunda imagem diz 62–65, tipicamente 62–63, dependendo de
-  servidor/versão); **ângulo = 90 − distância × 2** (± vento × 2).
-- **Tiro alto**: força **sempre 95**; **ângulo = 90 − distância** (± vento × 2).
-- **Unidade de distância:** no DDTank a distância é contada **em telas**: "distância 10 = uma tela inteira"
-  (o dono disse "1 minimapa inteiro"), com 0 exatamente onde o jogador que atira está.
+### 8.2 Resultado
+Gravidade + arrasto linear: erro ±1 ponto de força na maioria das distâncias, pior caso ~2,8 (distâncias 1–4 a 20° e 65°).
+Valores atuais: `gravity 507.32`, `speedPerPower 16.748`, `drag 0.1416`, `MUZZLE_HEIGHT 30.18` px (restrição para os artistas:
+o projétil sai ~30 px acima dos pés). Descartados: comprimento de cano, expoente de força ≠ 1.
 
-### 6.2 Suposição NÃO confirmada (importante)
-`unitPx = 100` — assumi tela de **1000 px / 10**. Se a tela do original tem outra largura, edite `unitPx` em
-`ddtank-tables.json` e rode `npm run calibrate -w @tankclone/core`; depois copie os valores ajustados para
-`DEFAULT_PHYSICS`/`MUZZLE_HEIGHT` em `physics.ts`. **Perguntar ao dono** (ele ainda não respondeu).
+### 8.3 Achado da avaliação de 2026-11-11
+Simulando a regra "ângulo ± vento × 2" com P = 95 e P = 62, o erro médio da regra é mínimo com `windAccel ≈ 15–17`
+(com 8, o tiro alto erra ~2 distâncias). Isso assume que "vento 1" do original = 1 unidade nossa, na escala 0–10.
 
-### 6.3 O que se descobriu
-- Parábola ideal (sem arrasto) dá ~8,5% de erro RMS no alcance → não reproduz as tabelas.
-- **Gravidade + arrasto linear do ar** → ~6,6% RMS no alcance, mas isso equivale a **±1 ponto de força** na maioria
-  dos pontos (pior caso ~2,8, em distâncias 1–4 a 20° e 65°). A resolução das próprias tabelas (feitas à mão) é ~1 ponto.
-- Testado e **descartado** (não melhorou): comprimento de cano (ponto de saída dependente do ângulo) e expoente de força ≠ 1.
-- Com arrasto, **gravidade e velocidade deixam de ser redundantes** → o ajuste libera 4 parâmetros:
-  `speedPerPower`, `gravity`, `drag`, `muzzleHeight`.
-- Validação fora do ajuste: tiro alto (P=95, ângulo = 90 − d) cai a ≤ 0,7 unidade do esperado. Tiro médio (P=60) bate
-  bem em curto alcance e piora em longo (provavelmente P real ≈ 62–63).
+### 8.4 Regressão
+`test/calibration.test.ts`: erro ≤ 3 pontos de força por ângulo (mediana ≤ 1,2) e tiro alto a ≤ 0,7 unidade. Não afrouxar.
 
-### 6.4 Valores atuais (em `physics.ts`)
-`gravity 507.32`, `speedPerPower 16.748`, `drag 0.1416`, `MUZZLE_HEIGHT 30.18` px, `windAccel 8` (**chute, sem calibrar**).
-`muzzleHeight` = altura do ponto de saída do projétil acima do chão do tanque → **restrição para os artistas**
-(o cano do sprite deve soltar o projétil ~30 px acima dos pés, na escala de tela de 1000 px).
-
-### 6.5 Testes de regressão (não afrouxe sem motivo)
-`test/calibration.test.ts` exige, por ângulo, erro ≤ 3 pontos de força (mediana ≤ 1,2) contra as tabelas e tiro alto a
-≤ 0,7 unidade. Se mudar a física, rode `npm run calibrate` e confirme que os testes seguem passando.
-
-### 6.6 Como recalibrar / estender
-Para novos dados (ex.: medições com vento ou outras forças), adicione amostras e use `fitPhysics`/`evaluate`
-(`ShotSample` aceita `wind` e `dy`). `requiredPower(angle, dx, cfg, muzzleHeight)` inverte o modelo (bisseção).
-Nota: a função de perda é não-suave (discretização do passo), então o Nelder-Mead pode cair em ótimos locais
-levemente diferentes; o script já tenta 3 escalas de partida.
-
-## 7. Visualizador (`packages/client`)
-
-Canvas 2D, mapa de 2200×600 (20 unidades = 2000 px; o canvas encolhe por CSS). Terreno via `Terrain` (cache em canvas
-offscreen). Controles: ângulo, força (passo 0,1), vento, direção, raio da cratera, sliders de física (gravidade,
-velocidade/força, arrasto, efeito do vento), "Disparar" (espaço) que abre cratera no impacto, "Terreno plano
-(p/ tabelas)" e "Terreno ondulado". Clicar no mapa move o atirador. Mostra impacto, distância em **unidades** e px,
-altura máxima e tempo. Serve para conferir as tabelas (ex.: 50° com força 48,3 em terreno plano → ≈ 10 un) e para
-ajustar o "feeling". Os sliders **não persistem**: valores bons devem ser copiados para `DEFAULT_PHYSICS`.
-
-## 8. Decisões de arquitetura (e por quê)
+## 9. Decisões de arquitetura
 
 | Decisão | Motivo |
 |---|---|
-| Cliente **web** (TypeScript + canvas; Phaser 3 planejado quando houver sprites) | Amigos só abrem uma URL; sem instalação. |
-| Servidor **Node + TypeScript**, WebSocket (`ws` ou Colyseus), **SQLite** | Mesmo código de `core` no cliente e no servidor; 20 jogadores não justificam mais. |
-| Servidor **autoritativo** | Cliente envia só intenções (ângulo, força, tiro, mover); servidor simula e devolve o resultado. Evita trapaça e dessincronização. |
-| Simulação **determinística**, passo fixo | Cliente anima o mesmo resultado que o servidor calculou. |
-| Fórmulas de stats em **arquivo de dados** (JSON/TS) | Ajustar o balanço sem recompilar e sem mexer em arte. |
-| Arte desacoplada por **manifesto de assets** (hitbox, âncoras, animações) | Amigos trocam arte sem tocar no código. |
-| Acesso: **Tailscale** (ou Cloudflare Tunnel) | Sem abrir portas no roteador; funciona com CGNAT. Ainda não montado. |
+| Cliente **web** (TypeScript + canvas; Phaser 3 quando houver sprites) | amigos só abrem uma URL |
+| Servidor **Node + TypeScript**, WebSocket (`ws` ou Colyseus), **SQLite** | mesmo `core` dos dois lados; 20 jogadores não pedem mais |
+| Servidor **autoritativo**, simulação **determinística** com semente | evita trapaça e dessincronização |
+| Regras e números em **arquivos de dados** (armas, itens, fórmulas, níveis) | ajustar balanço sem recompilar |
+| Arte por **manifesto de assets**; personagem em **camadas** (cabelo, rosto, roupa, chapéu, arma) | trocar arte sem tocar no código |
+| Mapa = imagem de arte + **máscara PNG** (preto = ar, branco = destrutível, cinza = indestrutível) | colisão exata e independente da arte; a máscara pode ser o guia do ArtCraft |
+| Contas com apelido + senha (hash), no SQLite | sem serviço externo |
+| Acesso pela internet via **Cloudflare Tunnel** | link público, sem instalar nada, funciona com CGNAT |
 
-## 9. Plano de desenvolvimento (próximas fases)
+## 10. Plano de desenvolvimento
 
-Cada fase deve terminar com testes automáticos no `core` e, quando fizer sentido, algo verificável no visualizador.
+Cada fase termina com testes no `core` e, quando fizer sentido, algo jogável/visível no cliente.
+Ordem pensada para ter **PvP jogável o quanto antes**.
 
-### Fase A — Fechar a calibração do tiro (curto)
-1. Confirmar com o dono a escala `unitPx` (tela do original) — §6.2.
-2. **Vento**: descobrir a escala do vento no original (que valores assume, ex.: 0–5?). Usando a regra "ângulo ± vento×2"
-   (50°/65°), calibrar `windAccel` para que a correção de ângulo da tabela reproduza o alcance sem vento. Criar amostras
-   com `wind != 0` e estender o ajuste a `windAccel`. Possível que o vento também deva ser modelado por arma (fator).
-3. Testar força do tiro médio entre 60 e 65 e ajustar a recomendação (§6.3).
-4. Opcional: colisão contínua em `simulateShot` (sub-passo / varredura de segmento) para não atravessar terreno fino.
+### Fase A — Fechar o tiro e o terreno
+1. Vento: escala 0–10; calibrar `windAccel` para que "ângulo ± vento × 2" valha (ponto de partida 15–17); amostras com vento
+   no ajuste; teste de regressão da regra.
+2. Tiro médio: confirmar força 62–63 no modelo e registrar.
+3. Colisão contínua em `simulateShot` (varredura do segmento entre passos).
+4. `Terrain` com 3 estados (ar / destrutível / indestrutível); `fromMask` lê a máscara em tons de cinza; cratera não apaga indestrutível.
+5. Colisão do projétil com jogadores (hitbox retangular) além do terreno.
+6. Faixa de ângulo por arma; ângulo relativo à inclinação do chão sob o personagem (confirmar com o dono).
 
-### Fase B — Stats e dano (`core/stats.ts`, a parte "idêntica" mais sensível)
-1. **Pesquisar fórmulas** em wikis, guias de jogadores, calculadoras de fãs e fóruns (EN/PT/ZH; o material mais detalhado
-   costuma estar em chinês). **Não copiar código vazado.** Documentar cada fonte e confiança em `docs/stats-sources.md`.
-2. Modelar atributos: HP/vitalidade, ATK, DEF (armadura), AGI (agilidade → ordem de turno / delay), sorte (crítico),
-   stamina. Definir como cada stat entra na fórmula de dano, redução por defesa, crítico, esquiva, dano por distância do
-   centro da explosão (queda radial), dano de queda.
-3. Implementar como **funções puras** + **tabela de dados** ajustável; cobrir com testes baseados em casos
-   conhecidos (stats → dano esperado) vindos das fontes. Como o dono aceita fidelidade aproximada, definir uma
-   tolerância explícita por caso.
-4. Exibir no visualizador (painel de teste: escolher stats de atacante/alvo, ver dano).
+### Fase B — Partida local (`core/match.ts`)
+Máquina de estados determinística, com entrada = intenções por turno e saída = eventos para animar.
+1. Personagem no terreno: posição, inclinação, andar gastando energia, escalar rampas até um limite, **queda** quando o chão some,
+   morte ao sair do mapa.
+2. Turnos por **delay** (ordem inicial por agilidade), tempo de 10 s / 5 s, passar a vez.
+3. Energia 220; itens 1–8 e F com custo, combinação e efeitos (+tiros, triplo, % de dano somado, voar).
+   Testes de aceitação: combos "124" e "1446".
+4. Fúria (atacar, passar, levar dano) e especial por arma.
+5. 3 armas como dados: dano base, faixa de ângulo, raio da cratera, nº de projéteis do especial, fator de vento.
+   Especiais e raios são placeholders até o dono ajustar jogando.
+6. Vento semeado por turno, HP, fim de partida (time eliminado), limite de turnos opcional.
+7. Cliente: força de **segurar e soltar**, régua de distância, câmera que acompanha o tiro + minimapa, barra de itens nas teclas originais.
 
-### Fase C — Partida local (`core/match.ts`)
-Máquina de estados determinística: jogadores/tanques com posição no terreno e **física de queda** quando o chão
-some; **turnos** com ordem por agilidade, tempo limite, movimento limitado, "delay" por ação; vento aleatório **semeado**
-por turno; aplicação de dano e fim de partida. Entrada = lista de intenções por turno; saída = eventos (para animar).
-Testes: partidas simuladas com semente fixa devem reproduzir exatamente os mesmos eventos.
+### Fase C — Stats e dano (`core/stats.ts`)
+1. Atributos: ATK, DEF, AGI, Sorte, HP, armadura, dano. Equipamentos com stats fixos (sem forja).
+2. Fórmula de dano de `docs/pesquisa-mecanicas.md` §3 (ATK/10 somado ao dano base; armadura e DEF/25; redução A/(A+100);
+   crítico Sorte/20 % e bônus Sorte/25), queda radial e dano de queda como placeholders. Casos de teste com tolerância explícita.
+3. FC (força de combate), usada no limiar do turno de 5 s.
+4. Painel de teste no cliente: stats de atacante e alvo → dano.
 
-### Fase D — Servidor e multiplayer 1×1
-Pacote `packages/server`: WebSocket, salas, matchmaking básico, validação de intenções, execução autoritativa do
-`core`, envio de eventos. Cliente passa a enviar intenções e animar eventos. Primeiro 1×1, depois 2v2–4v4.
-Acesso dos amigos via Tailscale/Cloudflare Tunnel; rodar o servidor como serviço (systemd/Podman) com reinício automático.
+### Fase D — Servidor e multiplayer
+1. `packages/server`: WebSocket, várias salas simultâneas (até 8 jogadores por sala), 1v1 → 4v4, validação de intenções,
+   execução autoritativa do `core`, envio de eventos, reconexão.
+2. Contas (apelido + senha com hash), SQLite, XP por partida, nível até 30, desbloqueios por nível (tutorial 1–9).
+3. Operação: serviço com reinício automático (systemd/Podman), Cloudflare Tunnel, backup do banco, teste com 20 conectados.
 
-### Fase E — Conteúdo
-Mais mapas (PNG com alfa → `Terrain.fromMask`), armas (raio/dano/efeitos próprios, fator de vento), itens/skills,
-modos de jogo. Escopo mínimo sugerido: 3 mapas e ~10 armas.
+### Fase E — Conteúdo da build PvP
+5 mapas provisórios (2 indestrutíveis, 3 tatuzáveis) via máscara; lobby, inventário/equipar, tela de partida; sons provisórios;
+boneco placeholder sobre o sistema de camadas. Trocar nomes do original por nomes próprios antes de abrir para os amigos.
 
-### Fase F — Arte, UI e som
-Trocar placeholders pela arte dos amigos via manifesto de assets; UI de lobby/partida; sons. Respeitar a restrição
-`MUZZLE_HEIGHT` e a escala de tela de 1000 px (a confirmar).
+### Fase F — Pérolas (nível 18)
+Ataque (ativas ao atirar), defesa (ativas ao levar dano), atributo (passivas). Antes de começar: perguntar ao dono slots,
+níveis, síntese e números da versão de 2022.
 
-### Fase G — Meta-jogo e operação
-Contas (SQLite), nível/equipamento/inventário, ranking, backups periódicos do banco, logs, teste com 20 conectados.
+### Fase G — Pets (nível 25)
+Formiga e plantinha, copiando as mecânicas do original como placeholder: 1 passiva + 2 skills, uso em partida.
 
-## 10. Riscos e pontos de atenção
+### Depois da primeira build
+PvE/instâncias (nível 10) com armas secundárias e cartas (nível 30); Q (escudo/dom de anjo) e Z/X/C (C = invisibilidade);
+forja (fortalecer +1..+12 com 12%/nível no dano base, compor, gemas); loja e economia; hazards de vento; mapas e arte definitivos.
 
-1. **Fidelidade das fórmulas de dano/stats** é o maior risco: não há documentação oficial. Mitigar com várias fontes,
-   tabelas de casos e tolerância explícita.
-2. **"Feeling" da física:** pequenas mudanças em gravidade/arrasto/vento/passo mudam muito o jogo — sempre rodar os testes
-   de regressão e conferir no visualizador.
-3. **Escopo:** o DDTank original tem dezenas de sistemas. Fechar a Fase B/C antes de expandir conteúdo.
-4. **Direitos autorais:** ver §1 (não usar código vazado; arte e nomes próprios).
-5. **Armazenamento:** NVMe do sistema cheio/instável; projeto e artefatos pesados ficam no SSD SATA.
+## 11. Perguntas em aberto para o dono
 
-## 11. Estado do ambiente neste momento
+1. O ângulo exibido muda quando o personagem está numa rampa?
+2. Depois do "1446", ainda dava para andar um pouco? (confirma os custos dos itens)
+3. Efeito do especial de cada uma das 3 armas.
+4. Pérolas de 2022: slots, níveis, síntese (na Fase F).
+5. Nome do jogo.
 
-- Servidor de desenvolvimento do Vite pode estar rodando em segundo plano em `http://localhost:5173`
-  (iniciado nesta sessão; se não estiver, `npm run dev -w @tankclone/client`).
-- Nenhum commit (sem repositório git). Sugestão: `git init` na raiz (o `.gitignore` já ignora `node_modules` e `dist`).
-- Memória do assistente com resumo do projeto: `tankclone-project.md` (diretório de memória do Claude Code do usuário).
+## 12. Riscos
+
+1. **Fórmulas de dano/stats** sem documentação oficial; fontes conflitam. Mitigar com dados configuráveis e testes com tolerância.
+2. **Feeling da física**: pequenas mudanças em gravidade/arrasto/vento mudam muito o jogo; rodar a regressão sempre.
+3. **Escopo**: o original tem dezenas de sistemas; não começar pérolas/pets antes do PvP estável.
+4. **Direitos autorais**: ver §1.
+5. **Armazenamento**: NVMe instável; projeto no SATA e backup no GitHub.

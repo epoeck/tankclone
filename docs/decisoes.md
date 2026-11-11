@@ -1,0 +1,41 @@
+# Respostas do refinamento do plano (2026-11-11)
+
+1. Modos na v1: 1v1 e times até 4v4 (sem PvE).
+2. Época de referência: entre a clássica e a atual. Sistemas desejados:
+   - Todos os equipamentos (inclusive armas secundárias).
+   - Pets: 1 passiva + 2 skills por pet.
+   - Pérolas (sistema como era em ~2022).
+   - Cartas.
+   - Cartas e armas secundárias só importam no PvE (futuro); NÃO entram na build inicial PvP.
+3. Progressão na build PvP inicial: tudo liberado (equips, pets, pérolas); loja/economia entra numa fase posterior.
+4. Vento: escala 0 a 10 (assumido com uma casa decimal), raramente passa de 5; sorteio deve favorecer valores baixos. Futuro: hazards de mapa que aumentam o vento (deixar o vento como modificável por evento/mapa).
+5. Resolução do original: desconhecida. Decisão: tela própria de 1000 px de largura (1 distância = 100 px), mantendo as proporções das tabelas.
+6. Itens de partida na build PvP: só o padrão inicial nas teclas 1–8 e F (Izzy lembra das teclas, não dos nomes). Q (escudo/"dom de anjo") fica vazio por enquanto. Z/X/C ficam para depois. Mapear quais itens são 1–8 a partir de pesquisa e confirmar com Izzy.
+7. F = voar (entra na build PvP). C = invisibilidade (Izzy usava em C; fica para depois, junto com Z/X). Manter as teclas originais por memória muscular.
+8. Movimento/energia: energia padrão 220 ≈ andar 2,2 distâncias (≈1 energia por px na tela de 1000 px). Em 2022, com muita agilidade e equips altos, andava 3–5 distâncias. Ou seja, agilidade/equip aumentam a energia. Itens também gastam energia (custos não lembrados → pesquisar).
+   Combos mais usados pelo Izzy: "124" para tatuzar (cavar) e "1446" para dano. Usar como teste de aceitação: esses combos devem caber na energia padrão e ter o efeito esperado.
+   Tempo de turno: não respondido → padrão 20 s (confirmar).
+9. Tempo de turno PvP: 10 s; cai para 5 s quando os jogadores passam de certo FC (força de combate, "veteranos"). O limiar de FC é configurável.
+10. Barra de fúria: entra na build PvP. Enche ao atacar, ao passar o turno e ao sofrer dano. Libera o especial da arma.
+11. Armas na build PvP (mínimo 3), cada uma simulando o comportamento de uma arma do original, com nome/visual próprios:
+   - "Canhão Arco-Íris" — dano base 200
+   - "Quebra-Tijolos" — dano base 200
+   - "Fogo Intenso" — dano base 205
+   Pesquisar em wikis/fóruns: raio, especial, padrão de tiro, fator de vento de cada uma.
+12. Pets: só 2 na primeira build — "formiga" e "plantinha" — copiando mecânicas do original como placeholder (nomes/visual serão trocados depois). Pets só começam a ser feitos DEPOIS do PvP e do básico funcionando. Pets liberados a partir do nível 25.
+13. Nível máximo da primeira build: 30. (Implica sistema de nível/XP na primeira build — conflita parcialmente com "tudo liberado"; ver pergunta seguinte.)
+14. Nível serve SÓ para liberar sistemas (não dá stats):
+   - Nv 1–9: tutorial; libera slots de equipamento e funções da UI gradualmente.
+   - Nv 10: instâncias/PvE (WIP).
+   - Nv 18: pérolas.
+   - Nv 25: pets.
+   - Nv 30 (máx. da 1ª build): cartas (obtidas nas instâncias).
+   Implica contas persistentes com XP/nível desde a build PvP.
+15. Contas: apelido + senha, guardadas no SQLite do PC do Izzy (sem serviço externo).
+16. Acesso dos amigos: link público via Cloudflare Tunnel (só navegador, nada para instalar).
+17. Mapas da primeira build: 5 (2 com chão indestrutível, 3 tatuzáveis/destrutíveis). Provisórios: guias feitos no ArtCraft + imagens geradas no Qwen Image pelo workflow local (ComfyUI no PC). Mapas definitivos vêm depois.
+   Impacto técnico: Terrain precisa de uma 2ª camada (pixels indestrutíveis) — hoje só há sólido/vazio.
+18. Formato dos mapas: imagem de arte + máscara PNG separada (preto = ar, branco = chão destrutível, cinza = indestrutível). A máscara pode ser o próprio guia do ArtCraft.
+19. Visual do personagem: boneco placeholder na primeira build, mas código já preparado para sprites em camadas (cabelo, rosto, roupa, chapéu, arma) quando a arte chegar.
+20. Equipamentos na primeira build: stats fixos, sem forja (fortalecer/compor/gemas vêm depois).
+21. Backup: repositório privado no GitHub (Izzy cria o repo vazio; Claude envia os commits).
