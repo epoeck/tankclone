@@ -1,0 +1,9 @@
+{
+  "name": "@tankclone/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite --host", "build": "vite build", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@tankclone/core": "*" },
+  "devDependencies": { "typescript": "^5.6.0", "vite": "^5.4.0" }
+}

@@ -1,0 +1,10 @@
+{
+  "_comment": "Tabelas de tiro da comunidade DDTank: força necessária para atingir cada distância (em telas/10) em chão plano, sem vento, por ângulo. 'power' = intensidade da barra (0-100). unitPx = quantos pixels vale 1 unidade de distância (ASSUMIDO: tela de 1000 px / 10). 'muzzleHeight' é ajustado no fit.",
+  "unitPx": 100,
+  "tables": {
+    "20": [10,19,25,30,36,40,44,48,51,54,57,60,63,66,69,72,74,76,78,80],
+    "30": [14,20,24.7,28.7,32.3,35.7,38.8,41.8,44.7,47.5,50.2,52.8,55.3,57.9,60.3,62.7,65.7,67.5,69.8,72.1],
+    "50": [14.1,20.1,24.8,28.8,32.5,35.9,39.0,42.0,44.9,48.3,50.5,53.0,55.5,58.0,60.5,63.0,65.5,68.0,70.0,72.5],
+    "65": [13,21,26,31.5,37,41,44,48.5,53,56,58,61,64,67,70,73,76,79,82,85]
+  }
+}

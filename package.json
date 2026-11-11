@@ -1,0 +1,6 @@
+{
+  "name": "tankclone",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": { "test": "npm test -w @tankclone/core" }
+}
