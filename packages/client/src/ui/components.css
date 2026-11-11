@@ -201,13 +201,26 @@
 }
 .portrait--blue { background: radial-gradient(circle at 50% 35%, #9cc8ff, var(--team-blue)); }
 .portrait--red { background: radial-gradient(circle at 50% 35%, #ffb1a6, var(--team-red)); }
-.portrait .tank { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%) scale(.5); transform-origin: 50% 100%; }
+.portrait .char { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform: translate(-1px, 2px) scale(.6); }
 
-/* ---------- Tanque em camadas (placeholder do personagem) ---------- */
-.tank { position: relative; width: 120px; height: 96px; }
-.tank > img { position: absolute; inset: 0; width: 120px; height: 96px; }
-.tank > .tank__barrel { width: 72px; height: 24px; left: 52px; top: 34px; inset: auto; transform-origin: 8px 12px; transform: rotate(calc(var(--angle, 30deg) * -1)); }
-.tank--flip { transform: scaleX(-1); }
+/* ---------- Boneco em camadas ----------
+   Todas as camadas são 96×128 com os pés em (48,124), olhando para a direita.
+   --angle gira o braço + arma em torno do ombro (56,82). */
+.char { position: relative; width: 96px; height: 128px; transform-origin: 48px 124px; }
+.char > img { position: absolute; inset: 0; width: 96px; height: 128px; }
+.char__aim { position: absolute; left: 56px; top: 82px; width: 0; height: 0; transform: rotate(calc(var(--angle, 30deg) * -1)); }
+.char__arm { position: absolute; left: -8px; top: -10px; width: 48px; height: 20px; }
+.char__weapon { position: absolute; left: 24px; top: -15px; width: 53px; height: 26px; }
+.char--flip { scale: -1 1; }
+
+/* ---------- Seletores de aparência ---------- */
+.swatch { width: 40px; height: 40px; border-radius: 50%; border: var(--line) solid var(--ink); background: var(--c); cursor: pointer; box-shadow: var(--inset-shine), var(--drop-sm); }
+.swatch[aria-checked="true"] { outline: 3px solid var(--brass-300); outline-offset: 2px; }
+.pick { appearance: none; padding: 4px; border: var(--line) solid var(--ink); border-radius: var(--r-md); background: var(--navy-800); cursor: pointer; }
+.pick[aria-checked="true"] { background: var(--g-brass); }
+.pick .portrait { display: block; width: 72px; height: 72px; }
+.pick .portrait .char { transform: translate(-6px, 4px) scale(.82); }
+.swatch:focus-visible, .pick:focus-visible { outline: 3px solid var(--sky-300); outline-offset: 2px; }
 
 /* ---------- Mensagens de chat ---------- */
 .chat { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); padding: var(--gap-3); overflow: auto; }
