@@ -120,7 +120,7 @@ e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 - Vento com sinal (positivo = para a direita); aceleração = `wind * windAccel`.
 - Integração Euler semi-implícita, passo fixo: `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
 - `simulateShot` varre o segmento entre passos (≤ 1 px) → colisão contínua; aceita `hitboxes` de jogadores (`Hitbox`, `PLAYER_HITBOX` provisório 36×52) e ignora o atirador até o projétil sair da própria caixa. Retorna `hitKind` (`terrain`/`player`) e `targetId`.
-- `Terrain`: 3 estados (`AIR`/`DESTRUCTIBLE`/`INDESTRUCTIBLE`); laterais e fundo indestrutíveis, topo vazio; `carveCircle` só apaga destrutível; `fromMask` lê cinza (<64 ar, ≥192 destrutível, meio indestrutível); `slopeDeg` dá a inclinação do chão sob o personagem.
+- `Terrain`: 3 estados (`AIR`/`DESTRUCTIBLE`/`INDESTRUCTIBLE`); laterais e fundo indestrutíveis, topo vazio; `carveCircle` só apaga destrutível; `fromMask` lê RGBA (preto = ar, branco = destrutível, vermelho puro = indestrutível; classificação por canal, ver `terrain.ts`); `slopeDeg(x, feetY, facing)` dá a inclinação do chão sob o personagem.
 - `angle.ts`: faixa de ângulo por arma relativa ao corpo; `allowedAbsoluteRange`, `clampAbsoluteAngle`, `relativeAngle`. O ângulo usado no tiro e exibido é o absoluto.
 
 ## 8. Calibração da física
@@ -156,7 +156,7 @@ Simulando a regra "ângulo ± vento × 2" com P = 95 e P = 62, o erro médio da 
 | Servidor **autoritativo**, simulação **determinística** com semente | evita trapaça e dessincronização |
 | Regras e números em **arquivos de dados** (armas, itens, fórmulas, níveis) | ajustar balanço sem recompilar |
 | Arte por **manifesto de assets**; personagem em **camadas** (cabelo, rosto, roupa, chapéu, arma) | trocar arte sem tocar no código |
-| Mapa = imagem de arte + **máscara PNG** (preto = ar, branco = destrutível, cinza = indestrutível) | colisão exata e independente da arte; a máscara pode ser o guia do ArtCraft |
+| Mapa = imagem de arte + **máscara PNG** (RGB: preto = ar, branco = destrutível, **vermelho puro** = indestrutível) | colisão exata e independente da arte; a máscara pode ser o guia do ArtCraft (pintar o indestrutível em vermelho puro) |
 | Contas com apelido + senha (hash), no SQLite | sem serviço externo |
 | Acesso pela internet via **Cloudflare Tunnel** | link público, sem instalar nada, funciona com CGNAT |
 
@@ -170,7 +170,7 @@ Ordem pensada para ter **PvP jogável o quanto antes**.
    no ajuste; teste de regressão da regra.
 2. Tiro médio: confirmar força 62–63 no modelo e registrar.
 3. Colisão contínua em `simulateShot` (varredura do segmento entre passos).
-4. `Terrain` com 3 estados (ar / destrutível / indestrutível); `fromMask` lê a máscara em tons de cinza; cratera não apaga indestrutível.
+4. `Terrain` com 3 estados (ar / destrutível / indestrutível); `fromMask` lê a máscara RGBA; cratera não apaga indestrutível.
 5. Colisão do projétil com jogadores (hitbox retangular) além do terreno.
 6. Faixa de ângulo por arma, relativa ao corpo inclinado pela rampa; UI mostra o ângulo absoluto real.
 

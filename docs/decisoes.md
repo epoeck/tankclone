@@ -35,7 +35,7 @@
 16. Acesso dos amigos: link público via Cloudflare Tunnel (só navegador, nada para instalar).
 17. Mapas da primeira build: 5 (2 com chão indestrutível, 3 tatuzáveis/destrutíveis). Provisórios: guias feitos no ArtCraft + imagens geradas no Qwen Image pelo workflow local (ComfyUI no PC). Mapas definitivos vêm depois.
    Impacto técnico: Terrain precisa de uma 2ª camada (pixels indestrutíveis) — hoje só há sólido/vazio.
-18. Formato dos mapas: imagem de arte + máscara PNG separada (preto = ar, branco = chão destrutível, cinza = indestrutível). A máscara pode ser o próprio guia do ArtCraft.
+18. Formato dos mapas: imagem de arte + máscara PNG separada (preto = ar, branco = chão destrutível, vermelho puro (255,0,0) = indestrutível; o cinza da borda antisserrilhada nunca vira indestrutível, por isso não se usa cinza). A máscara pode ser o próprio guia do ArtCraft.
 19. Visual do personagem: boneco placeholder na primeira build, mas código já preparado para sprites em camadas (cabelo, rosto, roupa, chapéu, arma) quando a arte chegar.
 20. Equipamentos na primeira build: stats fixos, sem forja (fortalecer/compor/gemas vêm depois).
 21. Backup: repositório privado no GitHub (Izzy cria o repo vazio; Claude envia os commits).

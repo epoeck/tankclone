@@ -3,9 +3,10 @@ export const AIR = 0;
 export const DESTRUCTIBLE = 1;
 export const INDESTRUCTIBLE = 2;
 
-/** Limiares da máscara em tons de cinza: < 64 = ar (preto), >= 192 = destrutível (branco), no meio = indestrutível (cinza). */
-export const MASK_AIR_BELOW = 64;
-export const MASK_DESTRUCTIBLE_FROM = 192;
+/** Máscara RGB: vermelho puro = indestrutível (R−G >= 96 e R >= 128); senão luminância >= 128 = destrutível; escuro = ar. */
+export const MASK_RED_MIN = 128;
+export const MASK_RED_DOMINANCE = 96;
+export const MASK_LUMA_SOLID = 128;
 
 /**
  * Terreno: 1 byte por pixel com 3 estados (ar / chão destrutível / chão indestrutível).
@@ -34,15 +35,18 @@ export class Terrain {
   }
 
   /**
-   * Cria a partir da máscara do mapa em tons de cinza (0–255 por pixel, como o PNG de máscara):
-   * preto (< 64) = ar, branco (>= 192) = destrutível, cinza no meio = indestrutível.
+   * Cria a partir da máscara do mapa em RGBA (ex.: `ImageData.data`, 4 bytes por pixel):
+   * preto = ar, branco = destrutível, vermelho puro (255,0,0) = indestrutível.
+   * Classifica por canal: R−G >= 96 e R >= 128 → indestrutível; senão luminância >= 128 → destrutível; senão ar.
+   * Assim a borda antisserrilhada branco→preto (cinza) nunca vira contorno indestrutível.
    */
-  static fromMask(width: number, height: number, gray: ArrayLike<number>): Terrain {
-    if (gray.length !== width * height) throw new Error("tamanho da máscara não bate com width*height");
+  static fromMask(width: number, height: number, rgba: ArrayLike<number>): Terrain {
+    if (rgba.length !== width * height * 4) throw new Error("tamanho da máscara não bate com width*height*4 (RGBA)");
     const t = new Terrain(width, height);
-    for (let i = 0; i < gray.length; i++) {
-      const g = gray[i]!;
-      t.mask[i] = g < MASK_AIR_BELOW ? AIR : g >= MASK_DESTRUCTIBLE_FROM ? DESTRUCTIBLE : INDESTRUCTIBLE;
+    for (let i = 0; i < width * height; i++) {
+      const r = rgba[i * 4]!, g = rgba[i * 4 + 1]!, b = rgba[i * 4 + 2]!;
+      if (r >= MASK_RED_MIN && r - g >= MASK_RED_DOMINANCE) t.mask[i] = INDESTRUCTIBLE;
+      else t.mask[i] = 0.299 * r + 0.587 * g + 0.114 * b >= MASK_LUMA_SOLID ? DESTRUCTIBLE : AIR;
     }
     return t;
   }
@@ -94,11 +98,13 @@ export class Terrain {
   }
 
   /**
-   * Inclinação (graus) do chão sob um personagem em `x`, medida entre `x - facing*half` e `x + facing*half`.
-   * Positivo = o chão sobe na direção para onde ele olha (rampa de subida). `fromY` = altura de onde procurar o chão.
+   * Inclinação (graus) do chão sob um personagem com os pés em (`x`, `feetY`), medida entre `x - facing*half` e `x + facing*half`.
+   * Positivo = o chão sobe na direção para onde ele olha. A busca do chão começa `2·half` acima dos pés,
+   * para não perder rampas íngremes cujo lado da frente já está acima dos pés.
    */
-  slopeDeg(x: number, fromY: number, facing: 1 | -1, half = 16): number {
-    const back = this.surfaceY(x - facing * half, fromY), front = this.surfaceY(x + facing * half, fromY);
+  slopeDeg(x: number, feetY: number, facing: 1 | -1, half = 16): number {
+    const from = feetY - 2 * half;
+    const back = this.surfaceY(x - facing * half, from), front = this.surfaceY(x + facing * half, from);
     if (back < 0 || front < 0) return 0;
     return (Math.atan2(back - front, 2 * half) * 180) / Math.PI;
   }
