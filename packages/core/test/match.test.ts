@@ -45,6 +45,21 @@ describe("energia e itens", () => {
     const rich2 = mk(duo({ agi: 3300 }));
     expect(combo(rich2, "a", "124").every(o => o.ok)).toBe(true); // 305 ≤ 350
   });
+  it("todos os itens repetem no turno, exceto o 2 (triplo): a segunda tentativa dá erro e não gasta energia", () => {
+    const m = mk(duo({ agi: 6000 })); // 440 de energia
+    expect(combo(m, "a", "44").every(o => o.ok)).toBe(true);
+    expect(m.submit({ type: "item", playerId: "a", key: "2" }).ok).toBe(true);
+    const e = m.getChar("a")!.energy;
+    const again = m.submit({ type: "item", playerId: "a", key: "2" });
+    expect(again.ok).toBe(false);
+    expect(m.getChar("a")!.energy).toBe(e);
+  });
+  it("+1 tiro causa −10% e +2 tiros −40% por disparo", () => {
+    const one = mk(duo({ agi: 3300 })), two = mk(duo({ agi: 3300 }));
+    ok(one.submit({ type: "item", playerId: "a", key: "3" })); ok(two.submit({ type: "item", playerId: "a", key: "1" }));
+    expect(ev(ok(one.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 })), "shot").map(s => s.damageMult)).toEqual([0.9, 0.9]);
+    expect(ev(ok(two.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 })), "shot").map(s => s.damageMult)).toEqual([0.6, 0.6, 0.6]);
+  });
   it("só o jogador da vez age", () => {
     const m = mk();
     expect(m.submit({ type: "pass", playerId: "b" }).ok).toBe(false);

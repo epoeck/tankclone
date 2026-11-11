@@ -11,9 +11,9 @@ energia (fonte: guia chinês [doyo](https://www.doyo.cn/article/11674); teclas 1
 
 | Tecla | Item | Efeito | Energia | Confiança |
 |---|---|---|---|---|
-| 1 | +2 tiros | 2 disparos extras; −40% de dano por disparo (4399 diz −50%) | 110 | alta (dono) |
-| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil | 110 | alta (dono) |
-| 3 | +1 tiro | 1 disparo extra; −20% (4399 diz −10%) | 110 | alta (dono) |
+| 1 | +2 tiros | 2 disparos extras; **−40%** de dano por disparo | 110 | alta (dono; doyo e i227 batem) |
+| 2 | Tiro triplo | 3 projéteis num disparo, em leque; −50% de dano por projétil; **só 1 vez por turno** | 110 | alta (dono) |
+| 3 | +1 tiro | 1 disparo extra; **−10%** de dano por disparo | 110 | alta (dono; doyo e 4399 batem) |
 | 4 | +50% dano | | 85 | alta (dono) |
 | 5 | +40% dano | | 80 | alta (dono) |
 | 6 | +30% dano | | 70 | alta (dono) |
@@ -25,7 +25,7 @@ energia (fonte: guia chinês [doyo](https://www.doyo.cn/article/11674); teclas 1
   [doyo](https://www.doyo.cn/article/11674): +1/+2 tiros 110, triplo 110, +50% 85, +40% 80, +30% 70, +20% 55, +10% 50, teleporte/voar 150.
   **Adotamos os custos do doyo**; os do 4399 eram de outra versão. "124" e "1446" só cabem com a energia maior de fim de jogo.
 
-Regras que se deduzem dos combos (a confirmar): itens de dano **somam** (+50 +50 +30 = +130%); vários itens podem ser usados no mesmo turno;
+Regras que se deduzem dos combos (a confirmar): itens de dano **somam** (+50 +50 +30 = +130%); **todos os itens repetem no turno, exceto o 2 (triplo)** (confirmado pelo dono);
 +2 tiros e triplo combinam.
 
 Itens para depois (fora da build PvP): Q = escudo / "dom de anjo"; Z/X/C = auxiliares (C = invisibilidade, 3 turnos); cura (300 HP, encerra o turno),
@@ -61,6 +61,10 @@ crítico:   chance = SORTE / 20 (%)   bônus de dano crítico = SORTE / 25
 **Implementado** em `core/src/stats.ts` (`DamageConfig` guarda os divisores). Suposições minhas: o stat "Dano" dos equipamentos soma ao dano base da arma;
 FC (placeholder) = (ATK+DEF+AGI+Sorte+Dano+Armadura) × Vida / 200, que dá ≈ 359,0 milhões na conta de referência (forma suposta, 1 ponto).
 **Problema de escala:** com a conta de referência atacando outra igual, bruto ≈ (200+8912+3328) = 12 440 e armadura ≈ 8550+28663/25 ≈ 9 700 → redução 99% → ~124 de dano contra 531 164 de vida (~4 300 tiros). O jogo real não é assim; a constante K = 100 de A/(A+K) ou a própria forma devem ser de outra escala. **Perguntar ao dono** quanto dano/vida vê no fim de jogo. Crítico: com Sorte 26 078 as fórmulas cruas dão 1 300% de chance; usei tetos provisórios (100% de chance, +100% de dano).
+
+**Hipótese (planejadora, a confirmar com o dono):** o painel do original provavelmente já mostra valores **finais** — a "Armadura 8550" já incluiria a parte vinda da DEF e o "Dano 8912" já incluiria o dano da arma. Aplicar a fórmula de 2011 por cima conta tudo em dobro e é um dos motivos do ~124. Nada foi alterado no código; tudo segue configurável até a resposta do dono.
+
+**Decisão do dono (item 32 de decisoes.md):** a build PvP usa a escala antiga (2011), vida ~5000 e K = 100; a escala de 2022 fica para quando houver forja/pérolas/pets. A hipótese acima fica registrada para essa etapa.
 
 Exemplo do 4399 (Fogo Intenso +8, ATK somado 560, +50+50+30 e fúria +50%): (205 × 1,96 + 56) × 2,8 = 1281,8. Vira teste de regressão
 quando houver forja. Queda radial e dano de queda **não encontrados** → placeholders.

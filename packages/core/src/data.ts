@@ -12,7 +12,7 @@ export interface ItemDef {
   cost: number;
   /** Disparos extras (um depois do outro, mesmo ângulo e força). */
   extraShots?: number;
-  /** Projéteis simultâneos em leque no disparo. */
+  /** Projéteis simultâneos em leque no disparo. Só pode ser usado uma vez por turno. */
   triple?: boolean;
   /** Multiplicador de dano de cada projétil (acumula multiplicando). */
   shotDamageMult?: number;
@@ -26,7 +26,7 @@ export interface ItemDef {
 export const ITEMS: Record<ItemKey, ItemDef> = {
   "1": { key: "1", cost: 110, extraShots: 2, shotDamageMult: 0.6 },
   "2": { key: "2", cost: 110, triple: true, shotDamageMult: 0.5 },
-  "3": { key: "3", cost: 110, extraShots: 1, shotDamageMult: 0.8 },
+  "3": { key: "3", cost: 110, extraShots: 1, shotDamageMult: 0.9 },
   "4": { key: "4", cost: 85, damageBonus: 0.5 },
   "5": { key: "5", cost: 80, damageBonus: 0.4 },
   "6": { key: "6", cost: 70, damageBonus: 0.3 },

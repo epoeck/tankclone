@@ -23,7 +23,7 @@ export interface Stats {
 
 export const ZERO_STATS: Stats = { atk: 0, def: 0, agi: 0, luck: 0, hp: 1000, armor: 0, damage: 0 };
 
-/** Conta de referência (print do dono, 2026-11-11) — escala de fim de jogo. */
+/** Conta de referência (print do dono, 2026-11-11). **Escala 2022 — NÃO usar na build PvP** (ver BUILDS e docs/decisoes.md item 32). */
 export const REFERENCE_STATS: Stats = { atk: 33281, def: 28663, agi: 29551, luck: 26078, hp: 531164, armor: 8550, damage: 8912 };
 
 export interface DamageConfig {

@@ -62,3 +62,28 @@ describe("stats na partida", () => {
     expect(b.stats.armor).toBe(100);
   });
 });
+
+import { BUILDS } from "../src/builds";
+describe("escala antiga (build PvP)", () => {
+  const shot = (a: string, t: string) => statDamage({ weapon: w(200), attacker: BUILDS[a]!, target: BUILDS[t]!, bonus: 0, shotMult: 1, falloff: 1, crit: false });
+  it("tiro central sem itens, média contra média: 5% a 15% da vida", () => {
+    const pct = shot("media", "media") / BUILDS.media!.hp;
+    expect(pct).toBeGreaterThanOrEqual(0.05);
+    expect(pct).toBeLessThanOrEqual(0.15);
+  });
+  it("qualquer par de builds fica entre 2% e 30% da vida do alvo", () => {
+    for (const a of Object.keys(BUILDS)) for (const t of Object.keys(BUILDS)) {
+      const pct = shot(a, t) / BUILDS[t]!.hp;
+      expect(pct, `${a} → ${t}`).toBeGreaterThanOrEqual(0.02);
+      expect(pct, `${a} → ${t}`).toBeLessThanOrEqual(0.3);
+    }
+  });
+  it("canhão de vidro bate mais forte que o tanque e morre mais fácil", () => {
+    expect(shot("canhao", "media")).toBeGreaterThan(shot("tanque", "media"));
+    expect(shot("media", "canhao") / BUILDS.canhao!.hp).toBeGreaterThan(shot("media", "tanque") / BUILDS.tanque!.hp);
+  });
+  it("crítico de build média é plausível (chance Sorte/20, bônus Sorte/25)", () => {
+    expect(critChancePct(BUILDS.media!.luck)).toBe(20);
+    expect(critBonusPct(BUILDS.media!.luck)).toBe(16);
+  });
+});

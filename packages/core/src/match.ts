@@ -248,6 +248,7 @@ export class Match {
     const def = ITEMS[key], c = this.current;
     if (!def) return { ok: false, error: "item desconhecido" };
     if (c.energy < def.cost) return { ok: false, error: "energia insuficiente" };
+    if (def.triple && this.ts.triple) return { ok: false, error: "tiro triplo só uma vez por turno" };
     if (def.fly && this.ts.fly) return { ok: false, error: "voar já ativo" };
     c.energy -= def.cost;
     this.ts.spent += def.cost;

@@ -6,3 +6,5 @@ export * from "./rng";
 export * from "./data";
 export * from "./match";
 export * from "./stats";
+export * from "./maps";
+export * from "./builds";
