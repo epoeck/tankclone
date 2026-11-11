@@ -31,7 +31,7 @@ export const DEFAULT_PHYSICS: PhysicsConfig = {
   dt: 1 / 60,
   gravity: 507.32,
   speedPerPower: 16.748,
-  windAccel: 8, // ainda NÃO calibrado
+  windAccel: 17, // calibrado: reproduz "ângulo ± vento × 2" (vento 0–10); ver fitWindAccel
   drag: 0.1416,
   maxSteps: 60 * 20,
 };
@@ -76,27 +76,88 @@ export function step(p: Projectile, wind: number, cfg: PhysicsConfig = DEFAULT_P
   p.y += p.vy * cfg.dt;
 }
 
-/** Algo que diz se um ponto está sólido (terreno ou limite do mapa). Terreno real vem depois. */
+/** Algo que diz se um ponto está sólido (terreno ou limite do mapa). */
 export type SolidQuery = (x: number, y: number) => boolean;
+
+/**
+ * Hitbox retangular de um jogador. (x, y) = centro dos pés; a caixa cobre
+ * x ± w/2 horizontalmente e de y − h até y (eixo Y para baixo).
+ */
+export interface Hitbox {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Tamanho provisório do boneco (px). Ajustar quando a arte chegar. */
+export const PLAYER_HITBOX = { w: 36, h: 52 } as const;
+
+export function hitboxContains(b: Hitbox, x: number, y: number): boolean {
+  return x >= b.x - b.w / 2 && x <= b.x + b.w / 2 && y >= b.y - b.h && y <= b.y;
+}
+
+export interface SimOptions {
+  /** Jogadores que o projétil pode acertar. */
+  hitboxes?: readonly Hitbox[];
+  /** Id de quem atirou: sua caixa é ignorada enquanto o projétil ainda estiver dentro dela. */
+  shooterId?: string;
+  /** Passo máximo (px) da varredura entre dois passos da simulação. Padrão 1. */
+  sweepPx?: number;
+}
 
 export interface TrajectoryResult {
   points: Array<{ x: number; y: number }>;
   hit: { x: number; y: number } | null;
+  /** O que foi atingido: terreno/limite do mapa ou um jogador (ver `targetId`). */
+  hitKind: "terrain" | "player" | null;
+  targetId: string | null;
   steps: number;
 }
 
-/** Simula o tiro inteiro até colidir ou estourar `maxSteps`. */
+/**
+ * Simula o tiro inteiro até colidir ou estourar `maxSteps`.
+ * A colisão é **contínua**: o segmento entre dois passos é varrido em passos de ≤ `sweepPx`,
+ * então tiros rápidos não atravessam paredes finas nem jogadores. A cada ponto da varredura
+ * o jogador tem prioridade sobre o terreno só se vier antes ao longo do segmento.
+ */
 export function simulateShot(
   shot: Shot,
   isSolid: SolidQuery,
   cfg: PhysicsConfig = DEFAULT_PHYSICS,
+  opts: SimOptions = {},
 ): TrajectoryResult {
   const p = launch(shot, cfg);
   const points = [{ x: p.x, y: p.y }];
+  const boxes = opts.hitboxes ?? [];
+  const sweep = opts.sweepPx ?? 1;
+  // caixas que já contêm o ponto inicial (normalmente a do atirador) ficam isentas até o projétil sair delas
+  const exempt = new Set<string>();
+  for (const b of boxes) if (b.id === opts.shooterId && hitboxContains(b, p.x, p.y)) exempt.add(b.id);
+
   for (let i = 1; i <= cfg.maxSteps; i++) {
+    const px = p.x, py = p.y;
     step(p, shot.wind, cfg);
+    const dist = Math.hypot(p.x - px, p.y - py);
+    const n = Math.max(1, Math.ceil(dist / sweep));
+    for (let k = 1; k <= n; k++) {
+      const t = k / n;
+      const x = px + (p.x - px) * t, y = py + (p.y - py) * t;
+      for (const b of boxes) {
+        const inside = hitboxContains(b, x, y);
+        if (exempt.has(b.id)) { if (!inside) exempt.delete(b.id); continue; }
+        if (inside) {
+          points.push({ x, y });
+          return { points, hit: { x, y }, hitKind: "player", targetId: b.id, steps: i };
+        }
+      }
+      if (isSolid(x, y)) {
+        points.push({ x, y });
+        return { points, hit: { x, y }, hitKind: "terrain", targetId: null, steps: i };
+      }
+    }
     points.push({ x: p.x, y: p.y });
-    if (isSolid(p.x, p.y)) return { points, hit: { x: p.x, y: p.y }, steps: i };
   }
-  return { points, hit: null, steps: cfg.maxSteps };
+  return { points, hit: null, hitKind: null, targetId: null, steps: cfg.maxSteps };
 }

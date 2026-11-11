@@ -3,7 +3,7 @@
  * Cada amostra = um tiro medido no original em chão plano: ângulo, força e
  * distância horizontal percorrida (px) até o impacto.
  */
-import { DEFAULT_PHYSICS, simulateShot, type Facing, type PhysicsConfig } from "./physics";
+import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, simulateShot, type Facing, type PhysicsConfig } from "./physics";
 
 export interface ShotSample {
   label?: string;
@@ -135,4 +135,54 @@ export function requiredPower(angleDeg: number, dx: number, cfg: PhysicsConfig, 
     if (d !== null && d < dx) lo = mid; else hi = mid;
   }
   return (lo + hi) / 2;
+}
+
+/**
+ * Regra da comunidade para o vento: corrigir o ângulo em **vento × 2** graus (a favor soma, contra subtrai)
+ * mantém a distância. Vale para tiro médio (força ≈ 62, ângulo = 90 − 2·d) e tiro alto (força 95, ângulo = 90 − d).
+ */
+export const WIND_RULE_DEG_PER_WIND = 2;
+
+export interface WindRuleCase { power: number; angleOf: (distUnits: number) => number; distances: number[] }
+
+export const WIND_RULE_CASES: Record<string, WindRuleCase> = {
+  alto: { power: 95, angleOf: d => 90 - d, distances: [10, 12, 14, 16, 18] },
+  medio: { power: 62.5, angleOf: d => 90 - 2 * d, distances: [8, 10, 12, 14, 16] },
+};
+
+/**
+ * Erro médio (em unidades de distância) ao aplicar a regra: para cada caso e vento 1..10, ambos os sentidos,
+ * atira com ângulo corrigido por `vento × 2` e compara a distância com a do mesmo tiro sem vento.
+ */
+export function windRuleError(cfg: PhysicsConfig, muzzleHeight = MUZZLE_HEIGHT, unitPx = 100): number {
+  let sum = 0, n = 0;
+  for (const c of Object.values(WIND_RULE_CASES)) {
+    for (const d of c.distances) {
+      const base = predictDx({ angleDeg: c.angleOf(d), power: c.power, dx: 1 }, cfg, muzzleHeight);
+      if (base === null) continue;
+      for (const w of [1, 2, 3, 4, 5, 6, 8, 10]) {
+        for (const sign of [1, -1]) {
+          const ang = c.angleOf(d) + sign * w * WIND_RULE_DEG_PER_WIND;
+          const dx = predictDx({ angleDeg: ang, power: c.power, dx: 1, wind: sign * w }, cfg, muzzleHeight);
+          sum += dx === null ? 5 : Math.abs(dx - base) / unitPx;
+          n++;
+        }
+      }
+    }
+  }
+  return sum / n;
+}
+
+/** Acha o `windAccel` que melhor reproduz a regra (busca em grade + refino). */
+export function fitWindAccel(cfg: PhysicsConfig = DEFAULT_PHYSICS, muzzleHeight = MUZZLE_HEIGHT): { windAccel: number; error: number } {
+  let best = { windAccel: 0, error: Infinity };
+  let lo = 4, hi = 30, stepW = 1;
+  for (let pass = 0; pass < 3; pass++) {
+    for (let w = lo; w <= hi + 1e-9; w += stepW) {
+      const e = windRuleError({ ...cfg, windAccel: w }, muzzleHeight);
+      if (e < best.error) best = { windAccel: w, error: e };
+    }
+    lo = best.windAccel - stepW; hi = best.windAccel + stepW; stepW /= 10;
+  }
+  return best;
 }

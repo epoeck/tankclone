@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Terrain } from "../src/terrain";
+import { Terrain, AIR, DESTRUCTIBLE, INDESTRUCTIBLE } from "../src/terrain";
 import { simulateShot, type Shot } from "../src/physics";
 
 const flat = () => Terrain.fromHeightFn(200, 100, () => 60);
@@ -55,5 +55,28 @@ describe("tiro contra terreno", () => {
     t.carveCircle(first.hit!.x, first.hit!.y, 25);
     const second = simulateShot(shot, (x, y) => t.isSolid(x, y));
     expect(second.hit!.y).toBeGreaterThan(first.hit!.y); // cai dentro da cratera
+  });
+});
+
+describe("3 estados e máscara em tons de cinza", () => {
+  it("fromMask: preto = ar, branco = destrutível, cinza = indestrutível", () => {
+    const t = Terrain.fromMask(3, 1, [0, 255, 128]);
+    expect([0, 1, 2].map(x => t.stateAt(x, 0))).toEqual([AIR, DESTRUCTIBLE, INDESTRUCTIBLE]);
+    expect(t.isSolid(0, 0)).toBe(false);
+    expect(t.isSolid(2, 0)).toBe(true);
+  });
+  it("cratera não apaga chão indestrutível", () => {
+    const t = flat();
+    t.fillIndestructible(80, 60, 120, 100);
+    t.carveCircle(100, 70, 15);
+    expect(t.stateAt(100, 70)).toBe(INDESTRUCTIBLE);
+    t.carveCircle(60, 60, 8);
+    expect(t.stateAt(60, 62)).toBe(AIR);
+  });
+  it("slopeDeg: positivo quando o chão sobe à frente, espelhado por facing", () => {
+    const t = Terrain.fromHeightFn(400, 300, x => 250 - x * 0.5); // sobe para a direita
+    expect(t.slopeDeg(200, 0, 1)).toBeCloseTo(26.57, 0);
+    expect(t.slopeDeg(200, 0, -1)).toBeCloseTo(-26.57, 0);
+    expect(flat().slopeDeg(100, 0, 1)).toBeCloseTo(0);
   });
 });

@@ -42,7 +42,7 @@ const syncers: Array<() => void> = [];
 
 slider("shot", { key: "a", label: "Ângulo (°)", min: 0, max: 180, step: 1, get: () => state.angleDeg, set: v => (state.angleDeg = v) });
 slider("shot", { key: "p", label: "Força", min: 0, max: 100, step: 0.1, get: () => state.power, set: v => (state.power = v) });
-slider("shot", { key: "w", label: "Vento", min: -20, max: 20, step: 0.5, get: () => state.wind, set: v => (state.wind = v) });
+slider("shot", { key: "w", label: "Vento", min: -10, max: 10, step: 0.1, get: () => state.wind, set: v => (state.wind = v) });
 slider("boom", { key: "r", label: "Raio da cratera", min: 5, max: 80, step: 1, get: () => boomR, set: v => (boomR = v) });
 slider("phys", { key: "g", label: "Gravidade", min: 100, max: 1500, step: 1, get: () => cfg.gravity, set: v => (cfg.gravity = v) });
 slider("phys", { key: "s", label: "Vel. por força", min: 2, max: 20, step: 0.1, get: () => cfg.speedPerPower, set: v => (cfg.speedPerPower = v) });

@@ -66,8 +66,8 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | `core`: calibração (Nelder-Mead, erro em pontos de força) | pronto |
 | `core`: testes (vitest) | 23 passando, typecheck limpo |
 | `client`: visualizador de trajetória (Vite + canvas) | pronto |
-| Vento calibrado | **não** (`windAccel: 8` é chute; ver Fase A) |
-| Colisão do projétil com jogadores | **não** |
+| Vento calibrado | **sim** (`windAccel 17`; regra "ângulo ± vento × 2" erra ~0,3 distância; Fase A) |
+| Colisão contínua + com jogadores (hitbox), terreno de 3 estados, faixa de ângulo | **sim** (Fase A) |
 | Turnos, energia, itens, fúria, armas, HP, queda | não começado |
 | Stats e dano | não começado |
 | Servidor, salas, contas | não começado |
@@ -119,8 +119,9 @@ e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 - Força 0–100; velocidade inicial = `power * speedPerPower`.
 - Vento com sinal (positivo = para a direita); aceleração = `wind * windAccel`.
 - Integração Euler semi-implícita, passo fixo: `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
-- `simulateShot` testa colisão só no fim de cada passo (até ~28 px por passo) → colisão contínua está na Fase A.
-- `Terrain`: laterais e fundo sólidos, acima do topo vazio; `carveCircle` determinístico; `fromHeightFn` e `fromMask`.
+- `simulateShot` varre o segmento entre passos (≤ 1 px) → colisão contínua; aceita `hitboxes` de jogadores (`Hitbox`, `PLAYER_HITBOX` provisório 36×52) e ignora o atirador até o projétil sair da própria caixa. Retorna `hitKind` (`terrain`/`player`) e `targetId`.
+- `Terrain`: 3 estados (`AIR`/`DESTRUCTIBLE`/`INDESTRUCTIBLE`); laterais e fundo indestrutíveis, topo vazio; `carveCircle` só apaga destrutível; `fromMask` lê cinza (<64 ar, ≥192 destrutível, meio indestrutível); `slopeDeg` dá a inclinação do chão sob o personagem.
+- `angle.ts`: faixa de ângulo por arma relativa ao corpo; `allowedAbsoluteRange`, `clampAbsoluteAngle`, `relativeAngle`. O ângulo usado no tiro e exibido é o absoluto.
 
 ## 8. Calibração da física
 
@@ -139,6 +140,9 @@ o projétil sai ~30 px acima dos pés). Descartados: comprimento de cano, expoen
 ### 8.3 Achado da avaliação de 2026-11-11
 Simulando a regra "ângulo ± vento × 2" com P = 95 e P = 62, o erro médio da regra é mínimo com `windAccel ≈ 15–17`
 (com 8, o tiro alto erra ~2 distâncias). Isso assume que "vento 1" do original = 1 unidade nossa, na escala 0–10.
+
+### 8.3b Vento calibrado (Fase A)
+`fitWindAccel` varre `windAccel` e minimiza o erro da regra "ângulo ± vento × 2" (tiro alto P=95 e médio P=62,5, vento 1–10 nos dois sentidos): ótimo em **17** (erro médio ~0,34 distância; com 8 era 3,3). Tiro médio com P=62,5 e ângulo 90−2d cai a ≤ 1 distância do alvo.
 
 ### 8.4 Regressão
 `test/calibration.test.ts`: erro ≤ 3 pontos de força por ângulo (mediana ≤ 1,2) e tiro alto a ≤ 0,7 unidade. Não afrouxar.
@@ -161,7 +165,7 @@ Simulando a regra "ângulo ± vento × 2" com P = 95 e P = 62, o erro médio da 
 Cada fase termina com testes no `core` e, quando fizer sentido, algo jogável/visível no cliente.
 Ordem pensada para ter **PvP jogável o quanto antes**.
 
-### Fase A — Fechar o tiro e o terreno
+### Fase A — Fechar o tiro e o terreno (**concluída**, ver §8.3b)
 1. Vento: escala 0–10; calibrar `windAccel` para que "ângulo ± vento × 2" valha (ponto de partida 15–17); amostras com vento
    no ajuste; teste de regressão da regra.
 2. Tiro médio: confirmar força 62–63 no modelo e registrar.

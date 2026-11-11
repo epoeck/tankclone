@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_PHYSICS, MUZZLE_HEIGHT, evaluate, fitPhysics, powerScalingCheck,
-  predictDx, requiredPower, samplesFromTables, type ShotSample,
+  predictDx, requiredPower, windRuleError, fitWindAccel, samplesFromTables, type ShotSample,
 } from "../src/index";
 import data from "../calibration/ddtank-tables.json";
 
@@ -41,5 +41,21 @@ describe("tabelas de tiro DDTank (20°, 30°, 50°, 65°)", () => {
   it("amostras geradas têm 80 pontos", () => {
     expect(samplesFromTables(data.tables, U)).toHaveLength(80);
     expect(evaluate(samplesFromTables(data.tables, U), DEFAULT_PHYSICS, MUZZLE_HEIGHT)).toHaveLength(80);
+  });
+});
+
+describe("vento (regra: ângulo ± vento × 2)", () => {
+  it("com o windAccel padrão a regra erra em média ≤ 0,5 distância", () => {
+    expect(windRuleError(DEFAULT_PHYSICS)).toBeLessThanOrEqual(0.5);
+  });
+  it("o windAccel padrão está perto do ótimo da regra", () => {
+    const best = fitWindAccel(DEFAULT_PHYSICS);
+    expect(Math.abs(best.windAccel - DEFAULT_PHYSICS.windAccel)).toBeLessThanOrEqual(1.5);
+  });
+  it("tiro médio: força 62,5 e ângulo 90 − 2d cai perto da distância d", () => {
+    for (const d of [8, 10, 12, 14]) {
+      const got = predictDx({ angleDeg: 90 - 2 * d, power: 62.5, dx: 1 }, DEFAULT_PHYSICS, MUZZLE_HEIGHT)! / data.unitPx;
+      expect(Math.abs(got - d)).toBeLessThanOrEqual(1);
+    }
   });
 });

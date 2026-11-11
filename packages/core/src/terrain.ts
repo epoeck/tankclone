@@ -1,5 +1,14 @@
+/** Estados de um pixel do terreno. */
+export const AIR = 0;
+export const DESTRUCTIBLE = 1;
+export const INDESTRUCTIBLE = 2;
+
+/** Limiares da máscara em tons de cinza: < 64 = ar (preto), >= 192 = destrutível (branco), no meio = indestrutível (cinza). */
+export const MASK_AIR_BELOW = 64;
+export const MASK_DESTRUCTIBLE_FROM = 192;
+
 /**
- * Terreno destrutível: máscara de bits (1 byte por pixel, 1 = sólido).
+ * Terreno: 1 byte por pixel com 3 estados (ar / chão destrutível / chão indestrutível).
  * Determinístico — o servidor e o cliente aplicam as mesmas crateras na mesma ordem.
  * Fora dos limites laterais e abaixo do mapa conta como sólido; acima do mapa, vazio.
  */
@@ -19,27 +28,44 @@ export class Terrain {
     const t = new Terrain(width, height);
     for (let x = 0; x < width; x++) {
       const top = Math.max(0, Math.min(height, Math.ceil(surface(x))));
-      for (let y = top; y < height; y++) t.mask[y * width + x] = 1;
+      for (let y = top; y < height; y++) t.mask[y * width + x] = DESTRUCTIBLE;
     }
     return t;
   }
 
-  /** Cria a partir de um bitmap (ex.: alfa de uma imagem de mapa): sólido onde solid[i] != 0. */
-  static fromMask(width: number, height: number, solid: ArrayLike<number>): Terrain {
-    if (solid.length !== width * height) throw new Error("tamanho da máscara não bate com width*height");
+  /**
+   * Cria a partir da máscara do mapa em tons de cinza (0–255 por pixel, como o PNG de máscara):
+   * preto (< 64) = ar, branco (>= 192) = destrutível, cinza no meio = indestrutível.
+   */
+  static fromMask(width: number, height: number, gray: ArrayLike<number>): Terrain {
+    if (gray.length !== width * height) throw new Error("tamanho da máscara não bate com width*height");
     const t = new Terrain(width, height);
-    for (let i = 0; i < solid.length; i++) t.mask[i] = solid[i] ? 1 : 0;
+    for (let i = 0; i < gray.length; i++) {
+      const g = gray[i]!;
+      t.mask[i] = g < MASK_AIR_BELOW ? AIR : g >= MASK_DESTRUCTIBLE_FROM ? DESTRUCTIBLE : INDESTRUCTIBLE;
+    }
     return t;
   }
 
-  isSolid(x: number, y: number): boolean {
-    const ix = Math.floor(x), iy = Math.floor(y);
-    if (ix < 0 || ix >= this.width || iy >= this.height) return true;
-    if (iy < 0) return false;
-    return this.mask[iy * this.width + ix] === 1;
+  /** Marca um retângulo como indestrutível (útil em testes e mapas procedurais). */
+  fillIndestructible(x0: number, y0: number, x1: number, y1: number): void {
+    for (let y = Math.max(0, y0); y < Math.min(this.height, y1); y++)
+      for (let x = Math.max(0, x0); x < Math.min(this.width, x1); x++) this.mask[y * this.width + x] = INDESTRUCTIBLE;
   }
 
-  /** Apaga um círculo. Retorna quantos pixels foram removidos. */
+  /** Estado do pixel: AIR, DESTRUCTIBLE ou INDESTRUCTIBLE (fora do mapa: laterais/fundo indestrutíveis, topo ar). */
+  stateAt(x: number, y: number): number {
+    const ix = Math.floor(x), iy = Math.floor(y);
+    if (ix < 0 || ix >= this.width || iy >= this.height) return INDESTRUCTIBLE;
+    if (iy < 0) return AIR;
+    return this.mask[iy * this.width + ix]!;
+  }
+
+  isSolid(x: number, y: number): boolean {
+    return this.stateAt(x, y) !== AIR;
+  }
+
+  /** Apaga um círculo de chão destrutível (o indestrutível resiste). Retorna quantos pixels foram removidos. */
   carveCircle(cx: number, cy: number, r: number): number {
     let removed = 0;
     const r2 = r * r;
@@ -50,7 +76,7 @@ export class Terrain {
         const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
         if (dx * dx + dy * dy <= r2) {
           const i = y * this.width + x;
-          if (this.mask[i] === 1) { this.mask[i] = 0; removed++; }
+          if (this.mask[i] === DESTRUCTIBLE) { this.mask[i] = AIR; removed++; }
         }
       }
     }
@@ -62,9 +88,19 @@ export class Terrain {
     const ix = Math.floor(x);
     if (ix < 0 || ix >= this.width) return -1;
     for (let y = Math.max(0, Math.floor(fromY)); y < this.height; y++) {
-      if (this.mask[y * this.width + ix] === 1) return y;
+      if (this.mask[y * this.width + ix] !== AIR) return y;
     }
     return -1;
+  }
+
+  /**
+   * Inclinação (graus) do chão sob um personagem em `x`, medida entre `x - facing*half` e `x + facing*half`.
+   * Positivo = o chão sobe na direção para onde ele olha (rampa de subida). `fromY` = altura de onde procurar o chão.
+   */
+  slopeDeg(x: number, fromY: number, facing: 1 | -1, half = 16): number {
+    const back = this.surfaceY(x - facing * half, fromY), front = this.surfaceY(x + facing * half, fromY);
+    if (back < 0 || front < 0) return 0;
+    return (Math.atan2(back - front, 2 * half) * 180) / Math.PI;
   }
 
   /** Acesso somente-leitura para renderização. */
