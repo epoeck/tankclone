@@ -124,7 +124,7 @@ interface TurnState {
 }
 
 /** Com o relógio parado: prazo para soltar o tiro depois de começar a carregar, e para o próximo tiro (ajustar o ângulo). */
-export const CHARGE_MAX_SECONDS = 3;
+export const CHARGE_MAX_SECONDS = 3.5;
 export const BETWEEN_SHOTS_SECONDS = 5;
 
 export class Match {
