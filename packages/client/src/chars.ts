@@ -5,7 +5,7 @@ import { applyCharacterTransform, drawDoll, type DollPose } from "./doll";
 import { drawWing } from "./wing";
 
 export const CHAR_SCALE = 1;
-type ImageEntry = { img: HTMLImageElement; loaded: boolean; ready: Promise<void> };
+type ImageEntry = { img: HTMLImageElement; loaded: boolean; failed?: boolean; ready: Promise<void> };
 type Sheets = { face: HTMLCanvasElement; upper: HTMLCanvasElement; weapon: HTMLCanvasElement; wing?: HTMLImageElement };
 const images = new Map<string, ImageEntry>();
 const tinted = new Map<string, HTMLCanvasElement>();
@@ -24,7 +24,7 @@ function asset(file: string): ImageEntry {
   const entry: ImageEntry = { img, loaded: false, ready: new Promise<void>(resolve => (finish = resolve)) };
   images.set(file, entry);
   img.onload = () => { entry.loaded = true; finish(); };
-  img.onerror = () => { console.warn(`Avatar: não foi possível carregar ${file}`); finish(); };
+  img.onerror = () => { entry.failed = true; console.warn(`Avatar: não foi possível carregar ${file}`); finish(); };
   img.src = `/assets/avatar/${file}`;
   return entry;
 }
@@ -58,13 +58,13 @@ function prepare(look: Look, weaponId: string, mode: AvatarMode): Sheets | null 
   const cached = sheets.get(key);
   if (cached) { sheets.delete(key); sheets.set(key, cached); return cached; }
   const parts = avatarLayers(look, weaponId, mode), entries = parts.map(p => asset(p.file));
-  if (entries.some(e => !e.loaded)) return null;
+  if (entries.some((e, i) => !e.loaded && !(e.failed && parts[i]!.group === "wing"))) return null;
   const size = mode === "game" ? { w: GAME_FRAME.width * GAME_FRAME.columns, h: GAME_FRAME.height * 3 } : { w: SHOW_FRAME.width, h: SHOW_FRAME.height };
   // SHOW tem quatro expressões lado a lado no rosto; roupa e demais peças usam o mesmo quadro.
   const result: Sheets = { face: canvas(size.w * (mode === "show" ? 4 : 1), size.h), upper: canvas(size.w, size.h), weapon: canvas(size.w, size.h) };
   parts.forEach((part, i) => {
     const img = entries[i]!.img;
-    if (part.group === "wing") { result.wing = img; return; }
+    if (part.group === "wing") { if (entries[i]!.loaded) result.wing = img; return; }
     result[part.group].getContext("2d")!.drawImage(colorMask(part, img), 0, 0);
   });
   return boundedSet(sheets, key, result, 32);
@@ -77,12 +77,12 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, look: Look, pose: D
   const now = performance.now() / 1000;
   const frames = avatarFrames(now + x * 0.013, pose.walk > 0, pose.aiming, pose.action, pose.actionElapsed);
   ctx.save(); applyCharacterTransform(ctx, x, y, pose.facing, scale, pose.slopeDeg ?? 0);
-  if (ready.wing && !drawWing(ctx, now, "game", "back", pose.walk > 0 || !!pose.action, pose.action === "shoot")) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -28, -61, 60, 60); ctx.restore(); }
+  if (ready.wing && !drawWing(ctx, now, "game", "back", pose.walk > 0 || !!pose.action, pose.action === "shoot", look.equipped.wings)) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -28, -61, 60, 60); ctx.restore(); }
   for (const group of ["weapon", "face", "upper"] as const) {
     const rect = avatarFrameRect(frames[group]);
     ctx.drawImage(ready[group], rect.x, rect.y, rect.w, rect.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, rect.w, rect.h);
   }
-  if (ready.wing) drawWing(ctx, now, "game", "front", pose.walk > 0 || !!pose.action, pose.action === "shoot");
+  if (ready.wing) drawWing(ctx, now, "game", "front", pose.walk > 0 || !!pose.action, pose.action === "shoot", look.equipped.wings);
   ctx.restore();
 }
 
@@ -129,7 +129,7 @@ export function drawCharPortrait(target: HTMLCanvasElement, look: Look, weaponId
   }
   const scale = Math.min(target.width / 185, target.height / 305);
   ctx.save(); ctx.translate(target.width / 2, target.height - 2); ctx.scale(scale, scale);
-  if (ready.wing && !drawWing(ctx, performance.now() / 1000, "show")) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -65, -150, 130, 130); ctx.restore(); }
+  if (ready.wing && !drawWing(ctx, performance.now() / 1000, "show", "back", true, false, look.equipped.wings)) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -65, -150, 130, 130); ctx.restore(); }
   const faceFrame = performance.now() % 4500 > 4350 ? 2 : 0;
   for (const group of ["face", "upper", "weapon"] as const) {
     ctx.drawImage(ready[group], group === "face" ? faceFrame * SHOW_FRAME.width : 0, 0, SHOW_FRAME.width, SHOW_FRAME.height,

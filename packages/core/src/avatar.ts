@@ -2,6 +2,7 @@
  * Recursos PNG compatíveis do mesmo pacote doador usado pelo Reborn. Ver docs/avatar.md. */
 import catalog from "./reference/avatar.json";
 import { cnPiece } from "./wardrobe-catalog";
+import { wingIcon } from "./wings";
 import { WEAPON_ART } from "./forge";
 import { HAIR_COLORS, PIECE_COLORS, SKIN_TONES, sanitizeLook, type Look } from "./appearance";
 
@@ -18,7 +19,7 @@ export function avatarLayers(raw: Look, weaponId: string, mode: AvatarMode): Ava
   const look = sanitizeLook(raw), a = look.appearance, e = look.equipped;
   const sex = catalog.sexes[a.sex];
   const layers: AvatarLayer[] = [];
-  if (e.wings) layers.push({ slot: "wing", group: "wing", file: catalog.wings["1"] });
+  if (e.wings) layers.push({ slot: "wing", group: "wing", file: wingIcon(e.wings) ?? catalog.wings["1"] });
   const weapons: Record<string, { game: string; show: string }> = catalog.weapons;
   // "sledge:1" = arma no estágio 1 (+10/+11) → pasta brick2; ":2" (+12) → brick3 (import-cn-weapons.py traz as artes)
   const [wid = "sledge", st = "0"] = weaponId.split(":"), stage = Number(st) || 0;

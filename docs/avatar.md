@@ -90,3 +90,11 @@ O retrato e a batalha foram inspecionados no navegador com os dois sexos e equip
 A asa `wing002` usa a biblioteca convertida `wings` do clone local Reborn, incluindo os quadros GAME e SHOW. No GAME os clipes esquerdo e direito ficam, respectivamente, atrás e à frente do corpo; os quadros selecionam repouso ou disparo, enquanto o clipe interno anima durante movimento e ação. O registro usa `weaponX` e `weaponY` de `GameCharacter` e `GamePlayer.addWing`. A lápide usa `asset.game.tombAsset` de `game.swf`; a alma recompõe o quadro 36 e o rosto reduzido em escala de cinza, com os corpos animados `ghostManMovieAsset` e `ghostGirlMovieAsset` do `gameii.swf`, seguindo `GameCharacter.drawSoul`, `doAction` e `GamePlayer.die`. O movimento suave da alma é uma aproximação. Os hashes dos arquivos importados constam em `packages/client/public/character-effects/manifest.json`; a importação é reproduzida por `python scripts/import-character-effects.py /caminho/ddtank-reborn`. Conversão SWF local do clone `dab2b445f153a6852b48182d4afe5c43ebbe3e16`.
 
 O rosto SOUL usa a origem original `GameCharacter._body=(-62,-83)` e deslocamento de composição `(7,5)` após escala 0,75; o corpo animado usa `ghostMovie=(-26,-50)` no mesmo sistema de coordenadas. O registro de pés `(-62,-91)` usado para o avatar vivo não deve ser aplicado à alma.
+
+### Asas do CN 14.7 (locais)
+
+Índices de asa: 0 = nenhuma, 1 = `wing002` (Reborn), 2.. = as 15 asas de `packages/core/src/reference/cn147-wings.json`. Os SWF e as timelines convertidas ficam só em `packages/client/public/vestuario-local/` (gitignored). Para converter (FFDec + `buildLibrary` do clone local do Reborn; gera `cn147/wing-lib/<pic>/library.json` + `shapes/` + `images/`, no mesmo formato da `wing002`):
+
+    /caminho/ddtank-reborn/node_modules/.bin/tsx scripts/convert-cn147-wings.mts [wing141 ...]
+
+O cliente (`wing.ts`) acha as instâncias `leftWing`/`rightWing` do clipe `wing_game_*` e a junção do `wing_show_*`. Sem a pasta convertida o jogo usa o ícone como asa reserva.

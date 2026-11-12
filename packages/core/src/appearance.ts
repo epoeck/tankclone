@@ -1,4 +1,5 @@
 import { isAvailablePiece, cnPieces, legacyCount, pieceInfo, NO_STATS, type PieceStats, type WardrobeSlot } from "./wardrobe-catalog";
+import { WING_COUNT } from "./wings";
 /**
  * Aparência do personagem clássico, composta por itens e folhas GAME/SHOW.
  * - `Appearance`: sexo, pele, rosto, cabelo + cor do cabelo — escolha livre do jogador.
@@ -13,7 +14,7 @@ export const HAIR_COLORS = ["#6B3A1F", "#1F1F2B", "#F5C542", "#E0372A", "#3B6FD1
 /** Cor do cabelo "original": a camada colorida da arte sem a máscara de tintura (o 2º arquivo do cabelo não é desenhado). */
 export const HAIR_ORIGINAL = -1;
 /** Opções do catálogo clássico (src/reference/avatar.json). hat/glasses/wings: 0 = sem item. */
-export const COUNTS = { skin: SKIN_TONES.length, face: 3, hair: 3, hairColor: HAIR_COLORS.length, outfit: 3, hat: 3, glasses: 2, wings: 2 } as const;
+export const COUNTS = { skin: SKIN_TONES.length, face: 3, hair: 3, hairColor: HAIR_COLORS.length, outfit: 3, hat: 3, glasses: 2, wings: WING_COUNT } as const;
 
 export type AvatarSex = "m" | "f";
 export interface Appearance { sex: AvatarSex; skin: number; face: number; hair: number; hairColor: number }
