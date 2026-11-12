@@ -3,11 +3,12 @@
  * Entrada = intenções do jogador da vez (andar, usar item, atirar, passar) + passagem de tempo;
  * saída = lista de eventos para o cliente animar. Sem DOM, rede, relógio ou Math.random.
  */
+import { craterShape } from "./craters";
 import { clampAbsoluteAngle } from "./angle";
 import { DEFAULT_MATCH, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
-import { combatPower, statDamage, withStats, critChancePct, type Stats } from "./stats";
+import { combatPower, statDamage, damageBreakdown, withStats, rollCritical, turnDelay, furyFromDamage, type Stats } from "./stats";
 import type { Terrain } from "./terrain";
 
 export interface PlayerSetup {
@@ -52,20 +53,21 @@ export type Intent =
   | { type: "shoot"; playerId: string; angleDeg: number; power: number; special?: boolean }
   | { type: "pass"; playerId: string };
 
-export type MatchEvent =
-  | { type: "turnStart"; playerId: string; wind: number; timeLimit: number; energy: number; turn: number }
-  | { type: "move"; playerId: string; path: Array<{ x: number; y: number }>; energyLeft: number }
+export type MatchEvent = (
+  | { type: "turnStart"; playerId: string; wind: number; timeLimit: number; energy: number; turn: number; delays: Record<string, number> }
+  | { type: "move"; playerId: string; path: Array<{ x: number; y: number }>; energyLeft: number; facing: Facing }
   | { type: "fall"; playerId: string; fromY: number; toY: number }
   | { type: "item"; playerId: string; key: ItemKey; energyLeft: number }
   | { type: "shot"; playerId: string; index: number; points: Array<{ x: number; y: number }>; hit: { x: number; y: number } | null;
-      hitKind: "terrain" | "player" | null; targetId: string | null; damageMult: number }
-  | { type: "crater"; x: number; y: number; radius: number }
+      hitKind: "terrain" | "player" | null; targetId: string | null; damageMult: number; stepSeconds: number; duration: number }
+  | { type: "crater"; x: number; y: number; ballId: number }
   | { type: "damage"; playerId: string; amount: number; hp: number; crit: boolean }
   | { type: "fly"; playerId: string; x: number; y: number }
   | { type: "fury"; playerId: string; fury: number }
   | { type: "death"; playerId: string; reason: "hp" | "out_of_map" }
   | { type: "turnEnd"; playerId: string; delay: number }
-  | { type: "gameOver"; winnerTeam: number | null };
+  | { type: "gameOver"; winnerTeam: number | null }
+) & { /** Instante absoluto na linha de animação da partida (segundos). */ at?: number };
 
 export type Outcome = { ok: true; events: MatchEvent[] } | { ok: false; error: string };
 
@@ -96,6 +98,7 @@ export interface MatchOptions {
 
 interface TurnState {
   spent: number;
+  itemDelay: number;
   bonus: number;
   mult: number;
   extraShots: number;
@@ -113,8 +116,11 @@ export class Match {
   /** Sorteio de críticos, separado do vento para um não mexer na sequência do outro. */
   private combatRng: Rng;
   private damageFn: (d: DamageInput) => number;
+  private animationTime = 0;
   turn = 0;
   wind = 0;
+  private rawWind = 0;
+  private nextWind = 0;
   winnerTeam: number | null | undefined = undefined; // undefined = em andamento
   private current: Character;
   private ts: TurnState = freshTurn();
@@ -137,7 +143,7 @@ export class Match {
       const maxEnergy = this.energyFor(agi);
       this.chars.push({
         id: p.id, team: p.team, x: p.x, y, facing: p.facing ?? 1, hp: stats.hp, maxHp: stats.hp,
-        agi, stats, fc: p.fc ?? combatPower(stats), weaponId: p.weaponId, energy: maxEnergy, maxEnergy, fury: 0, delay: 0, alive: true,
+        agi, stats, fc: p.fc ?? combatPower(stats), weaponId: p.weaponId, energy: maxEnergy, maxEnergy, fury: 0, delay: turnDelay(stats), alive: true,
       });
     }
     if (this.chars.length < 2) throw new Error("a partida precisa de ao menos 2 jogadores");
@@ -168,17 +174,25 @@ export class Match {
   }
 
   private rollWind(): number {
-    const u = this.rng.next(), sign = this.rng.next() < 0.5 ? -1 : 1;
-    // u³ favorece valores baixos: ~79% dos sorteios ≤ 5
-    return sign * Math.round(u * u * u * this.cfg.maxWind * 10) / 10 * this.cfg.windMultiplier;
+    // BaseGame.GetNextWind: muda em até 1 unidade por turno, buscando um alvo em [-4, 3.9].
+    const previous = this.rawWind;
+    const delta = Math.floor(this.rng.next() * 11);
+    this.rawWind += previous > this.nextWind ? -delta : delta;
+    if (previous === this.nextWind) this.nextWind = Math.floor(this.rng.next() * 80) - 40;
+    this.rawWind = Math.max(-this.cfg.maxWind * 10, Math.min(this.cfg.maxWind * 10, this.rawWind));
+    return this.rawWind / 10 * this.cfg.windMultiplier;
   }
 
   private beginTurn(): MatchEvent {
+    // PVPGame.MinusDelays normaliza a fila; StartAttacking acrescenta GetTurnDelay.
+    const minimum = this.current.delay;
+    for (const c of this.chars) c.delay -= minimum;
+    this.current.delay += turnDelay(this.current.stats);
     this.turn++;
     this.ts = freshTurn();
     this.wind = this.rollWind();
     this.current.energy = this.current.maxEnergy;
-    return { type: "turnStart", playerId: this.current.id, wind: this.wind, timeLimit: this.turnTimeLimit(), energy: this.current.energy, turn: this.turn };
+    return { type: "turnStart", playerId: this.current.id, wind: this.wind, timeLimit: this.turnTimeLimit(), energy: this.current.energy, turn: this.turn, delays: Object.fromEntries(this.chars.map(c => [c.id, c.delay])) };
   }
 
   /** Passa o tempo; ao estourar o limite do turno, passa a vez automaticamente. */
@@ -205,6 +219,7 @@ export class Match {
 
   private doMove(dir: Facing, px: number): Outcome {
     const c = this.current, cfg = this.cfg, T = this.terrain;
+    const changedFacing = c.facing !== dir;
     c.facing = dir;
     const path: Array<{ x: number; y: number }> = [];
     const events: MatchEvent[] = [];
@@ -220,12 +235,14 @@ export class Match {
       if (g >= 0 && g - c.y <= cfg.maxStepDown) { c.y = g; path.push({ x: c.x, y: c.y }); continue; }
       // sem chão logo abaixo: queda livre
       path.push({ x: c.x, y: c.y });
-      events.push({ type: "move", playerId: c.id, path: [...path], energyLeft: c.energy });
+      events.push({ type: "move", playerId: c.id, path: [...path], energyLeft: c.energy, facing: c.facing });
       path.length = 0;
       this.settle(c, events);
       if (!c.alive) break;
     }
-    if (path.length) events.push({ type: "move", playerId: c.id, path, energyLeft: c.energy });
+    if (path.length || (changedFacing && !events.some(e => e.type === "move"))) {
+      events.push({ type: "move", playerId: c.id, path, energyLeft: c.energy, facing: c.facing });
+    }
     this.checkOver(events);
     if (!c.alive && !this.over) events.push(...this.endTurn(false)); // o da vez morreu andando: passa o turno
     return { ok: true, events };
@@ -252,8 +269,10 @@ export class Match {
     if (def.fly && this.ts.fly) return { ok: false, error: "voar já ativo" };
     c.energy -= def.cost;
     this.ts.spent += def.cost;
+    this.ts.itemDelay += def.delay;
     this.ts.bonus += def.damageBonus ?? 0;
-    this.ts.mult *= def.shotDamageMult ?? 1;
+    if (def.triple) this.ts.bonus = (1 + this.ts.bonus) * 0.5 - 1;
+    if (!def.triple) this.ts.mult *= def.shotDamageMult ?? 1;
     this.ts.extraShots += def.extraShots ?? 0;
     this.ts.triple ||= !!def.triple;
     this.ts.fly ||= !!def.fly;
@@ -269,7 +288,7 @@ export class Match {
   private doShoot(angleDeg: number, power: number, special: boolean): Outcome {
     const c = this.current, cfg = this.cfg, T = this.terrain, weapon = own(WEAPONS, c.weaponId)!;
     if (!Number.isFinite(angleDeg) || !Number.isFinite(power)) return { ok: false, error: "valores inválidos" };
-    if (special && c.fury < 100) return { ok: false, error: "fúria insuficiente" };
+    if (special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
     const events: MatchEvent[] = [];
     const slope = T.slopeDeg(c.x, c.y, c.facing);
     const ang = clampAbsoluteAngle(angleDeg, weapon.angle, slope);
@@ -278,39 +297,49 @@ export class Match {
     const ts = this.ts;
 
     // Lista de projéteis do disparo: cada elemento = um tiro simulado em sequência
-    type Proj = { ang: number; mult: number };
+    type Proj = { ang: number; mult: number; power: number };
     const volleys: Proj[][] = [];
     const base = ts.fly ? 1 : ts.mult * (special ? weapon.special.damageMult : 1);
     const shotsCount = 1 + (ts.fly ? 0 : ts.extraShots + (special ? weapon.special.shots : 0));
     for (let i = 0; i < shotsCount; i++) {
-      volleys.push(ts.triple && !ts.fly
-        ? [-1, 0, 1].map(k => ({ ang: ang + k * cfg.tripleSpreadDeg, mult: base }))
-        : [{ ang, mult: base }]);
+      const count = ts.fly ? 1 : special ? weapon.special.balls : ts.triple ? 3 : 1;
+      // Living.ShootImp: o primeiro é central; os laterais usam força 0.9 e 1.1.
+      // O ângulo absoluto do servidor é espelhado ao mirar para a esquerda.
+      volleys.push(Array.from({ length: count }, (_, n) => ({
+        ang: ang + (n === 1 ? 1 : n === 2 ? -1 : 0) * cfg.tripleSpreadDeg * c.facing,
+        power: pow * (n === 1 ? 0.9 : n === 2 ? 1.1 : 1), mult: base,
+      })));
     }
 
     let index = 0;
     for (const volley of volleys) {
-      const results: Array<{ r: ReturnType<typeof simulateShot>; mult: number }> = [];
-      for (const p of volley) {
-        // todos os projéteis do leque saem juntos: simulados contra o mesmo estado do mundo
-        const r = simulateShot(
-          { x: c.x, y: c.y - MUZZLE_HEIGHT, angleDeg: p.ang, power: pow, facing: c.facing, wind },
-          (x, y) => T.isSolid(x, y), this.physics, { hitboxes: this.hitboxes(), shooterId: c.id });
-        results.push({ r, mult: p.mult });
+      const start = this.animationTime;
+      const results = volley.map(p => ({ mult: p.mult, r: simulateShot(
+        { x: c.x, y: c.y - MUZZLE_HEIGHT, angleDeg: p.ang, power: p.power, facing: c.facing, wind },
+        (x, y) => T.isSolid(x, y), this.physics, { hitboxes: this.hitboxes(), shooterId: c.id }),
+      }));
+      // As bolas do leque saem juntas. Os impactos são aplicados em ordem de chegada.
+      for (const { r, mult } of results) events.push({
+        type: "shot", playerId: c.id, index: index++, points: r.points, hit: r.hit, hitKind: r.hitKind,
+        targetId: r.targetId, damageMult: mult, stepSeconds: this.physics.dt, duration: r.duration, at: start,
+      });
+      for (const { r, mult } of [...results].sort((a, b) => a.r.duration - b.r.duration)) {
+        const effects: MatchEvent[] = [];
+        if (ts.fly) this.flyTo(c, r.hit, effects);
+        else if (r.hit) this.impact(c, weapon, r.hit, mult, special, effects);
+        events.push(...effects.map(e => ({ ...e, at: start + r.duration })));
       }
-      for (const { r, mult } of results) {
-        events.push({ type: "shot", playerId: c.id, index: index++, points: r.points, hit: r.hit, hitKind: r.hitKind, targetId: r.targetId, damageMult: mult });
-        if (ts.fly) { this.flyTo(c, r.hit, events); continue; }
-        if (r.hit) this.impact(c, weapon, r.hit, mult, special, events);
-        if (this.over) break;
-      }
+      this.animationTime = start + Math.max(...results.map(({ r }) => r.duration));
+      const finished: MatchEvent[] = [];
+      this.checkOver(finished);
+      events.push(...finished.map(e => ({ ...e, at: this.animationTime })));
       if (this.over) break;
     }
 
-    c.fury = Math.min(100, (special ? 0 : c.fury) + cfg.furyOnAttack);
+    c.fury = Math.min(cfg.maxFury, (special ? 0 : c.fury) + cfg.furyOnAttack);
     events.push({ type: "fury", playerId: c.id, fury: c.fury });
     if (!this.over) events.push(...this.endTurn(false));
-    return { ok: true, events };
+    return { ok: true, events: events.map(e => ({ ...e, at: e.at ?? this.animationTime })) };
   }
 
   private flyTo(c: Character, hit: { x: number; y: number } | null, events: MatchEvent[]): void {
@@ -324,8 +353,8 @@ export class Match {
 
   private impact(shooter: Character, weapon: WeaponDef, hit: { x: number; y: number }, mult: number, special: boolean, events: MatchEvent[]): void {
     const cfg = this.cfg;
-    const radius = weapon.craterRadius * (special ? weapon.special.craterMult : 1);
-    const dmgRadius = radius * cfg.damageRadiusFactor;
+    const ballId = special ? weapon.special.ballId : weapon.ballId;
+    const dmgRadius = special ? weapon.special.damageRadius : weapon.damageRadius;
     for (const t of this.chars) {
       if (!t.alive) continue;
       if (!cfg.friendlyFire && t.team === shooter.team) continue;
@@ -333,20 +362,21 @@ export class Match {
       const dx = Math.max(t.x - PLAYER_HITBOX.w / 2 - hit.x, 0, hit.x - (t.x + PLAYER_HITBOX.w / 2));
       const dy = Math.max(t.y - PLAYER_HITBOX.h - hit.y, 0, hit.y - t.y);
       const d = Math.hypot(dx, dy);
-      if (d > dmgRadius) continue;
+      if (d >= dmgRadius) continue;
       const falloff = 1 - cfg.falloffEdge * (d / dmgRadius);
-      const crit = this.combatRng.next() * 100 < critChancePct(shooter.stats.luck);
-      const amount = this.damageFn({ weapon, attacker: shooter.stats, target: t.stats, bonus: this.ts.bonus, shotMult: mult, falloff, crit });
+      const crit = rollCritical(shooter.stats.luck, this.combatRng.next());
+      const input = { weapon, attacker: shooter.stats, target: t.stats, bonus: this.ts.bonus, shotMult: mult, falloff, crit };
+      const amount = this.damageFn(input);
       t.hp = Math.max(0, t.hp - amount);
       events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit });
-      t.fury = Math.min(100, t.fury + cfg.furyOnHit);
+      const baseDamage = this.damageFn === defaultDamage ? damageBreakdown(input).base : this.damageFn({ ...input, crit: false });
+      if (t.hp > 0) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
       events.push({ type: "fury", playerId: t.id, fury: t.fury });
       if (t.hp <= 0) { t.alive = false; events.push({ type: "death", playerId: t.id, reason: "hp" }); }
     }
-    this.terrain.carveCircle(hit.x, hit.y, radius);
-    events.push({ type: "crater", x: hit.x, y: hit.y, radius });
+    this.terrain.carveShape(hit.x, hit.y, craterShape(ballId));
+    events.push({ type: "crater", x: hit.x, y: hit.y, ballId });
     for (const t of this.chars) this.settle(t, events); // o chão pode ter sumido sob alguém
-    this.checkOver(events);
   }
 
   // ---------- fim de turno / partida ----------
@@ -363,11 +393,15 @@ export class Match {
   private endTurn(passed: boolean): MatchEvent[] {
     const c = this.current, cfg = this.cfg, events: MatchEvent[] = [];
     if (passed) {
-      c.fury = Math.min(100, c.fury + cfg.furyOnPass);
+      c.fury = Math.min(cfg.maxFury, c.fury + cfg.furyOnPass);
       events.push({ type: "fury", playerId: c.id, fury: c.fury });
     }
-    const raw = cfg.delayBase * (passed ? cfg.delayPassFactor : 1) + this.ts.spent * cfg.delayPerEnergy;
-    c.delay += raw / (1 + c.agi / cfg.agiDelayScale);
+    const weapon = own(WEAPONS, c.weaponId)!;
+    // PrepareShoot limita speedTime por GetTurnWaitTime(), que retorna o identificador
+    // do modo (1..6), e não a duração em segundos retornada pela outra sobrecarga.
+    const timeType = new Map([[5, 1], [7, 2], [10, 3], [15, 4], [20, 5], [30, 6]]).get(this.turnTimeLimit()) ?? this.turnTimeLimit();
+    c.delay += this.ts.itemDelay + (passed ? cfg.delayPass :
+      weapon.delay + weapon.ballDelay + Math.floor(Math.min(this.ts.elapsed, timeType)) * cfg.delayPerSecond);
     events.push({ type: "turnEnd", playerId: c.id, delay: c.delay });
     if (cfg.maxTurns > 0 && this.turn >= cfg.maxTurns && !this.over) {
       const hp = new Map<number, number>();
@@ -384,5 +418,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0 };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0 };
 }

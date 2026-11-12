@@ -1,15 +1,10 @@
-/**
- * Atributos e dano (Fase C). Fórmulas de guias de jogadores (docs/pesquisa-mecanicas.md §3), confiança baixa/média:
- * tudo configurável em `DamageConfig`; a escala dos números de fim de jogo ainda precisa de confirmação do dono.
- *
- *   bruto  = (dano_arma + Dano_equip + ATK / 10) × (1 + Σbônus)
- *   armadura = Armadura_equip + DEF / 25 ;  redução = A / (A + K)
- *   final  = bruto × (1 − redução) × multiplicador do projétil × queda radial × (crítico ? 1 + Sorte/25 % : 1)
- *   chance de crítico = Sorte / 20 (%)
- */
+/** Cálculos PvP do DDTank41 (SimpleBomb.MakeDamage, Living.MakeCriticalDamage,
+ * TurnedLiving.GetTurnDelay). Fontes e limites em docs/ddtank41.md. */
 import type { WeaponDef } from "./data";
 
 export interface Stats {
+  /** Grade do atacante no servidor de referência; padrão 1 enquanto não informado. */
+  grade?: number;
   atk: number;
   def: number;
   agi: number;
@@ -26,47 +21,42 @@ export const ZERO_STATS: Stats = { atk: 0, def: 0, agi: 0, luck: 0, hp: 1000, ar
 /** Conta de referência (print do dono, 2026-11-11). **Escala 2022 — NÃO usar na build PvP** (ver BUILDS e docs/decisoes.md item 32). */
 export const REFERENCE_STATS: Stats = { atk: 33281, def: 28663, agi: 29551, luck: 26078, hp: 531164, armor: 8550, damage: 8912 };
 
-export interface DamageConfig {
-  atkDivisor: number;
-  defArmorDivisor: number;
-  /** Constante K da redução A / (A + K). */
-  armorK: number;
-  /** Chance de crítico (%) = Sorte / critChanceDivisor, limitada por critChanceCap. */
-  critChanceDivisor: number;
-  critChanceCap: number;
-  /** Bônus do crítico (%) = Sorte / critBonusDivisor, limitado por critBonusCap. */
-  critBonusDivisor: number;
-  critBonusCap: number;
-}
-
-export const DEFAULT_DAMAGE: DamageConfig = {
-  atkDivisor: 10, defArmorDivisor: 25, armorK: 100,
-  critChanceDivisor: 20, critChanceCap: 100,
-  critBonusDivisor: 25, critBonusCap: 100, // tetos provisórios: com Sorte de fim de jogo a fórmula crua explode
-};
-
 export function withStats(s: Partial<Stats> = {}): Stats {
   return { ...ZERO_STATS, ...s };
 }
 
-/** Chance de crítico em % (0–100). */
-export function critChancePct(luck: number, cfg: DamageConfig = DEFAULT_DAMAGE): number {
-  return Math.min(cfg.critChanceCap, Math.max(0, luck / cfg.critChanceDivisor));
+/** Taxa antes da comparação com Random.Next(100), que usa >= no servidor. */
+export function critChancePct(luck: number): number {
+  return Math.max(0, luck) * 45 / (800 + Math.max(0, luck));
 }
 
-/** Bônus de dano do crítico em % (soma sobre 100%). */
-export function critBonusPct(luck: number, cfg: DamageConfig = DEFAULT_DAMAGE): number {
-  return Math.min(cfg.critBonusCap, Math.max(0, luck / cfg.critBonusDivisor));
+export function rollCritical(luck: number, roll: number): boolean {
+  return critChancePct(luck) >= Math.floor(roll * 100);
 }
 
-export function totalArmor(s: Stats, cfg: DamageConfig = DEFAULT_DAMAGE): number {
-  return s.armor + s.def / cfg.defArmorDivisor;
+export function critBonusPct(luck: number): number {
+  return (0.5 + Math.max(0, luck) * 0.00015) * 100;
 }
 
-/** Fração do dano absorvida pela armadura (0–1). */
-export function armorReduction(s: Stats, cfg: DamageConfig = DEFAULT_DAMAGE): number {
-  const a = totalArmor(s, cfg);
-  return a / (a + cfg.armorK);
+/** BaseGuard já é a armadura; DEF é uma segunda redução, não armadura adicional. */
+export function totalArmor(s: Stats): number { return s.armor; }
+
+export function armorReduction(target: Stats, attacker: Stats = ZERO_STATS): number {
+  const guard = target.armor - 3 * (attacker.grade ?? 1);
+  // O servidor permite DR1 negativo: alvos com pouca armadura sofrem dano adicional.
+  const dr1 = 0.95 * guard / (500 + guard);
+  const defence = target.def - attacker.luck;
+  const dr2 = defence >= 0 ? 0.95 * defence / (600 + defence) : 0;
+  return dr1 + dr2 - dr1 * dr2;
+}
+
+export function turnDelay(s: Stats): number {
+  return Math.trunc(1600 - 1200 * s.agi / (s.agi + 1200) + s.atk / 10);
+}
+
+/** Inteiros intermediários de Player.TakeDamage; crítico não entra nesta conta. */
+export function furyFromDamage(baseDamage: number): number {
+  return Math.trunc((Math.trunc(baseDamage * 2 / 5) + 5) / 2);
 }
 
 /**
@@ -79,6 +69,8 @@ export function combatPower(s: Stats): number {
 
 export interface DamageBreakdown {
   gross: number;
+  base: number;
+  critical: number;
   reduction: number;
   crit: boolean;
   final: number;
@@ -97,14 +89,15 @@ export interface StatDamageInput {
   crit: boolean;
 }
 
-export function damageBreakdown(d: StatDamageInput, cfg: DamageConfig = DEFAULT_DAMAGE): DamageBreakdown {
-  const gross = (d.weapon.baseDamage + d.attacker.damage + d.attacker.atk / cfg.atkDivisor) * (1 + d.bonus);
-  const reduction = armorReduction(d.target, cfg);
-  const critMult = d.crit ? 1 + critBonusPct(d.attacker.luck, cfg) / 100 : 1;
-  const final = Math.max(1, Math.round(gross * (1 - reduction) * d.shotMult * d.falloff * critMult));
-  return { gross, reduction, crit: d.crit, final };
+export function damageBreakdown(d: StatDamageInput): DamageBreakdown {
+  const gross = (d.weapon.baseDamage + d.attacker.damage) * (1 + d.attacker.atk * 0.001);
+  const reduction = armorReduction(d.target, d.attacker);
+  const raw = gross * (1 - reduction) * Math.fround(1 + d.bonus) * Math.fround(d.shotMult) * d.falloff;
+  const base = raw < 0 ? 1 : Math.trunc(raw);
+  const critical = d.crit ? Math.trunc(base * critBonusPct(d.attacker.luck) / 100) : 0;
+  return { gross, reduction, crit: d.crit, base, critical, final: base + critical };
 }
 
-export function statDamage(d: StatDamageInput, cfg: DamageConfig = DEFAULT_DAMAGE): number {
-  return damageBreakdown(d, cfg).final;
+export function statDamage(d: StatDamageInput): number {
+  return damageBreakdown(d).final;
 }

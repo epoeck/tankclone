@@ -4,6 +4,10 @@ Documento de handoff: objetivo, decisões do dono, estado atual e plano das pró
 (ou pessoa) continue sem depender do histórico da conversa. Idioma do projeto e da comunicação com o dono: **português (pt-BR)**.
 
 Documentos relacionados:
+- **`docs/ESTADO-E-RUMO.md`: estado atual e direção do projeto; tem precedência sobre as fases e estimativas históricas deste documento.**
+- `docs/avatar.md`: renderer clássico atual, catálogo local de peças, correção de direção e verificação da continuidade do vento.
+- `docs/ddtank-reborn.md`: atualização atual de física float32, máscaras reais de explosão, delay das bolas e reprodução simultânea dos leques.
+- `docs/ddtank41.md`: referência atual dos cálculos de física e combate, alinhada ao repositório DDTank41 em 2026-11-12; substitui as fórmulas estimadas descritas abaixo.
 - `docs/pesquisa-mecanicas.md`: o que se sabe do original (itens, armas, dano, turnos, pérolas), com fontes e confiança.
 - `docs/decisoes.md`: respostas do dono no refinamento de 2026-11-11 (fonte da verdade para escopo).
 
@@ -18,8 +22,7 @@ servidor rodando no PC do dono.
   fúria/especial, stats e fórmula de dano. Fidelidade = "mesma sensação e mesmos números aproximados", não bit a bit.
 - **Próprio:** nome do jogo, arte, sons, UI e nomes de armas/pets/itens. Nomes do original podem ser usados como
   **placeholder interno** durante o desenvolvimento, mas são trocados antes de abrir para os amigos.
-- **Não copiar código vazado do DDTank** (circula em fóruns/GitHub; é propriedade da 7Road). Fórmulas e números vindos de
-  guias de jogadores, wikis e medições são aceitáveis. Se alguém sugerir usar código vazado, avisar do risco e reimplementar.
+- **Avatar (decisão posterior, 2026-11-12):** o dono passou a preferir o sistema e os recursos visuais clássicos. A composição atual e seus limites estão em `docs/avatar.md`; isso substitui o placeholder SVG para personagens.
 - Só o dono programa; os amigos fazem arte.
 
 ## 2. Escopo da primeira build ("build PvP")
@@ -33,7 +36,7 @@ servidor rodando no PC do dono.
 | Equipamentos com **stats fixos**, todos liberados | forja (fortalecer, compor, gemas), loja e economia |
 | Contas (apelido + senha), XP e nível até **30**; tutorial do 1 ao 9 | hazards de mapa que aumentam o vento |
 | 5 mapas provisórios: 2 com chão indestrutível, 3 tatuzáveis | mapas definitivos |
-| Boneco placeholder (código pronto para sprites em camadas) | arte final em camadas |
+| Avatar clássico em camadas, com catálogo inicial de equipamentos | catálogo completo e animação das asas |
 | Depois do PvP estável: **pérolas** (nível 18) e **pets** (nível 25; formiga e plantinha, 1 passiva + 2 skills) | demais pets |
 
 O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equipamento e funções da UI aos poucos),
@@ -56,33 +59,30 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | Terreno | 3 estados: ar, chão destrutível, chão indestrutível | dono (mapas) |
 | Morte | HP 0 ou cair para fora do mapa | gênero |
 
-## 4. Estado atual (2026-11-11)
+## 4. Estado atual (2026-11-12)
 
-| Item | Estado |
-|---|---|
-| Monorepo TypeScript (npm workspaces), git, GitHub privado `epoeck/tankclone` | pronto |
-| `core`: física do projétil (gravidade + arrasto linear + vento), **calibrada** contra as tabelas da comunidade | pronto |
-| `core`: terreno destrutível (máscara 1 byte/pixel, crateras circulares) | pronto, mas só 2 estados |
-| `core`: calibração (Nelder-Mead, erro em pontos de força) | pronto |
-| `core`: testes (vitest) | 23 passando, typecheck limpo |
-| `client`: visualizador de trajetória (Vite + canvas) | pronto |
-| Vento calibrado | **sim** (`windAccel 17`; regra "ângulo ± vento × 2" erra ~0,3 distância; Fase A) |
-| Colisão contínua + com jogadores (hitbox), terreno de 3 estados, faixa de ângulo | **sim** (Fase A) |
-| Turnos por delay, energia, itens 1–8/F, fúria, 3 armas (dados em `data.ts`), HP, queda, vento semeado, fim de partida | **sim** (Fase B; `match.ts`, dano provisório até a Fase C) |
-| Stats e dano | não começado |
-| Servidor WebSocket, salas até 8, contas (scrypt + SQLite), XP/nível 1–30, reconexão por log, 20 conexões testadas | **sim** (Fase D; cliente ainda joga só local) |
-| Arte, UI, som | não começado |
+O estado detalhado está em [`docs/ESTADO-E-RUMO.md`](docs/ESTADO-E-RUMO.md).
+
+- PvP local e em rede, várias salas, até 8 jogadores por sala, contas SQLite, XP/nível e reconexão por log.
+- Física de referência DDTank41, passo de 40 ms e integração float32, com comparação aos vetores C# publicados pelo Reborn.
+- Fórmulas de dano, crítico, energia, fúria e delay adaptadas; itens respeitam a ordem de aplicação.
+- Terreno com estados destrutível/indestrutível e seis máscaras de explosão importadas.
+- Reprodução dos tiros simultâneos por linha do tempo, independente da taxa de desenho.
+- Direção transmitida pelo servidor; vento gradual entre turnos e estável dentro do turno.
+- Avatares clássicos PNG em camadas, retratos, masculino/feminino e animações básicas; asas estáticas.
+- As tabelas da comunidade e o perfil anterior continuam disponíveis para comparação histórica.
+- Inventário completo, novas habilidades, pets, pérolas, cartas e PvE ainda não foram portados.
 
 ## 5. Localização, requisitos e comandos
 
 - Pasta: `/run/media/bazzite/5c30424f-a21c-4799-94ee-89c1ba8949f0/tankclone` (SSD SATA, ext4). O NVMe do sistema está
   quase cheio e instável sob carga — **mantenha I/O pesado no SATA**.
-- Remoto: `https://github.com/epoeck/tankclone` (privado), branch `main`.
+- Remoto: `https://github.com/epoeck/tankclone` (privado); conferir a branch e seu upstream com `git status -sb`.
 - Máquina: Linux (Bazzite/Fedora Atomic), Node v24, npm 11. Mapas provisórios: ArtCraft (guias) + Qwen Image (ComfyUI local).
 
 ```bash
 npm install                                       # na raiz (o aviso do script do esbuild pode ser ignorado)
-npm test                                          # testes do core (vitest)
+npm test                                          # testes do core e do servidor (vitest)
 npm run typecheck -w @tankclone/core
 npm run typecheck -w @tankclone/client
 npm run calibrate -w @tankclone/core              # reajusta a física contra as tabelas
@@ -94,7 +94,7 @@ npm run build -w @tankclone/client
 
 ```
 tankclone/
-  package.json              workspaces: packages/*; "test" delega ao core
+  package.json              workspaces: packages/*; "test" verifica core e servidor
   tsconfig.base.json        strict, noUncheckedIndexedAccess, resolveJsonModule, moduleResolution Bundler
   DESENVOLVIMENTO.md        este arquivo
   docs/                     pesquisa-mecanicas.md, decisoes.md
@@ -106,11 +106,11 @@ tankclone/
       calibration/ddtank-tables.json   tabelas de tiro da comunidade (renomear antes de publicar)
       scripts/calibrate.ts
       test/*.test.ts
-    client/                 visualizador hoje; vira o cliente do jogo
+    client/                 jogo Canvas 2D, lobby, HUD, vestiário e prévias
 ```
 
 Regra de arquitetura: **nada de DOM, rede, tempo real ou aleatoriedade não semeada em `core`**. O servidor é autoritativo
-e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
+e roda o mesmo `core` que o cliente, com passo fixo de referência (`dt = 0.04`, 25 passos/s); o desenho do cliente segue seu próprio relógio.
 
 ## 7. Convenções do `core`
 
@@ -118,17 +118,19 @@ e roda o mesmo `core` que o cliente, com passo fixo (`dt = 1/60`).
 - Ângulo em graus: `0° = direita`, `90° = para cima`; `facing: 1 | -1` espelha o eixo X.
 - Força 0–100; velocidade inicial = `power * speedPerPower`.
 - Vento com sinal (positivo = para a direita); aceleração = `wind * windAccel`.
-- Integração Euler semi-implícita, passo fixo: `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
-- `simulateShot` varre o segmento entre passos (≤ 1 px) → colisão contínua; aceita `hitboxes` de jogadores (`Hitbox`, `PLAYER_HITBOX` provisório 36×52) e ignora o atirador até o projétil sair da própria caixa. Retorna `hitKind` (`terrain`/`player`) e `targetId`.
+- Integração Euler semi-implícita com arredondamentos float32 por operação, passo fixo de 0,04 s: `ax = wind*windAccel - drag*vx`, `ay = gravity - drag*vy`.
+- `simulateShot` varre o segmento entre passos (≤ 1 px) → colisão contínua; aceita `hitboxes` de jogadores (`Hitbox`, `PLAYER_HITBOX` provisório 36×42) e ignora o atirador até o projétil sair da própria caixa. Retorna `hitKind` (`terrain`/`player`) e `targetId`.
 - `Terrain`: 3 estados (`AIR`/`DESTRUCTIBLE`/`INDESTRUCTIBLE`); laterais e fundo indestrutíveis, topo vazio; `carveCircle` só apaga destrutível; `fromMask` lê RGBA (preto = ar, branco = destrutível, vermelho puro = indestrutível; classificação por canal, ver `terrain.ts`); `slopeDeg(x, feetY, facing)` dá a inclinação do chão sob o personagem.
 - `angle.ts`: faixa de ângulo por arma relativa ao corpo; `allowedAbsoluteRange`, `clampAbsoluteAngle`, `relativeAngle`. O ângulo usado no tiro e exibido é o absoluto.
 
 - **Cliente só anima eventos**: nunca re-simula o tiro. `Math.hypot`, `atan2`, `sin` e `cos` não são garantidos bit a bit entre motores (V8, Safari); só o servidor (core) decide, o cliente desenha os `points` recebidos. Antes do servidor existir, o `game.html` roda o core localmente (um motor só).
-- **Personagem = boneco customizável em camadas (não tanque).** `core/appearance.ts`: `Appearance` (pele, rosto, cabelo, cor do cabelo; escolha livre) e `EquippedLook` (roupa e chapéu vêm de equipamentos; placeholder na 1ª build). Salvo na conta (`look`), enviado no setup da partida. Desenho em `client/src/chars.ts`: camadas SVG da arte (`public/assets/chars/<camada>/<camada>-<n>.svg`, pele e cabelo por tinta `currentColor`, braço+arma giram no ombro); `doll.ts` é só o fallback procedural enquanto as imagens carregam. Slots de equipamento visual: roupa, chapéu, óculos, asas.
-- Pendência: a parede do `doMove` só testa 1 px acima do degrau; o boneco de 52 px atravessa saliências na altura da cabeça.
-- Pendência (Fase C): a escala da fórmula de dano não fecha com a conta de referência (ver `docs/pesquisa-mecanicas.md` §3); tetos de crítico provisórios.
+- **Personagem = avatar clássico em camadas.** `core/appearance.ts` guarda a aparência e `core/avatar.ts` define peças/quadros; `client/src/chars.ts` compõe PNGs GAME/SHOW em Canvas 2D, aplica máscaras de cor e espelha todas as peças juntas. Não usa runtime Flash. Veja `docs/avatar.md` para fontes, importação e limites.
+- Pendência: revisar a colisão do corpo com obstáculos e saliências na altura da cabeça durante o movimento.
+- A fórmula atual de dano/crítico está em `docs/ddtank41.md`; a conta de 2022 continua fora da escala da primeira build PvP, que usa stats antigos.
 
-## 8. Calibração da física
+## 8. Calibração histórica da física (perfil TABLE_PHYSICS)
+
+Esta seção registra a aproximação anterior. O padrão da partida agora é `DEFAULT_PHYSICS` descrito em `docs/ddtank41.md`; os testes por tabelas usam `TABLE_PHYSICS`.
 
 ### 8.1 Dados
 Tabelas da comunidade: força necessária por distância 1..20 a 20°, 30°, 50° e 65°, chão plano, sem vento
@@ -139,7 +141,7 @@ Tabelas da comunidade: força necessária por distância 1..20 a 20°, 30°, 50�
 
 ### 8.2 Resultado
 Gravidade + arrasto linear: erro ±1 ponto de força na maioria das distâncias, pior caso ~2,8 (distâncias 1–4 a 20° e 65°).
-Valores atuais: `gravity 507.32`, `speedPerPower 16.748`, `drag 0.1416`, `MUZZLE_HEIGHT 30.18` px (restrição para os artistas:
+Valores históricos: `gravity 507.32`, `speedPerPower 16.748`, `drag 0.1416`, `MUZZLE_HEIGHT 30.18` px (restrição para os artistas:
 o projétil sai ~30 px acima dos pés). Descartados: comprimento de cano, expoente de força ≠ 1.
 
 ### 8.3 Achado da avaliação de 2026-11-11

@@ -1,0 +1,275 @@
+{
+  "commit": "7fcb55290e4c7aabd6887d3c1ccd2621b5080924",
+  "damage": [
+    {
+      "name": "sem equipamentos",
+      "atk": 0,
+      "damage": 0,
+      "grade": 1,
+      "luck": 0,
+      "armor": 0,
+      "defence": 0,
+      "bonus": 0,
+      "mult": 1,
+      "falloff": 1,
+      "crit": false,
+      "expectedBase": 201,
+      "expectedCritical": 0,
+      "expectedFinal": 201
+    },
+    {
+      "name": "ataque multiplica",
+      "atk": 1000,
+      "damage": 50,
+      "grade": 1,
+      "luck": 0,
+      "armor": 0,
+      "defence": 0,
+      "bonus": 0,
+      "mult": 1,
+      "falloff": 1,
+      "crit": false,
+      "expectedBase": 502,
+      "expectedCritical": 0,
+      "expectedFinal": 502
+    },
+    {
+      "name": "armadura e defesa separadas",
+      "atk": 1500,
+      "damage": 250,
+      "grade": 30,
+      "luck": 400,
+      "armor": 160,
+      "defence": 900,
+      "bonus": 1.3,
+      "mult": 0.6,
+      "falloff": 0.85,
+      "crit": false,
+      "expectedBase": 662,
+      "expectedCritical": 0,
+      "expectedFinal": 662
+    },
+    {
+      "name": "critico truncado depois do dano base",
+      "atk": 2800,
+      "damage": 400,
+      "grade": 30,
+      "luck": 600,
+      "armor": 150,
+      "defence": 1200,
+      "bonus": 0.5,
+      "mult": 0.9,
+      "falloff": 0.93,
+      "crit": true,
+      "expectedBase": 1349,
+      "expectedCritical": 795,
+      "expectedFinal": 2144
+    },
+    {
+      "name": "sorte supera defesa",
+      "atk": 1000,
+      "damage": 150,
+      "grade": 1,
+      "luck": 800,
+      "armor": 100,
+      "defence": 400,
+      "bonus": 0,
+      "mult": 1,
+      "falloff": 1,
+      "crit": false,
+      "expectedBase": 591,
+      "expectedCritical": 0,
+      "expectedFinal": 591
+    },
+    {
+      "name": "dano pode truncar para zero",
+      "atk": 0,
+      "damage": 0,
+      "grade": 1,
+      "luck": 0,
+      "armor": 1000000000.0,
+      "defence": 1000000000.0,
+      "bonus": 0,
+      "mult": 0.01,
+      "falloff": 1,
+      "crit": true,
+      "expectedBase": 0,
+      "expectedCritical": 0,
+      "expectedFinal": 0
+    }
+  ],
+  "items": {
+    "1": {
+      "Property2": 2,
+      "Property4": 110,
+      "Property5": 600
+    },
+    "2": {
+      "Property2": 3,
+      "Property4": 110,
+      "Property5": 600
+    },
+    "3": {
+      "Property2": 1,
+      "Property4": 110,
+      "Property5": 500
+    },
+    "4": {
+      "Property2": 50,
+      "Property4": 85,
+      "Property5": 400
+    },
+    "5": {
+      "Property2": 40,
+      "Property4": 80,
+      "Property5": 340
+    },
+    "6": {
+      "Property2": 30,
+      "Property4": 70,
+      "Property5": 200
+    },
+    "7": {
+      "Property2": 20,
+      "Property4": 55,
+      "Property5": 150
+    },
+    "8": {
+      "Property2": 10,
+      "Property4": 50,
+      "Property5": 70
+    },
+    "F": {
+      "Property2": 0,
+      "Property4": 150,
+      "Property5": 200
+    }
+  },
+  "balls": {
+    "101": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 55.0,
+      "Power": 1.0,
+      "Amount": 1.0
+    },
+    "111": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 65.0,
+      "Power": 1.3,
+      "Amount": 1.0
+    },
+    "161": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 55.0,
+      "Power": 1.0,
+      "Amount": 1.0
+    },
+    "171": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 45.0,
+      "Power": 0.6,
+      "Amount": 3.0
+    },
+    "381": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 55.0,
+      "Power": 1.0,
+      "Amount": 1.0
+    },
+    "391": {
+      "Mass": 10.0,
+      "Weight": 70.0,
+      "Wind": 240.0,
+      "DragIndex": 1.0,
+      "Radii": 65.0,
+      "Power": 1.5,
+      "Amount": 1.0
+    }
+  },
+  "trajectories": [
+    {
+      "angle": 45,
+      "power": 50,
+      "wind": 0,
+      "facing": 1,
+      "points": [
+        {
+          "step": 1,
+          "x": 228.0537567138672,
+          "y": 373.0662536621094
+        },
+        {
+          "step": 25,
+          "x": 837.9686889648438,
+          "y": 103.7701187133789
+        },
+        {
+          "step": 100,
+          "x": 2136.1103515625,
+          "y": 2879.185546875
+        }
+      ]
+    },
+    {
+      "angle": 65,
+      "power": 80,
+      "wind": 3,
+      "facing": 1,
+      "points": [
+        {
+          "step": 1,
+          "x": 226.93887329101562,
+          "y": 343.583984375
+        },
+        {
+          "step": 25,
+          "x": 845.1458740234375,
+          "y": -566.6834106445312
+        },
+        {
+          "step": 100,
+          "x": 2505.362060546875,
+          "y": 844.4901123046875
+        }
+      ]
+    },
+    {
+      "angle": 30,
+      "power": 62.5,
+      "wind": -4,
+      "facing": -1,
+      "points": [
+        {
+          "step": 1,
+          "x": 156.9126434326172,
+          "y": 376.35968017578125
+        },
+        {
+          "step": 25,
+          "x": -823.220947265625,
+          "y": 178.66610717773438
+        },
+        {
+          "step": 100,
+          "x": -3368.568603515625,
+          "y": 3106.480224609375
+        }
+      ]
+    }
+  ]
+}

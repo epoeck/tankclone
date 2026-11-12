@@ -125,6 +125,13 @@ function renderWardrobe() {
     host.append(row);
   };
   const a = me.look.appearance, e = me.look.equipped;
+  const sexRow = el("div", "", "opts"); sexRow.append(el("span", "Avatar", "label"));
+  for (const [sex, label] of [["m", "Masculino"], ["f", "Feminino"]] as const) {
+    const button = el("button", label, "btn btn--sm btn--steel");
+    button.setAttribute("aria-pressed", String(a.sex === sex));
+    button.onclick = () => apply(l => (l.appearance.sex = sex)); sexRow.append(button);
+  }
+  host.append(sexRow);
   colors("Pele", SKIN_TONES, a.skin, (l, i) => (l.appearance.skin = i));
   numbers("Rosto", COUNTS.face, a.face, (l, i) => (l.appearance.face = i));
   numbers("Cabelo", COUNTS.hair, a.hair, (l, i) => (l.appearance.hair = i));

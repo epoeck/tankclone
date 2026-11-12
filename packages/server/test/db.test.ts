@@ -48,9 +48,9 @@ describe("aparência na conta", () => {
     const look = db.setLook("bonequinho", { appearance: { skin: 4, face: 2, hair: 2, hairColor: 5 }, equipped: { outfit: 2, hat: 1 } });
     expect(look.appearance.skin).toBe(4);
     expect(db.setLook("bonequinho", { appearance: { skin: 999 } }).appearance.skin).toBe(1);
-    db.setLook("bonequinho", { appearance: { skin: 5 }, equipped: { hat: 2 } });
+    db.setLook("bonequinho", { appearance: { sex: "f", skin: 5 }, equipped: { hat: 2 } });
     const acc = await db.login("bonequinho", "segredo1");
     expect(typeof acc).not.toBe("string");
-    expect((acc as { look: { appearance: { skin: number }; equipped: { hat: number } } }).look).toMatchObject({ appearance: { skin: 5 }, equipped: { hat: 2 } });
+    expect((acc as { look: { appearance: { skin: number }; equipped: { hat: number } } }).look).toMatchObject({ appearance: { sex: "f", skin: 5 }, equipped: { hat: 2 } });
   });
 });

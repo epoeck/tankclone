@@ -121,7 +121,7 @@ export class Hud {
       const en = who === cur ? who.energy : who.maxEnergy;
       this.enBar.style.setProperty("--value", `${(en / Math.max(1, who.maxEnergy)) * 100}%`);
       this.enText.textContent = `${fmt(en)}${who === cur && v.ui.spent ? ` · itens −${v.ui.spent}` : ""}`;
-      this.gauge.style.setProperty("--pressure", String(who.fury / 100)); this.gaugeLabel.textContent = `Pressão ${Math.round(who.fury)}%${v.ui.special ? " · ESTOURO" : ""}`;
+      this.gauge.style.setProperty("--pressure", String(who.fury / 200)); this.gaugeLabel.textContent = `Pressão ${Math.round(who.fury / 2)}%${v.ui.special ? " · ESTOURO" : ""}`;
     }
     this.power.style.setProperty("--power", `${v.ui.power}%`); this.power.style.setProperty("--last", `${v.ui.last}%`);
     this.angle.style.setProperty("--angle", `${v.ui.angle}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;

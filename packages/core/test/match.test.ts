@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Match, Terrain, WEAPONS, DEFAULT_PHYSICS, MUZZLE_HEIGHT, simulateShot, type MatchEvent, type PlayerSetup, type ItemKey } from "../src/index";
+import { Match, Terrain, WEAPONS, DEFAULT_PHYSICS, MUZZLE_HEIGHT, simulateShot, furyFromDamage, type MatchEvent, type PlayerSetup, type ItemKey } from "../src/index";
 
 const flat = () => Terrain.fromHeightFn(1000, 600, () => 450);
 const duo = (over: Partial<PlayerSetup> = {}, over2: Partial<PlayerSetup> = {}): PlayerSetup[] => [
@@ -75,18 +75,30 @@ describe("turnos", () => {
     ok(m.submit({ type: "pass", playerId: "b" }));
     expect(m.currentId).toBe("a"); // a ganha menos delay por turno (agi 100) e volta antes
   });
-  it("passar a vez gasta menos delay que atirar", () => {
-    const a = mk(), b = mk();
-    ok(a.submit({ type: "pass", playerId: "a" }));
-    ok(b.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 10 }));
-    expect(a.getChar("a")!.delay).toBeLessThan(b.getChar("a")!.delay);
+  it("delay de itens é independente de energia, movimento não acrescenta delay sozinho", () => {
+    const calm = mk(), moved = mk(), item = mk();
+    ok(moved.submit({ type: "move", playerId: "a", dir: -1, px: 50 }));
+    ok(item.submit({ type: "item", playerId: "a", key: "4" }));
+    const end = (m: Match) => ev(ok(m.submit({ type: "pass", playerId: "a" })), "turnEnd")[0]!.delay;
+    const baseline = end(calm);
+    expect(end(moved)).toBe(baseline);
+    expect(end(item) - baseline).toBe(400);
   });
-  it("mover e usar itens aumentam o delay; agilidade reduz o ganho", () => {
-    const m1 = mk(duo({ agi: 0 })), m2 = mk(duo({ agi: 20000 }));
-    for (const m of [m1, m2]) { ok(m.submit({ type: "move", playerId: "a", dir: -1, px: 50 })); ok(m.submit({ type: "pass", playerId: "a" })); }
-    const calm = mk(duo({ agi: 0 })); ok(calm.submit({ type: "pass", playerId: "a" }));
-    expect(m1.getChar("a")!.delay).toBeGreaterThan(calm.getChar("a")!.delay);
-    expect(m2.getChar("a")!.delay).toBeLessThan(m1.getChar("a")!.delay);
+  it("tempo antes do tiro soma 20 de delay por segundo inteiro", () => {
+    const quick = mk(), slow = mk();
+    slow.tick(3.9);
+    const shot = (m: Match) => ev(ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 10 })), "turnEnd")[0]!.delay;
+    expect(shot(slow) - shot(quick)).toBe(60);
+  });
+  it("PrepareShoot limita o tempo ao id do modo: 3 para turno de 10 s", () => {
+    const early = mk(), late = mk();
+    early.tick(3); late.tick(9);
+    const shot = (m: Match) => ev(ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 10 })), "turnEnd")[0]!.delay;
+    expect(shot(late)).toBe(shot(early));
+  });
+  it("ataque também participa da escolha do primeiro jogador", () => {
+    const m = mk(duo({ agi: 100, stats: { atk: 10000 } }, { agi: 0, stats: { atk: 0 } }));
+    expect(m.currentId).toBe("b");
   });
   it("tempo: 10 s, passa a vez ao estourar; 5 s se todos têm FC alta", () => {
     const m = mk();
@@ -118,7 +130,9 @@ describe("movimento", () => {
     expect(c.energy).toBe(0);
     expect(c.x).toBe(200 + 243); // 240 + 100/30 = 243 de energia
     expect(e.length).toBeGreaterThan(0);
-    expect(ok(m.submit({ type: "move", playerId: "a", dir: -1, px: 5 }))).toEqual([]);
+    expect(ok(m.submit({ type: "move", playerId: "a", dir: -1, px: 5 }))).toEqual([
+      { type: "move", playerId: "a", facing: -1, path: [], energyLeft: 0 },
+    ]);
   });
   it("sobe rampa suave e é barrado por parede alta", () => {
     const t = Terrain.fromHeightFn(1000, 600, x => (x >= 260 ? 360 : 450 - Math.max(0, x - 200) * 1)); // rampa de 45° e depois parede de 90 px
@@ -157,8 +171,8 @@ describe("tiro, dano e fúria", () => {
     expect(dmg.playerId).toBe("b");
     expect(dmg.amount).toBeGreaterThan(100);
     expect(m.getChar("b")!.hp).toBe(1000 - dmg.amount);
-    expect(m.getChar("a")!.fury).toBe(15);
-    expect(m.getChar("b")!.fury).toBe(10);
+    expect(m.getChar("a")!.fury).toBe(20);
+    expect(m.getChar("b")!.fury).toBe(furyFromDamage(dmg.amount));
     expect(ev(es, "crater")).toHaveLength(1);
     expect(m.currentId).toBe("b");
   });
@@ -177,7 +191,8 @@ describe("tiro, dano e fúria", () => {
     ok(t.submit({ type: "item", playerId: "a", key: "2" }));
     const shots = ev(ok(shoot(t, "a", 320)), "shot");
     expect(shots).toHaveLength(3);
-    expect(shots.every(s => s.damageMult === 0.5)).toBe(true);
+    expect(shots.every(s => s.damageMult === 1)).toBe(true);
+    expect(shots[0]!.points[1]).not.toEqual(shots[1]!.points[1]);
   });
   it("tecla F: voa até onde o projétil cai, sem dano nem cratera", () => {
     const m = mk(duo({ agi: 3300 }, { x: 900 }));
@@ -195,10 +210,10 @@ describe("tiro, dano e fúria", () => {
   it("especial exige fúria cheia e a zera", () => {
     const m = mk(duo({ weaponId: "furnace" }));
     expect(m.submit({ type: "shoot", playerId: "a", angleDeg: 30, power: 50, special: true }).ok).toBe(false);
-    m.getChar("a")!.fury = 100;
+    m.getChar("a")!.fury = 200;
     const es = ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 30, power: 50, special: true }));
-    expect(ev(es, "shot")).toHaveLength(1 + WEAPONS.furnace!.special.shots);
-    expect(m.getChar("a")!.fury).toBe(15);
+    expect(ev(es, "shot")).toHaveLength(WEAPONS.furnace!.special.balls);
+    expect(m.getChar("a")!.fury).toBe(20);
   });
   it("aliados não se ferem (friendlyFire off)", () => {
     const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge" }, { id: "c", team: 1, x: 320, weaponId: "sledge" }, { id: "b", team: 2, x: 800, weaponId: "sledge" }]);

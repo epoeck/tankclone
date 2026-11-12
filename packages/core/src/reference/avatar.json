@@ -1,0 +1,1176 @@
+{
+  "source": "dk-khoado/Gunny-3.0",
+  "commit": "16e24b119f96b93b34ddb148f9a035f71a234e67",
+  "sexes": {
+    "m": {
+      "face": [
+        {
+          "pic": "default",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/face/default/1/game.png",
+                "equip/m/face/default/2/game.png",
+                "equip/m/face/default/3/game.png"
+              ],
+              "show": [
+                "equip/m/face/default/1/show.png",
+                "equip/m/face/default/2/show.png",
+                "equip/m/face/default/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "face1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/face/face1/1/game.png",
+                "equip/m/face/face1/2/game.png",
+                "equip/m/face/face1/3/game.png"
+              ],
+              "show": [
+                "equip/m/face/face1/1/show.png",
+                "equip/m/face/face1/2/show.png",
+                "equip/m/face/face1/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "face2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/face/face2/1/game.png",
+                "equip/m/face/face2/2/game.png",
+                "equip/m/face/face2/3/game.png"
+              ],
+              "show": [
+                "equip/m/face/face2/1/show.png",
+                "equip/m/face/face2/2/show.png",
+                "equip/m/face/face2/3/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "cloth": [
+        {
+          "pic": "cloth1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/cloth/cloth1/1/game.png",
+                "equip/m/cloth/cloth1/2/game.png",
+                "equip/m/cloth/cloth1/3/game.png"
+              ],
+              "show": [
+                "equip/m/cloth/cloth1/1/show.png",
+                "equip/m/cloth/cloth1/2/show.png",
+                "equip/m/cloth/cloth1/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "cloth2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/cloth/cloth2/1/game.png",
+                "equip/m/cloth/cloth2/2/game.png",
+                "equip/m/cloth/cloth2/3/game.png"
+              ],
+              "show": [
+                "equip/m/cloth/cloth2/1/show.png",
+                "equip/m/cloth/cloth2/2/show.png",
+                "equip/m/cloth/cloth2/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "cloth3",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/cloth/cloth3/1/game.png",
+                "equip/m/cloth/cloth3/2/game.png",
+                "equip/m/cloth/cloth3/3/game.png"
+              ],
+              "show": [
+                "equip/m/cloth/cloth3/1/show.png",
+                "equip/m/cloth/cloth3/2/show.png",
+                "equip/m/cloth/cloth3/3/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "hair": [
+        {
+          "pic": "default",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/m/hair/default/1/A/game.png",
+                "equip/m/hair/default/2/A/game.png"
+              ],
+              "show": [
+                "equip/m/hair/default/1/A/show.png",
+                "equip/m/hair/default/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/m/hair/default/1/B/game.png",
+                "equip/m/hair/default/2/B/game.png"
+              ],
+              "show": [
+                "equip/m/hair/default/1/B/show.png",
+                "equip/m/hair/default/2/B/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "hair3",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/m/hair/hair3/1/A/game.png",
+                "equip/m/hair/hair3/2/A/game.png"
+              ],
+              "show": [
+                "equip/m/hair/hair3/1/A/show.png",
+                "equip/m/hair/hair3/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/m/hair/hair3/1/B/game.png",
+                "equip/m/hair/hair3/2/B/game.png"
+              ],
+              "show": [
+                "equip/m/hair/hair3/1/B/show.png",
+                "equip/m/hair/hair3/2/B/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "hair5",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/m/hair/hair5/1/A/game.png",
+                "equip/m/hair/hair5/2/A/game.png"
+              ],
+              "show": [
+                "equip/m/hair/hair5/1/A/show.png",
+                "equip/m/hair/hair5/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/m/hair/hair5/1/B/game.png",
+                "equip/m/hair/hair5/2/B/game.png"
+              ],
+              "show": [
+                "equip/m/hair/hair5/1/B/show.png",
+                "equip/m/hair/hair5/2/B/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "head": [
+        {
+          "pic": "head1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/head/head1/1/game.png"
+              ],
+              "show": [
+                "equip/m/head/head1/1/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "head2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/head/head2/1/game.png"
+              ],
+              "show": [
+                "equip/m/head/head2/1/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "glass": [
+        {
+          "pic": "glass1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/m/glass/glass1/1/game.png"
+              ],
+              "show": [
+                "equip/m/glass/glass1/1/show.png"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "f": {
+      "face": [
+        {
+          "pic": "default",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/face/default/1/game.png",
+                "equip/f/face/default/2/game.png",
+                "equip/f/face/default/3/game.png"
+              ],
+              "show": [
+                "equip/f/face/default/1/show.png",
+                "equip/f/face/default/2/show.png",
+                "equip/f/face/default/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "face1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/face/face1/1/game.png",
+                "equip/f/face/face1/2/game.png",
+                "equip/f/face/face1/3/game.png"
+              ],
+              "show": [
+                "equip/f/face/face1/1/show.png",
+                "equip/f/face/face1/2/show.png",
+                "equip/f/face/face1/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "face2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/face/face2/1/game.png",
+                "equip/f/face/face2/2/game.png",
+                "equip/f/face/face2/3/game.png"
+              ],
+              "show": [
+                "equip/f/face/face2/1/show.png",
+                "equip/f/face/face2/2/show.png",
+                "equip/f/face/face2/3/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "cloth": [
+        {
+          "pic": "cloth1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/cloth/cloth1/1/game.png",
+                "equip/f/cloth/cloth1/2/game.png",
+                "equip/f/cloth/cloth1/3/game.png"
+              ],
+              "show": [
+                "equip/f/cloth/cloth1/1/show.png",
+                "equip/f/cloth/cloth1/2/show.png",
+                "equip/f/cloth/cloth1/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "cloth2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/cloth/cloth2/1/game.png",
+                "equip/f/cloth/cloth2/2/game.png",
+                "equip/f/cloth/cloth2/3/game.png"
+              ],
+              "show": [
+                "equip/f/cloth/cloth2/1/show.png",
+                "equip/f/cloth/cloth2/2/show.png",
+                "equip/f/cloth/cloth2/3/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "cloth3",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/cloth/cloth3/1/game.png",
+                "equip/f/cloth/cloth3/2/game.png",
+                "equip/f/cloth/cloth3/3/game.png"
+              ],
+              "show": [
+                "equip/f/cloth/cloth3/1/show.png",
+                "equip/f/cloth/cloth3/2/show.png",
+                "equip/f/cloth/cloth3/3/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "hair": [
+        {
+          "pic": "default",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/f/hair/default/1/A/game.png",
+                "equip/f/hair/default/2/A/game.png"
+              ],
+              "show": [
+                "equip/f/hair/default/1/A/show.png",
+                "equip/f/hair/default/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/f/hair/default/1/B/game.png",
+                "equip/f/hair/default/2/B/game.png"
+              ],
+              "show": [
+                "equip/f/hair/default/1/B/show.png",
+                "equip/f/hair/default/2/B/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "hair3",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/f/hair/hair3/1/A/game.png",
+                "equip/f/hair/hair3/2/A/game.png"
+              ],
+              "show": [
+                "equip/f/hair/hair3/1/A/show.png",
+                "equip/f/hair/hair3/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/f/hair/hair3/1/B/game.png",
+                "equip/f/hair/hair3/2/B/game.png"
+              ],
+              "show": [
+                "equip/f/hair/hair3/1/B/show.png",
+                "equip/f/hair/hair3/2/B/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "hair5",
+          "variants": {
+            "A": {
+              "game": [
+                "equip/f/hair/hair5/1/A/game.png",
+                "equip/f/hair/hair5/2/A/game.png"
+              ],
+              "show": [
+                "equip/f/hair/hair5/1/A/show.png",
+                "equip/f/hair/hair5/2/A/show.png"
+              ]
+            },
+            "B": {
+              "game": [
+                "equip/f/hair/hair5/1/B/game.png",
+                "equip/f/hair/hair5/2/B/game.png"
+              ],
+              "show": [
+                "equip/f/hair/hair5/1/B/show.png",
+                "equip/f/hair/hair5/2/B/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "head": [
+        {
+          "pic": "head1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/head/head1/1/game.png"
+              ],
+              "show": [
+                "equip/f/head/head1/1/show.png"
+              ]
+            }
+          }
+        },
+        {
+          "pic": "head2",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/head/head2/1/game.png"
+              ],
+              "show": [
+                "equip/f/head/head2/1/show.png"
+              ]
+            }
+          }
+        }
+      ],
+      "glass": [
+        {
+          "pic": "glass1",
+          "variants": {
+            "default": {
+              "game": [
+                "equip/f/glass/glass1/1/game.png"
+              ],
+              "show": [
+                "equip/f/glass/glass1/1/show.png"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "weapons": {
+    "prism": {
+      "game": "arm/bomb/1/0/game.png",
+      "show": "arm/bomb/1/0/show.png"
+    },
+    "sledge": {
+      "game": "arm/brick/1/0/game.png",
+      "show": "arm/brick/1/0/show.png"
+    },
+    "furnace": {
+      "game": "arm/bombpack/1/0/game.png",
+      "show": "arm/bombpack/1/0/show.png"
+    }
+  },
+  "wings": {
+    "1": "equip/wing/wing002/icon.png"
+  },
+  "files": {
+    "equip/m/face/default/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "55c4d53747011117cee2f5dae1a37cc22707bad7e2695f7435b54d8e86ac9437"
+    },
+    "equip/m/face/default/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "ac05a595c677a8cac938205361c65b5f9c75b17977229febc19c9bb5403f178c"
+    },
+    "equip/m/face/default/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "b243f1e07167d0e01c273ce39d519f85491a28f6f011035fe20e51231f92ba78"
+    },
+    "equip/m/face/default/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "858737e5de6d42250152c5196b7864fa5dcae9e1c13c621155f477b7b91b13a4"
+    },
+    "equip/m/face/default/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "deaa2a32ec1bd5de80f39c23827a318a9cebcea1ea7d23abe5d70aea824af4af"
+    },
+    "equip/m/face/default/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "008e505876c5a659b38173490a0b68ccbc2ae91e6bf4637acc95ea946f63d7fb"
+    },
+    "equip/m/face/face1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8ca951db0f8a4622f80ba732c6cfad378626a4475fb8c3e5bd2e5ba1f3f5d08a"
+    },
+    "equip/m/face/face1/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "21a48c4788a2deae8f9820128e6d2164bf61d8e1294a0a3dbd19652ba3fd2ea3"
+    },
+    "equip/m/face/face1/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "c83f6f7d9be9db662c3682bc1e1134baf58a8223416115fa23fb5f8b29731511"
+    },
+    "equip/m/face/face1/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "4658cbff068b3e8fde889d2e87d96573a2ddf4ce8485f6d7e33dd6a54789769e"
+    },
+    "equip/m/face/face1/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "23d4062ae00995c8c4d26de1e8a510c791f9cd7cc4f869f1ae5038802e49d035"
+    },
+    "equip/m/face/face1/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "9cab48aa8040d69c65fc77cb6155f80cdfc3ce987b0ed589dcfb670318e94ecf"
+    },
+    "equip/m/face/face2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "3745160ffcbd442eddfea1ec1d8884e742a625ce99b48bc6e1840baa85273935"
+    },
+    "equip/m/face/face2/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "b0e070be88abfc332265c302d6a30ea9f7ff232afd3c9077a78a115fa23d9ab4"
+    },
+    "equip/m/face/face2/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "62c7ab1c3871aaa710a60e98a69814b7ec8bace44539074d651319156b5954cd"
+    },
+    "equip/m/face/face2/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "4b8ad0eeaf6aac969b9eacd696c553eede8bde010087df5bc33bd55d909d571a"
+    },
+    "equip/m/face/face2/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "f3466e292c139bdda7d76f890f03a46cdda0df0633519e29d5a96b147d2b9898"
+    },
+    "equip/m/face/face2/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "f433d0745345f68b592e91a75ecd1f393fec4a008eaae8922ba14b515a5e6424"
+    },
+    "equip/m/cloth/cloth1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "430fa18e7adf8b54680deaa8c5f13b89a179f69b9b5762418a8a1301f8d06045"
+    },
+    "equip/m/cloth/cloth1/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "bd86c46d8c7c4160badbd78bc9e26467ecc9816822afb9618a66501d34402f51"
+    },
+    "equip/m/cloth/cloth1/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "bc4df34eb49737da8d4e290f85b4f99ebfe95fa4cbd6a15da28ac84418858511"
+    },
+    "equip/m/cloth/cloth1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "54f9b742c4b6da56fc092f13f7d789c6db94eb7e4b0b3120ffcb855b57bb3663"
+    },
+    "equip/m/cloth/cloth1/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "366574d443b42d4f19a4d09611df72beb2ea4800a572cc94fb0250b65c02eb5c"
+    },
+    "equip/m/cloth/cloth1/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "9c89f681d90663be7256e534cb1d4ed172a34249c8fc90585c91412de2901037"
+    },
+    "equip/m/cloth/cloth2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "7d6bce2d3b96d12a7ab2c51084b8e0eeeca5129f2d2ae9cefc9b0a92f09956a6"
+    },
+    "equip/m/cloth/cloth2/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "ad6bfd6148dac1e6e2f280ca9d4be5e73f7528d8337e85a3540bacea1a819b16"
+    },
+    "equip/m/cloth/cloth2/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "3024ddec6a8b9fefad9ebf80bcf4a6fb63580461e855867e665a87710e4901f9"
+    },
+    "equip/m/cloth/cloth2/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "6e3477b9a1ffd5274bad32b19680ca90a680e6ef00da4f18826778cc8db800de"
+    },
+    "equip/m/cloth/cloth2/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "94bf1158b075aa7965bd0e2cdc33c541372e7b4342eac5d81825d223cad59fa7"
+    },
+    "equip/m/cloth/cloth2/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "2e9712f9d76564af7f0f9f2b1e8e8be85795f4c80d4d4a6e2f5398d9349333c3"
+    },
+    "equip/m/cloth/cloth3/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "cdbcd820f45ec71e8cf54e113c5314019a47a6928426c85ccbc778b81301675e"
+    },
+    "equip/m/cloth/cloth3/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "df78d97cbae7ca3ca6ee49cc9bc303fef05062ded8bb0a117dccafedaad03284"
+    },
+    "equip/m/cloth/cloth3/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "28212be7bddaa1693bd6e1fff02ba7dc70e6c9c1b5311fd978b4bdfc07addc40"
+    },
+    "equip/m/cloth/cloth3/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "8b79f73e23e6cb83ee5d59741dfb4ddf69895c0df8f97620acf70cf95ee3d445"
+    },
+    "equip/m/cloth/cloth3/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "aab2e1c1136a1491257af727af47de159ad8ff2c0c5fcf8da3f1f27a3c8f95e8"
+    },
+    "equip/m/cloth/cloth3/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "ac7781f3c18538b52fbdaee53dd05270fdecc84714df1bd8f333f4771d27c772"
+    },
+    "equip/m/hair/default/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "d836fb294fe2af85d1a8cc0612100cf34f0ed8079b2295954c70a14df4c8bfb4"
+    },
+    "equip/m/hair/default/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "6c8c924c7cacf054ab82cdfc30f142d8aed3135ef8fe8bfe95cfe6918d9194bf"
+    },
+    "equip/m/hair/default/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "9f71d3a05df98b78ca0ddcf1caed2d1f62f59e39b112199d404a34ca9bbba3fb"
+    },
+    "equip/m/hair/default/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "973e771a52445de3b78b00c89d6b10c8cbb5ed20b2dac54a8225d6129ed96fd8"
+    },
+    "equip/m/hair/default/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "53a9ddfa8002bd58396ccaaeababf48be65cb87964e934e9fa0dfc73f46fed3e"
+    },
+    "equip/m/hair/default/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "3bbc62b4442def4601217b0aa3e20864531f276014d3dd8f7de36445790d8401"
+    },
+    "equip/m/hair/default/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "ee676a9d0d1ecf840f946feafbbf971ea0dfedf47f00370053256222d7fa38ab"
+    },
+    "equip/m/hair/default/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "807ca1b27372351b474fb3086a3007f8e67c989e61eee195e592a50783700c32"
+    },
+    "equip/m/hair/hair3/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "65ba910308aee8ade1c6d620733a89f364715ebe0cb73ea9e8b00e138f0322c3"
+    },
+    "equip/m/hair/hair3/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "95e8af44537280d4235fea8f67293df148c6a8238999926d47347dd9578233a0"
+    },
+    "equip/m/hair/hair3/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "0ab90521f5ff1659624263f161bd8151f6c992d8cbf69db91c357cade5f715f2"
+    },
+    "equip/m/hair/hair3/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "22ac2970836abdeeb5450f990f4ab3b2af738ca5a0f03db5fe914788cac690a1"
+    },
+    "equip/m/hair/hair3/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "0d23bc3955c64acc2a73b68384cee33f9eb4f1b32b21ee4af350d1ec18d7cc2e"
+    },
+    "equip/m/hair/hair3/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "105069bb7e0f963d006e18bc30932ae086c2ab14ca5a520d90582a638d5685fc"
+    },
+    "equip/m/hair/hair3/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "d0f72f607965f07ebe7e4636423139e782f806a889e50ac3fff8ab44dc3f80f5"
+    },
+    "equip/m/hair/hair3/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "1b1b9032a2cd52d772456d0afaafc67988d94a2b66c6cfd324c469df816cd8ea"
+    },
+    "equip/m/hair/hair5/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "a07158dc3cb43ed49a28dc43fd4475cc2cb9b8eb951d4ec573f599bc31fa38c7"
+    },
+    "equip/m/hair/hair5/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "0d2ccdd5c63eba6e5c88c1f0eb68c92810b2f91e37542c772ac8395690d9fdc7"
+    },
+    "equip/m/hair/hair5/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "293f862e654effe67bb6ccd08bbb18c7bc8295797f08776089c7ba7ee75f02fe"
+    },
+    "equip/m/hair/hair5/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "ff6c9a422474621bf47d899e3ce3dbfd5e326e54383005512880b99513398a04"
+    },
+    "equip/m/hair/hair5/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "f9ecf2d85c44a0d8166ad894aad1c6371d03a12eb18f7e2f62bbc162c43b4560"
+    },
+    "equip/m/hair/hair5/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "c7bfbeb51c8ea38eed4b002119c2bab9439da374a3b23397e8f8be143d9768ea"
+    },
+    "equip/m/hair/hair5/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "a7154d5cd789448645000df6b720ecd6a38bb53e99bc98a5db4639ebef920395"
+    },
+    "equip/m/hair/hair5/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "756947f1309bf695136591ec03da54a52fe2788a1c127a96758401135342099e"
+    },
+    "equip/m/head/head1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8a27475642dcfae9d85a7ef109bf865fc18a682382dd6c3a3e4cceae90651bd5"
+    },
+    "equip/m/head/head1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "5a8c19eddc306233784a1826252db2925b75e7a3b7df58ee425d98132be63993"
+    },
+    "equip/m/head/head2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "9ce1046b8dbc183d39e366c47a415a6f8008a2f90140b7af3fadeb6bc7339485"
+    },
+    "equip/m/head/head2/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "b1d50186e8b6fb3c8282ec7784a1717b072f2ab1a3ab6126a10a01f914960ba7"
+    },
+    "equip/m/glass/glass1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "0225639a0ec88f64cbd2ad4154d02c85158e03b3623cc27d86fdddff87770f49"
+    },
+    "equip/m/glass/glass1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "38f3e87084fecab2ba8ec3340019de60e67911c29d3e0c0be85267220c9c1ba2"
+    },
+    "equip/f/face/default/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8bdea53d6a543e51c5549051270fbd43153e2be1f8a9a796e1575ce9f826237f"
+    },
+    "equip/f/face/default/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "d9c44400fc6dca0753c5ff71d8651e38b5ed4369abbe598412b68ee4dcefe907"
+    },
+    "equip/f/face/default/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "2960b65a5276e7541a4805b5a598e3ad641ac4f2282902498587b9cc60cb6f9a"
+    },
+    "equip/f/face/default/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "a2a8189c2532b4e70468ff87460aa56838f2dcbf8c100057b24234f548d3e2bb"
+    },
+    "equip/f/face/default/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "83047fe4d772c37abb3855bb7d19c06d52dab9e9cd7c4806cec6ee4cdfcf9c02"
+    },
+    "equip/f/face/default/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "bfdcec4c5fcaccae46700199237de2fbb098a5003e145f09ef87064622564074"
+    },
+    "equip/f/face/face1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "3997612c18123d5a4452ce1988cf36a84c489f25f859937c0bd5c0d6404c7c8b"
+    },
+    "equip/f/face/face1/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "572e558788908e3d34ffa754426c846f20ef7d61a39f21a6d453b4e537ea1da8"
+    },
+    "equip/f/face/face1/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "875555e62be73abc410c01dcd0809382d6e50d9215d92077b2c04d8ce5fa149b"
+    },
+    "equip/f/face/face1/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "bb84acf70710d854002249b3468c36eef7fa246f086da1801e396ff3ecd32bac"
+    },
+    "equip/f/face/face1/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "3f826d4f37fc22a418eaba67f2048daf1bbfcbb6b20d7b2804ae052f2cae723d"
+    },
+    "equip/f/face/face1/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "4256791f381f180694fb44a9a72eb7edfc8cb5d3619325b3d3bbc05013f6f2bd"
+    },
+    "equip/f/face/face2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "6ba0a77f4248ef4f4b40848779ef19a4bb00ae064ce97eecdbf0fcde00c42292"
+    },
+    "equip/f/face/face2/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "bff6d1eb4e692293be671c07f7e36633711c08782e7cc6f25833273869f0757a"
+    },
+    "equip/f/face/face2/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "f6d2d3e86184c034267df07586dc4a8ce333ef6e9a15433d09024fc424d05101"
+    },
+    "equip/f/face/face2/1/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "7c76bcefcec3c14fe120a245403704a7aeed62a42939f82e523dc2b16b295b33"
+    },
+    "equip/f/face/face2/2/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "26164b799255a4522d2852fbdc26c9bfd0f05db285ca0149fe8459d7c4f5fa2d"
+    },
+    "equip/f/face/face2/3/show.png": {
+      "width": 1000,
+      "height": 312,
+      "sha256": "080018630750398418079a5dbae87bdfe10ddef4c90a8b551974fd9f6a4a82b2"
+    },
+    "equip/f/cloth/cloth1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "9e999c3eccf9c71cfb2f3ab471ebbb4c8db66123d8594a1531b50d89649815e8"
+    },
+    "equip/f/cloth/cloth1/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "cfdc36163bdc2e33cb0b1d17c7dddc75ebffb1dc10d86206173c32135702575f"
+    },
+    "equip/f/cloth/cloth1/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8567c8608710b7da6b591e7918e5fd5c2473314533ef0e6066f102bc3d43445e"
+    },
+    "equip/f/cloth/cloth1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "ae0339dcdfe2e1236eb62765fad61fb27027f0abe25d4f2dac22f40ad2d31270"
+    },
+    "equip/f/cloth/cloth1/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "34767a24475ebc93d07bee27e8b900cfc337b62a14e1db4143f6eb0fe2160425"
+    },
+    "equip/f/cloth/cloth1/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "e1feb466250dd6426e6e1c1a0cc81da9de0c505f077e9d707f346072d5226090"
+    },
+    "equip/f/cloth/cloth2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "9a7b7d534c12b9de6a9365d18a622c0955f60f352ed2a657f1d0e6eb8e38d283"
+    },
+    "equip/f/cloth/cloth2/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "ffc26610aeddbff3c6e3afc041a0f3aee324d9f94f3672e588af9fc800546a3e"
+    },
+    "equip/f/cloth/cloth2/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "992337811a1eb54112f7f81a5483b12ef75de1adabb2570073bba44ffc8abd06"
+    },
+    "equip/f/cloth/cloth2/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "2faa044a9580a07d93b90428b4e36a3f7a82c68eba3d19dd9614c9aad3d274c0"
+    },
+    "equip/f/cloth/cloth2/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "9fb49b97c49e88073ee980d1543c8a14bd4ab2e6bd01838e301795dbe992b954"
+    },
+    "equip/f/cloth/cloth2/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "d699bb034f75496045a451d361b5c95b10c6f02182aaa3cd5bf3d24cb81fa13c"
+    },
+    "equip/f/cloth/cloth3/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "deca57135944b0675a4a570277f4da4924ad9b3cb391e1bf7f1b9f84d8b6dd4e"
+    },
+    "equip/f/cloth/cloth3/2/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "2111fa4560c3513663b24e16f17ff35c4c935ec2d9310ca214fd9b4b1f38f49d"
+    },
+    "equip/f/cloth/cloth3/3/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "30ecedfcf286b17c20ba4f10e8432adb178a313dce5e1b5371c34893ebd9d6bb"
+    },
+    "equip/f/cloth/cloth3/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "de246d805b8ad3c19c977b1c756aea06e91ddf13f5592d5b7689636e52ac071c"
+    },
+    "equip/f/cloth/cloth3/2/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "4dbbf570f6d58ac5bdcbf62da3850b74801623f523c2fe0e3befe9ad1281fd25"
+    },
+    "equip/f/cloth/cloth3/3/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "68eef9c7d47bc31bb85ca2258c567a088368ccb5e49fca4dd4be2567e7612417"
+    },
+    "equip/f/hair/default/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "4092126740e180b881769b5f89d76be65da0fc0847e68f88ff083b9298a9896c"
+    },
+    "equip/f/hair/default/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "6c8ce07cab7ef5aa1f890b0ea812ec27371182b24085ecd90d2da9ae9edf6b35"
+    },
+    "equip/f/hair/default/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "280fea4d347165e4ccb9d1b9be60bd237ff06ba35523176c9054eec71dfe9e90"
+    },
+    "equip/f/hair/default/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "35d143c028b53a87663df0db39b7ba11fc847bf6b1001fd393eea484814003b9"
+    },
+    "equip/f/hair/default/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "88a90fd71a284de509682fbd0618b5323718ed93156d626c37fbea6cc89b68f9"
+    },
+    "equip/f/hair/default/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "7185001387512d9de331f8fd565524d9c73064482d41cec029c7434154207fe9"
+    },
+    "equip/f/hair/default/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "8cadce1a823d9999598ca79ad057000687b9f890a4fca81557fe8f169a52b114"
+    },
+    "equip/f/hair/default/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "f778d0efc1111b6ec9d68884b668498bb706ff5b7f54d9dbbff287728b41e9c7"
+    },
+    "equip/f/hair/hair3/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "674ef5cde36a63b93985f5ee2ca3c4127353f9aa434dbb8eaf3a077e0905adb1"
+    },
+    "equip/f/hair/hair3/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "e1796d974b893c665a3d0ea2f02d03a93b4aab7bd18162735917e5bc5563eba0"
+    },
+    "equip/f/hair/hair3/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "2141c0ed3ac8ead16bd1b73b7e96975fc84dc93e41edebfcfaab7e155235a1c7"
+    },
+    "equip/f/hair/hair3/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "a6ea4d462d514f64d1c698a991cbc4d797f5dd7ab588b50c8e7d655d3023d4bd"
+    },
+    "equip/f/hair/hair3/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "1e5d056bb33e38aaf45f5f47c369e9744209204f27c6e30de351ffaa38d530bd"
+    },
+    "equip/f/hair/hair3/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "4163ca9b0794180dbef2d58c52dfa02914decbb42ebf1fe798484870896832fa"
+    },
+    "equip/f/hair/hair3/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "5580974a17886f777069d646f764ac1a0eb01c2ddc7af5235abb4d8fd6fffd5a"
+    },
+    "equip/f/hair/hair3/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "08f2224a22c3e865419f8fac08d5c7170a3299ec311e9e6ea107c42a5c5325a5"
+    },
+    "equip/f/hair/hair5/1/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "69d7f139d71f83dd82c4101f55ba69b9115a5007c9fda6292fb6c16999f5ed6f"
+    },
+    "equip/f/hair/hair5/2/A/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "ff90f957493d9604a4986aa452db321af70b548d45c7b56dc564a84b2a46eab6"
+    },
+    "equip/f/hair/hair5/1/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "e213bef42d62a7edfdf425c6aecb0f087dc3fcabd28b15d18979fae3ca715061"
+    },
+    "equip/f/hair/hair5/2/A/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "0a2719d79e08943d7cc5a957dd2bdd44321769680b0224a6f693be0ed2011c86"
+    },
+    "equip/f/hair/hair5/1/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "b718ed55f4a61c56a3ba84ec6777c24f63bbb87597b5ebe3f27d7a9509a0364e"
+    },
+    "equip/f/hair/hair5/2/B/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "7052542606b19170c73348ddb2ba7d43fd77e0e8ba1c7ff721502080467276d8"
+    },
+    "equip/f/hair/hair5/1/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "b98bb4182581381e85ec6ae92527860e79963586661046bf741d7dcc02300b90"
+    },
+    "equip/f/hair/hair5/2/B/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "81ac35fc01f84c89aee3c35e56175935988a8ef920bf5cbd70d5b0fb03e581ab"
+    },
+    "equip/f/head/head1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8a27475642dcfae9d85a7ef109bf865fc18a682382dd6c3a3e4cceae90651bd5"
+    },
+    "equip/f/head/head1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "5a8c19eddc306233784a1826252db2925b75e7a3b7df58ee425d98132be63993"
+    },
+    "equip/f/head/head2/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "9ce1046b8dbc183d39e366c47a415a6f8008a2f90140b7af3fadeb6bc7339485"
+    },
+    "equip/f/head/head2/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "b1d50186e8b6fb3c8282ec7784a1717b072f2ab1a3ab6126a10a01f914960ba7"
+    },
+    "equip/f/glass/glass1/1/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "0225639a0ec88f64cbd2ad4154d02c85158e03b3623cc27d86fdddff87770f49"
+    },
+    "equip/f/glass/glass1/1/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "38f3e87084fecab2ba8ec3340019de60e67911c29d3e0c0be85267220c9c1ba2"
+    },
+    "arm/bomb/1/0/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+    },
+    "arm/bomb/1/0/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "fffa78b59e99eaa37f35f8d0084d16349c53750bb1ac5cb88cb841f66ba85cd1"
+    },
+    "arm/brick/1/0/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+    },
+    "arm/brick/1/0/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "93046850d3de2de004536e7e486743f1f001e36b2cfc6eae7a24c5a533f90c51"
+    },
+    "arm/bombpack/1/0/game.png": {
+      "width": 1482,
+      "height": 285,
+      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+    },
+    "arm/bombpack/1/0/show.png": {
+      "width": 250,
+      "height": 312,
+      "sha256": "7bf454565e40d8f6f0a338762bcc00172b8ed2785bb469e0fe01c207d8a6ba1a"
+    },
+    "equip/wing/wing002/icon.png": {
+      "width": 78,
+      "height": 78,
+      "sha256": "29c0aa0c5af1a1e9f73358357651cce2717ded3bfb4f3af9e2ca062419d17193"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Avatares clássicos</title>
+  <link rel="stylesheet" href="/src/ui/tokens.css"><link rel="stylesheet" href="/src/ui/components.css">
+  <style>
+    body { margin:0; padding:24px; background:#101b36; color:#fff; font-family:Nunito,system-ui,sans-serif; }
+    main { max-width:1040px; margin:auto; } h1 { margin:0 0 8px; } p { color:#bccbe7; }
+    .preview { display:flex; flex-wrap:wrap; align-items:end; justify-content:center; gap:16px; background:#263b60; border-radius:16px; padding:16px; }
+    canvas { max-width:100%; object-fit:contain; } .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:20px; }
+    label { display:grid; gap:4px; } select { padding:8px; border-radius:8px; background:#203457; color:white; border:1px solid #607da4; }
+    a { color:#ffdb70; }
+  </style>
+</head>
+<body><main>
+  <h1>Avatares clássicos</h1><p>Experimente as peças, cores e animações. As escolhas desta prévia não alteram sua conta.</p>
+  <div class="preview"><canvas id="portrait" width="240" height="320" aria-label="Retrato do avatar"></canvas><canvas id="battle" width="620" height="260" aria-label="Avatar em batalha olhando para os dois lados"></canvas></div>
+  <div class="controls" id="controls"></div><p><a href="/game.html">Abrir partida local</a> · <a href="/play.html">Abrir jogo em rede</a></p>
+</main><script type="module" src="/src/avatar-preview.ts"></script></body>
+</html>

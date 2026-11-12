@@ -1,6 +1,6 @@
 /** Salas e partidas. Lógica pura de servidor: recebe intenções, roda o Match do core e devolve eventos. Sem rede aqui. */
 import { randomInt } from "node:crypto";
-import { DEFAULT_LOOK, type Look, BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
+import { playbackDuration, DEFAULT_LOOK, type Look, BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
 import type { ClientIntent, MatchSetup, RoomInfo } from "./protocol";
 
 export const MAX_ROOM_PLAYERS = 8;
@@ -120,9 +120,8 @@ export class Room {
 
   private record(events: MatchEvent[], now: number): void {
     this.log.push(...events);
-    // pausa o relógio pelo tempo real da animação: trajetória a 60 passos/s + 0,5 s por tiro
-    let pause = 0;
-    for (const e of events) if (e.type === "shot") pause += e.points.length / 60 + 0.5;
+    // Usa o tempo de voo transmitido ao cliente, inclusive quando o passo da física muda.
+    const pause = playbackDuration(events);
     if (pause) this.pausedUntil = now + pause * 1000;
   }
 

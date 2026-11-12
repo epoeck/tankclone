@@ -1,3 +1,5 @@
+import { craterOrigin, type CraterShape } from "./craters";
+
 /** Estados de um pixel do terreno. */
 export const AIR = 0;
 export const DESTRUCTIBLE = 1;
@@ -89,6 +91,25 @@ export class Terrain {
         if (dx * dx + dy * dy <= r2) {
           const i = y * this.width + x;
           if (this.mask[i] === DESTRUCTIBLE) { this.mask[i] = AIR; removed++; }
+        }
+      }
+    }
+    return removed;
+  }
+
+  /** Aplica a máscara real da bola; só remove chão destrutível e recorta nas bordas. */
+  carveShape(cx: number, cy: number, shape: CraterShape): number {
+    const origin = craterOrigin(cx, cy, shape);
+    let removed = 0;
+    const y0 = Math.max(0, -origin.y), y1 = Math.min(shape.height, this.height - origin.y);
+    for (let sy = y0; sy < y1; sy++) {
+      const spans = shape.rows[sy]!;
+      const base = (origin.y + sy) * this.width;
+      for (let i = 0; i < spans.length; i += 2) {
+        const x0 = Math.max(0, origin.x + spans[i]!);
+        const x1 = Math.min(this.width, origin.x + spans[i + 1]!);
+        for (let x = x0; x < x1; x++) {
+          if (this.mask[base + x] === DESTRUCTIBLE) { this.mask[base + x] = AIR; removed++; }
         }
       }
     }

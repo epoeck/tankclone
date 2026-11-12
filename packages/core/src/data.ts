@@ -15,6 +15,8 @@ export interface ItemDef {
   key: ItemKey;
   /** Energia gasta ao usar (o mesmo item pode ser usado mais de uma vez no turno). */
   cost: number;
+  /** Property5 do item no TemplateAlllist.xml; independente do custo de energia. */
+  delay: number;
   /** Disparos extras (um depois do outro, mesmo ângulo e força). */
   extraShots?: number;
   /** Projéteis simultâneos em leque no disparo. Só pode ser usado uma vez por turno. */
@@ -27,24 +29,28 @@ export interface ItemDef {
   fly?: boolean;
 }
 
-/** Itens de turno nas teclas 1–8 e F. Custos do guia doyo, confirmados pelo dono (docs/pesquisa-mecanicas.md §1). */
+/** Teclas preservadas; custos e delays conferidos no TemplateAlllist.xml do DDTank41. */
 export const ITEMS: Record<ItemKey, ItemDef> = {
-  "1": { key: "1", cost: 110, extraShots: 2, shotDamageMult: 0.6 },
-  "2": { key: "2", cost: 110, triple: true, shotDamageMult: 0.5 },
-  "3": { key: "3", cost: 110, extraShots: 1, shotDamageMult: 0.9 },
-  "4": { key: "4", cost: 85, damageBonus: 0.5 },
-  "5": { key: "5", cost: 80, damageBonus: 0.4 },
-  "6": { key: "6", cost: 70, damageBonus: 0.3 },
-  "7": { key: "7", cost: 55, damageBonus: 0.2 },
-  "8": { key: "8", cost: 50, damageBonus: 0.1 },
-  F: { key: "F", cost: 150, fly: true },
+  "1": { key: "1", cost: 110, delay: 600, extraShots: 2, shotDamageMult: 0.6 },
+  "2": { key: "2", cost: 110, delay: 600, triple: true },
+  "3": { key: "3", cost: 110, delay: 500, extraShots: 1, shotDamageMult: 0.9 },
+  "4": { key: "4", cost: 85, delay: 400, damageBonus: 0.5 },
+  "5": { key: "5", cost: 80, delay: 340, damageBonus: 0.4 },
+  "6": { key: "6", cost: 70, delay: 200, damageBonus: 0.3 },
+  "7": { key: "7", cost: 55, delay: 150, damageBonus: 0.2 },
+  "8": { key: "8", cost: 50, delay: 70, damageBonus: 0.1 },
+  F: { key: "F", cost: 150, delay: 200, fly: true },
 };
 
 export interface SpecialDef {
-  /** Projéteis extras do especial, lançados em sequência. */
+  /** Disparos sequenciais extras (os especiais atuais usam Amount simultâneo). */
   shots: number;
   damageMult: number;
-  craterMult: number;
+  /** Bola/máscara do especial. */
+  ballId: number;
+  damageRadius: number;
+  /** Número de projéteis simultâneos (BallInfo.Amount). */
+  balls: number;
 }
 
 export interface WeaponDef {
@@ -52,22 +58,28 @@ export interface WeaponDef {
   /** Nome interno provisório. */
   name: string;
   baseDamage: number;
+  /** BallInfo.Radii, separado da cratera visual. */
+  damageRadius: number;
+  /** Property8 da arma + BallInfo.Delay (confirmado no balls.json do Reborn). */
+  delay: number;
+  ballDelay: number;
   /** Faixa de ângulo relativa ao corpo. */
   angle: AngleRange;
-  craterRadius: number;
+  /** Bola/máscara comum. */
+  ballId: number;
   /** Multiplica o vento sentido pelo projétil. */
   windFactor: number;
-  /** Placeholder até o dono ajustar jogando. */
+  /** Configuração das bolas 111, 391 e 171 no XML do repositório. */
   special: SpecialDef;
 }
 
 export const WEAPONS: Record<string, WeaponDef> = {
-  prism: { id: "prism", name: "Prisma", baseDamage: 200, angle: { min: 55, max: 70 }, craterRadius: 40, windFactor: 1,
-    special: { shots: 0, damageMult: 1.5, craterMult: 1.5 } },
-  sledge: { id: "sledge", name: "Marreta", baseDamage: 200, angle: { min: 20, max: 65 }, craterRadius: 26, windFactor: 1,
-    special: { shots: 0, damageMult: 2, craterMult: 1 } },
-  furnace: { id: "furnace", name: "Fornalha", baseDamage: 205, angle: { min: 20, max: 50 }, craterRadius: 30, windFactor: 1,
-    special: { shots: 2, damageMult: 1, craterMult: 1 } },
+  prism: { id: "prism", name: "Prisma", baseDamage: 200, damageRadius: 55, delay: 2, ballDelay: 200, angle: { min: 55, max: 70 }, ballId: 101, windFactor: 1,
+    special: { shots: 0, damageMult: 1, ballId: 111, damageRadius: 65, balls: 1 } },
+  sledge: { id: "sledge", name: "Marreta", baseDamage: 200, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 65 }, ballId: 381, windFactor: 1,
+    special: { shots: 0, damageMult: 1, ballId: 391, damageRadius: 65, balls: 1 } },
+  furnace: { id: "furnace", name: "Fornalha", baseDamage: 205, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 50 }, ballId: 161, windFactor: 1,
+    special: { shots: 0, damageMult: 1, ballId: 171, damageRadius: 45, balls: 3 } },
 };
 
 export interface MatchConfig {
@@ -85,16 +97,14 @@ export interface MatchConfig {
   fcThreshold: number;
   /** Leque do tiro triplo (graus entre projéteis). */
   tripleSpreadDeg: number;
-  /** Delay ganho por turno = (base + energia gasta × perEnergy) / (1 + AGI / agiDelayScale). */
-  delayBase: number;
-  delayPerEnergy: number;
-  delayPassFactor: number;
-  agiDelayScale: number;
+  /** Passar soma 100; atirar soma segundos inteiros gastos × 20, além de arma/bola/itens. */
+  delayPass: number;
+  delayPerSecond: number;
   furyOnAttack: number;
   furyOnPass: number;
-  furyOnHit: number;
-  /** Raio de dano = raio da cratera × este fator; dano cai de 100% (centro) a (1 − falloffMin)... ver match.ts. */
-  damageRadiusFactor: number;
+  /** Limite e custo do especial na escala nativa do servidor. */
+  maxFury: number;
+
   /** Fração do dano perdida na borda do raio de dano. */
   falloffEdge: number;
   friendlyFire: boolean;
@@ -116,15 +126,12 @@ export const DEFAULT_MATCH: MatchConfig = {
   turnTimeFast: 5,
   fcThreshold: 1_000_000,
   tripleSpreadDeg: 5,
-  delayBase: 100,
-  delayPerEnergy: 0.2,
-  delayPassFactor: 0.5,
-  agiDelayScale: 10_000,
-  furyOnAttack: 15,
-  furyOnPass: 10,
-  furyOnHit: 10,
-  damageRadiusFactor: 1.4,
-  falloffEdge: 0.5,
+  delayPass: 100,
+  delayPerSecond: 20,
+  furyOnAttack: 20,
+  furyOnPass: 20,
+  maxFury: 200,
+  falloffEdge: 0.25,
   friendlyFire: false,
   maxWind: 10,
   windMultiplier: 1,

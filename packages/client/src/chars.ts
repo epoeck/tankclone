@@ -1,96 +1,118 @@
-/**
- * Boneco montado a partir das camadas SVG da arte (public/assets/chars, manifest.json > character).
- * Pele e cabelo usam tinta (currentColor): o SVG é lido como texto, o atributo color da raiz é trocado pelo hex e
- * rasterizado como imagem (uma por arquivo+cor, em cache). Enquanto as imagens carregam, usa o boneco procedural (doll.ts).
- */
-import { HAIR_COLORS, SKIN_TONES, type Look } from "@tankclone/core";
+/** Avatar clássico: sprites PNG por item, máscaras de cor e folhas GAME/SHOW do cliente original.
+ * Todos os recursos são locais; não usa Flash nem consulta CDNs durante a partida. */
+import { avatarFrames, avatarFrameRect, avatarLayers, avatarTint, GAME_FRAME, SHOW_FRAME, type AvatarLayer, type AvatarMode, type Look } from "@tankclone/core";
 import { drawDoll, type DollPose } from "./doll";
 
-const CANVAS = { w: 96, h: 128 }, FEET = { x: 48, y: 124 }, SHOULDER = { x: 56, y: 82 }, ARM_PIVOT = { x: 8, y: 10 }, HAND = { x: 38, y: 10 }, GRIP = { x: 10, y: 27 };
-export const CHAR_SCALE = 0.433;
-const CROUCH_Y = 0.72, CROUCH_DROP = 14, SHOULDER_DROP = 12;
+export const CHAR_SCALE = 1;
+type ImageEntry = { img: HTMLImageElement; loaded: boolean; ready: Promise<void> };
+type Sheets = { face: HTMLCanvasElement; upper: HTMLCanvasElement; weapon: HTMLCanvasElement; wing?: HTMLImageElement };
+const images = new Map<string, ImageEntry>();
+const tinted = new Map<string, HTMLCanvasElement>();
+const sheets = new Map<string, Sheets>();
 
-type Entry = { img: HTMLImageElement; ok: boolean };
-const cache = new Map<string, Entry>();
-const texts = new Map<string, Promise<string>>();
-
-function fetchText(file: string): Promise<string> {
-  let p = texts.get(file);
-  if (!p) { p = fetch(`/assets/${file}`).then(r => (r.ok ? r.text() : Promise.reject(new Error(file)))); texts.set(file, p); }
-  return p;
+function boundedSet<T>(cache: Map<string, T>, key: string, value: T, limit: number): T {
+  cache.set(key, value);
+  while (cache.size > limit) cache.delete(cache.keys().next().value!);
+  return value;
 }
-
-/** Imagem da camada já pronta (ou null e dispara o carregamento). */
-function layer(file: string, tint?: string): HTMLImageElement | null {
-  const key = `${file}|${tint ?? ""}`;
-  let e = cache.get(key);
-  if (!e) {
-    e = { img: new Image(), ok: false }; cache.set(key, e);
-    const entry = e;
-    fetchText(file).then(svg => {
-      // tinta: atributo color da raiz (currentColor) e também a cor literal padrão, caso o SVG tenha sido reexportado sem currentColor
-      const literal = file.includes("hair") ? /#6B3A1F/gi : /#F2C79F/gi;
-      const text = tint ? svg.replace(/(<svg[^>]*?)\scolor="[^"]*"/, `$1`).replace("<svg", `<svg color="${tint}"`).replace(literal, tint) : svg;
-      entry.img.onload = () => { entry.ok = true; };
-      entry.img.src = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
-    }).catch(() => { /* arquivo ausente: a camada simplesmente não aparece */ });
+function asset(file: string): ImageEntry {
+  const cached = images.get(file);
+  if (cached) return cached;
+  const img = new Image();
+  let finish!: () => void;
+  const entry: ImageEntry = { img, loaded: false, ready: new Promise<void>(resolve => (finish = resolve)) };
+  images.set(file, entry);
+  img.onload = () => { entry.loaded = true; finish(); };
+  img.onerror = () => { console.warn(`Avatar: não foi possível carregar ${file}`); finish(); };
+  img.src = `/assets/avatar/${file}`;
+  return entry;
+}
+function canvas(w: number, h: number): HTMLCanvasElement {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; return c;
+}
+function colorMask(part: AvatarLayer, img: HTMLImageElement): CanvasImageSource {
+  if (!part.tint) return img;
+  const key = `${part.file}|${part.tint}`;
+  const cached = tinted.get(key);
+  if (cached) return cached;
+  const { fill, highlight } = avatarTint(part.tint);
+  const c = canvas(img.naturalWidth, img.naturalHeight), ctx = c.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = `rgb(${fill.join(",")})`; ctx.fillRect(0, 0, c.width, c.height);
+  const h = canvas(c.width, c.height), hc = h.getContext("2d")!;
+  hc.drawImage(img, 0, 0);
+  const pixels = hc.getImageData(0, 0, h.width, h.height);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    pixels.data[i] = Math.min(255, pixels.data[i]! + highlight[0]!);
+    pixels.data[i + 1] = Math.min(255, pixels.data[i + 1]! + highlight[1]!);
+    pixels.data[i + 2] = Math.min(255, pixels.data[i + 2]! + highlight[2]!);
   }
-  return e.ok ? e.img : null;
+  hc.putImageData(pixels, 0, 0);
+  ctx.globalCompositeOperation = "hard-light"; ctx.drawImage(h, 0, 0);
+  return boundedSet(tinted, key, c, 64);
+}
+function prepare(look: Look, weaponId: string, mode: AvatarMode): Sheets | null {
+  const key = JSON.stringify([look, weaponId, mode]);
+  const cached = sheets.get(key);
+  if (cached) { sheets.delete(key); sheets.set(key, cached); return cached; }
+  const parts = avatarLayers(look, weaponId, mode), entries = parts.map(p => asset(p.file));
+  if (entries.some(e => !e.loaded)) return null;
+  const size = mode === "game" ? { w: GAME_FRAME.width * GAME_FRAME.columns, h: GAME_FRAME.height * 3 } : { w: SHOW_FRAME.width, h: SHOW_FRAME.height };
+  // SHOW tem quatro expressões lado a lado no rosto; roupa e demais peças usam o mesmo quadro.
+  const result: Sheets = { face: canvas(size.w * (mode === "show" ? 4 : 1), size.h), upper: canvas(size.w, size.h), weapon: canvas(size.w, size.h) };
+  parts.forEach((part, i) => {
+    const img = entries[i]!.img;
+    if (part.group === "wing") { result.wing = img; return; }
+    result[part.group].getContext("2d")!.drawImage(colorMask(part, img), 0, 0);
+  });
+  return boundedSet(sheets, key, result, 32);
 }
 
-const FILES = (look: Look, weaponId: string) => {
-  const { appearance: a, equipped: q } = look;
-  const skin = SKIN_TONES[a.skin]!, hair = HAIR_COLORS[a.hairColor]!;
-  return [
-    q.wings ? { f: `chars/wings/wings-${q.wings}.svg` } : null,
-    { f: `chars/hair-back/hair-back-${a.hair + 1}.svg`, t: hair },
-    { f: "chars/body/body-1.svg", t: skin },
-    { f: `chars/outfit/outfit-${q.outfit + 1}.svg` },
-    { f: "chars/head/head-1.svg", t: skin },
-    { f: `chars/face/face-${a.face + 1}.svg` },
-    { f: `chars/hair-front/hair-front-${a.hair + 1}.svg`, t: hair },
-    q.glasses ? { f: `chars/glasses/glasses-${q.glasses}.svg` } : null,
-    q.hat ? { f: `chars/hat/hat-${q.hat}.svg` } : null,
-    { f: `ui/weapons/weapon-${weaponId}.svg`, weapon: true },
-    { f: "chars/arm/arm-1.svg", t: skin, arm: true },
-  ].filter(Boolean) as Array<{ f: string; t?: string; weapon?: boolean; arm?: boolean }>;
-};
-
-/** Desenha o boneco com os pés em (x, y). Usa a arte se todas as camadas já carregaram; senão, o placeholder procedural. */
+/** O mesmo espelhamento é aplicado a todas as peças, ancoradas no mesmo ponto dos pés. */
 export function drawCharacter(ctx: CanvasRenderingContext2D, look: Look, pose: DollPose, x: number, y: number, scale = CHAR_SCALE): void {
-  const parts = FILES(look, pose.weaponId);
-  const imgs = parts.map(p => layer(p.f, p.t));
-  if (imgs.some(i => !i)) { drawDoll(ctx, look, pose, x, y, scale / CHAR_SCALE); return; }
-  const bob = pose.walk ? Math.abs(Math.sin(pose.walk)) * 3 : 0;
-  ctx.save(); ctx.translate(x, y - bob * scale); ctx.scale(pose.facing * scale, scale); ctx.translate(-FEET.x, -FEET.y);
-  const crouch = !!pose.crouch, sway = x * 0.013;
-  const ang = pose.aiming ? (pose.angleDeg * Math.PI) / 180 : 0.35;
-  parts.forEach((p, i) => {
-    const img = imgs[i]!;
-    if (p.weapon || p.arm) return;
-    const head = /hair-|head|face|glasses|hat/.test(p.f);
-    if (!crouch) { ctx.drawImage(img, 0, 0, CANVAS.w, CANVAS.h); return; }
-    // em partida: corpo achatado e só a cabeça chibi balança
-    ctx.save();
-    if (head) { ctx.translate(0, CROUCH_DROP + Math.sin(performance.now() / 260 + sway) * 2.2); ctx.translate(CANVAS.w / 2, 40); ctx.rotate(Math.sin(performance.now() / 330 + sway) * 0.05); ctx.translate(-CANVAS.w / 2, -40); }
-    else { ctx.translate(0, FEET.y * (1 - CROUCH_Y)); ctx.scale(1, CROUCH_Y); }
-    ctx.drawImage(img, 0, 0, CANVAS.w, CANVAS.h);
-    ctx.restore();
-  });
-  // arma e braço giram juntos em torno do ombro; o cabo da arma fica na mão
-  ctx.save(); ctx.translate(SHOULDER.x, SHOULDER.y + (crouch ? SHOULDER_DROP : 0)); ctx.rotate(-ang);
-  parts.forEach((p, i) => {
-    if (p.weapon) ctx.drawImage(imgs[i]!, HAND.x - ARM_PIVOT.x - GRIP.x, HAND.y - ARM_PIVOT.y - GRIP.y, 96, 48);
-  });
-  parts.forEach((p, i) => { if (p.arm) ctx.drawImage(imgs[i]!, -ARM_PIVOT.x, -ARM_PIVOT.y, 48, 20); });
-  ctx.restore();
+  const ready = prepare(look, pose.weaponId, "game");
+  if (!ready) { drawDoll(ctx, look, pose, x, y, scale); return; }
+  const now = performance.now() / 1000;
+  const frames = avatarFrames(now + x * 0.013, pose.walk > 0, pose.aiming, pose.action, pose.actionElapsed);
+  ctx.save(); ctx.translate(x, y); ctx.scale(pose.facing * scale, scale);
+  if (ready.wing) ctx.drawImage(ready.wing, -32, -61, 60, 60);
+  for (const group of ["weapon", "face", "upper"] as const) {
+    const rect = avatarFrameRect(frames[group]);
+    ctx.drawImage(ready[group], rect.x, rect.y, rect.w, rect.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, rect.w, rect.h);
+  }
   ctx.restore();
 }
 
-/** Retrato montado (saguão/sala/vestiário). */
-export function drawCharPortrait(canvas: HTMLCanvasElement, look: Look, weaponId = "sledge"): void {
-  const c = canvas.getContext("2d")!;
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  const s = Math.min(canvas.width / 80, canvas.height / 128) ;
-  drawCharacter(c, look, { facing: 1, angleDeg: 15, walk: 0, weaponId, aiming: true }, canvas.width / 2, canvas.height - 2, s);
+const portraitPending = new WeakMap<HTMLCanvasElement, string>();
+const portraitLook = new WeakMap<HTMLCanvasElement, { key: string; look: Look; weaponId: string }>();
+
+/** Retrato SHOW original, separado da folha de batalha. Atualiza após o carregamento inicial. */
+export function drawCharPortrait(target: HTMLCanvasElement, look: Look, weaponId = "sledge"): void {
+  const key = JSON.stringify([look, weaponId]);
+  portraitLook.set(target, { key, look, weaponId });
+  const ctx = target.getContext("2d")!;
+  ctx.clearRect(0, 0, target.width, target.height);
+  const ready = prepare(look, weaponId, "show");
+  if (!ready) {
+    const scale = Math.min(target.width / 48, target.height / 72);
+    drawDoll(ctx, look, { facing: 1, angleDeg: 20, walk: 0, weaponId, aiming: true }, target.width / 2, target.height - 3, scale);
+    if (portraitPending.get(target) !== key) {
+      portraitPending.set(target, key);
+      void Promise.all(avatarLayers(look, weaponId, "show").map(p => asset(p.file).ready)).then(() => {
+        const latest = portraitLook.get(target);
+        if (latest?.key === key && prepare(latest.look, latest.weaponId, "show")) drawCharPortrait(target, latest.look, latest.weaponId);
+      });
+    }
+    return;
+  }
+  const scale = Math.min(target.width / 185, target.height / 305);
+  ctx.save(); ctx.translate(target.width / 2, target.height - 2); ctx.scale(scale, scale);
+  if (ready.wing) ctx.drawImage(ready.wing, -65, -150, 130, 130);
+  const faceFrame = performance.now() % 4500 > 4350 ? 2 : 0;
+  for (const group of ["face", "upper", "weapon"] as const) {
+    ctx.drawImage(ready[group], group === "face" ? faceFrame * SHOW_FRAME.width : 0, 0, SHOW_FRAME.width, SHOW_FRAME.height,
+      -SHOW_FRAME.feetX, -SHOW_FRAME.feetY, SHOW_FRAME.width, SHOW_FRAME.height);
+  }
+  ctx.restore();
 }

@@ -1,5 +1,11 @@
 # Respostas do refinamento do plano (2026-11-11)
 
+Atualização de 2026-11-12: o dono solicitou alinhar os cálculos ao repositório `pnkl1999/DDTank41` e remover do documento de desenvolvimento a restrição de uso desse código. Para física, dano, crítico, fúria e delay, a referência atual é `docs/ddtank41.md`; as estimativas anteriores abaixo ficam como histórico.
+
+Ainda em 2026-11-12, autorizou a adaptação do `thurdev/ddtank-reborn`: delay 200 das bolas, integração float32, máscaras reais de explosão e reprodução simultânea dos leques. Detalhes e limites em `docs/ddtank-reborn.md`.
+
+Depois de testar, relatou flicker ao virar e pediu conferência da progressão do vento. Preferiu o sistema visual clássico do avatar às três imagens de referência da raiz. Direção agora é explícita nos eventos; vento gradual foi confirmado; avatar migrou para peças GAME/SHOW clássicas. Ver `docs/avatar.md`.
+
 1. Modos na v1: 1v1 e times até 4v4 (sem PvE).
 2. Época de referência: entre a clássica e a atual. Sistemas desejados:
    - Todos os equipamentos (inclusive armas secundárias).

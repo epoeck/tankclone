@@ -1,4 +1,7 @@
 export * from "./physics";
+export * from "./euler";
+export * from "./craters";
+export * from "./playback";
 export * from "./terrain";
 export * from "./calibration";
 export * from "./angle";
@@ -9,3 +12,4 @@ export * from "./stats";
 export * from "./maps";
 export * from "./builds";
 export * from "./appearance";
+export * from "./avatar";

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DEFAULT_PHYSICS, MUZZLE_HEIGHT, evaluate, fitPhysics, powerScalingCheck,
+  TABLE_PHYSICS as DEFAULT_PHYSICS, MUZZLE_HEIGHT, evaluate, fitPhysics, powerScalingCheck,
   predictDx, requiredPower, windRuleError, fitWindAccel, samplesFromTables, type ShotSample,
 } from "../src/index";
 import data from "../calibration/ddtank-tables.json";
@@ -21,7 +21,7 @@ describe("ferramenta de ajuste (dados sintéticos)", () => {
   });
 });
 
-// Regressão: a física padrão precisa continuar batendo com as tabelas de tiro da comunidade.
+// Arquivo histórico: verifica o perfil ajustado por tabelas, separado do perfil DDTank41 usado no jogo.
 describe("tabelas de tiro DDTank (20°, 30°, 50°, 65°)", () => {
   const U = data.unitPx;
   for (const [angle, powers] of Object.entries(data.tables)) {

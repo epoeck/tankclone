@@ -5,10 +5,16 @@
  * Convenções: unidades em pixels e segundos; eixo Y cresce para BAIXO (como na tela).
  * Ângulo em graus: 0° = direita, 90° = para cima. `facing` espelha para quem mira à esquerda.
  */
+import { eulerStep } from "./euler";
 
 export interface PhysicsConfig {
   /** Passo fixo da simulação (s). */
   dt: number;
+  /** O servidor C# transmite as velocidades iniciais como inteiros. */
+  integerLaunch?: boolean;
+  /** Preserva os arredondamentos do EulerVector C#; legado por tabelas usa double. */
+  float32?: boolean;
+  mass?: number;
   /** Gravidade (px/s²), positiva = puxa para baixo. */
   gravity: number;
   /** Velocidade inicial (px/s) por ponto de força (força vai de 0 a 100). */
@@ -21,19 +27,20 @@ export interface PhysicsConfig {
   maxSteps: number;
 }
 
-/**
- * Valores ajustados contra as tabelas de tiro da comunidade DDTank
- * (packages/core/calibration + `npm run calibrate -w @tankclone/core`).
- * Assumem tela de 1000 px (1 unidade de distância = 100 px). Gravidade e velocidade
- * são "unidades do nosso modelo", não constantes do jogo original.
+/** Perfil anterior, mantido só para comparar com as tabelas históricas da comunidade. */
+export const TABLE_PHYSICS: PhysicsConfig = {
+  dt: 1 / 60, gravity: 507.32, speedPerPower: 16.748,
+  windAccel: 17, drag: 0.1416, maxSteps: 60 * 20,
+};
+
+/** DDTank41: mapa Weight=10, DragIndex=2; bola Mass=10, Weight=70, Wind=240, DragIndex=1.
+ * BombObject + EulerVector: g=10×70, arrasto=2×1/10, vento=240/10.
+ * Barra 0–100 corresponde à força 0–2000. Ver docs/ddtank41.md.
  */
 export const DEFAULT_PHYSICS: PhysicsConfig = {
-  dt: 1 / 60,
-  gravity: 507.32,
-  speedPerPower: 16.748,
-  windAccel: 17, // calibrado: reproduz "ângulo ± vento × 2" (vento 0–10); ver fitWindAccel
-  drag: 0.1416,
-  maxSteps: 60 * 20,
+  dt: 0.04, gravity: 700, speedPerPower: 20,
+  windAccel: 24, drag: 0.2, maxSteps: 25 * 20,
+  integerLaunch: true, float32: true, mass: 10,
 };
 
 /** Altura (px) do ponto de saída do tiro acima do chão onde o tanque está. Resultado do ajuste. */
@@ -62,15 +69,23 @@ export function launch(shot: Shot, cfg: PhysicsConfig = DEFAULT_PHYSICS): Projec
   const speed = shot.power * cfg.speedPerPower;
   const a = (shot.angleDeg * Math.PI) / 180;
   return {
-    x: shot.x,
-    y: shot.y,
-    vx: Math.cos(a) * speed * shot.facing,
-    vy: -Math.sin(a) * speed,
+    x: cfg.float32 ? Math.fround(shot.x) : shot.x,
+    y: cfg.float32 ? Math.fround(shot.y) : shot.y,
+    vx: cfg.integerLaunch ? Math.trunc(Math.cos(a) * speed * shot.facing) : Math.cos(a) * speed * shot.facing,
+    vy: cfg.integerLaunch ? Math.trunc(-Math.sin(a) * speed) : -Math.sin(a) * speed,
   };
 }
 
 /** Avança um passo (Euler semi-implícito: velocidade primeiro, depois posição). */
 export function step(p: Projectile, wind: number, cfg: PhysicsConfig = DEFAULT_PHYSICS): void {
+  if (cfg.float32) {
+    const f = Math.fround, mass = f(cfg.mass ?? 10);
+    const air = f(cfg.drag * mass);
+    const horizontal = f(f(wind) * f(cfg.windAccel * mass));
+    [p.x, p.vx] = eulerStep(p.x, p.vx, mass, air, horizontal, cfg.dt);
+    [p.y, p.vy] = eulerStep(p.y, p.vy, mass, air, f(cfg.gravity * mass), cfg.dt);
+    return;
+  }
   p.vx += (wind * cfg.windAccel - cfg.drag * p.vx) * cfg.dt;
   p.vy += (cfg.gravity - cfg.drag * p.vy) * cfg.dt;
   p.x += p.vx * cfg.dt;
@@ -115,6 +130,8 @@ export interface TrajectoryResult {
   hitKind: "terrain" | "player" | null;
   targetId: string | null;
   steps: number;
+  /** Tempo real de voo; o último segmento pode terminar antes de um passo inteiro. */
+  duration: number;
 }
 
 /**
@@ -150,15 +167,15 @@ export function simulateShot(
         if (exempt.has(b.id)) { if (!inside) exempt.delete(b.id); continue; }
         if (inside) {
           points.push({ x, y });
-          return { points, hit: { x, y }, hitKind: "player", targetId: b.id, steps: i };
+          return { points, hit: { x, y }, hitKind: "player", targetId: b.id, steps: i, duration: (i - 1 + t) * cfg.dt };
         }
       }
       if (isSolid(x, y)) {
         points.push({ x, y });
-        return { points, hit: { x, y }, hitKind: "terrain", targetId: null, steps: i };
+        return { points, hit: { x, y }, hitKind: "terrain", targetId: null, steps: i, duration: (i - 1 + t) * cfg.dt };
       }
     }
     points.push({ x: p.x, y: p.y });
   }
-  return { points, hit: null, hitKind: null, targetId: null, steps: cfg.maxSteps };
+  return { points, hit: null, hitKind: null, targetId: null, steps: cfg.maxSteps, duration: cfg.maxSteps * cfg.dt };
 }

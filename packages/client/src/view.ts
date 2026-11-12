@@ -3,9 +3,10 @@
  * Serve ao jogo local (game.ts) e ao jogo em rede (play.ts). O cliente só anima o que o core/servidor decidiu.
  */
 import { drawCharacter } from "./chars";
+import { applyCharacterMove } from "./character-state";
 import { sfx, toggleMute } from "./sound";
 import {
-  BUILDS, DEFAULT_LOOK, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
+  BUILDS, DEFAULT_LOOK, MatchPlayback, craterShape, craterOrigin, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
   type Facing, type ItemKey, type Look, type MatchEvent,
 } from "@tankclone/core";
 
@@ -13,7 +14,7 @@ export interface PlayerInfo { id: string; team: number; weaponId: string; build:
 
 export interface CharView {
   id: string; team: number; weaponId: string; x: number; y: number; hp: number; maxHp: number;
-  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number;
+  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number; action?: "shoot" | "hit"; actionStart?: number;
 }
 
 export const VIEW_W = 1280, VIEW_H = 720;
@@ -29,8 +30,7 @@ export class MatchView {
   private bg: HTMLImageElement | null = null;
   private tc: HTMLCanvasElement;
   private tctx: CanvasRenderingContext2D;
-  private queue: MatchEvent[] = [];
-  private anim: { points: Array<{ x: number; y: number }>; i: number } | null = null;
+  private playback = new MatchPlayback();
   private cam = 0;
   readonly width: number; readonly height: number;
 
@@ -77,50 +77,62 @@ export class MatchView {
   get terrainCanvas(): HTMLCanvasElement { return this.tc; }
   get camX(): number { return this.cam; }
 
-  get busy(): boolean { return !!this.anim || this.queue.length > 0; }
-  push(events: MatchEvent[]): void { this.queue.push(...events); }
+  get busy(): boolean { return this.playback.busy; }
+  push(events: MatchEvent[]): void { this.playback.push(events); }
   get current(): CharView | undefined { return this.chars.get(this.hud.player); }
 
   private apply(e: MatchEvent): void {
     const v = "playerId" in e ? this.chars.get(e.playerId) : undefined;
     switch (e.type) {
       case "turnStart": {
-        this.hud.wind = e.wind; this.hud.turn = e.turn; this.hud.player = e.playerId; this.hud.timeLimit = e.timeLimit; this.hud.timeLeft = e.timeLimit;
+        this.hud.wind = e.wind; this.hud.turn = e.turn; this.hud.player = e.playerId; this.hud.timeLimit = e.timeLimit; this.hud.timeLeft = e.timeLimit; for (const [id, delay] of Object.entries(e.delays)) { const c = this.chars.get(id); if (c) c.delay = delay; }
         if (v) { v.energy = e.energy; v.maxEnergy = Math.max(v.maxEnergy, e.energy); this.ui.angle = Math.max(this.ui.angle, 0); }
         if (e.playerId === this.me) sfx("turn");
         this.ui.power = 0; this.ui.special = false; this.ui.turnBonus = 0; this.ui.extraShots = 0; this.ui.triple = false; this.ui.fly = false; this.ui.spent = 0; this.ui.used = {};
         break;
       }
-      case "move": if (v) { const p = e.path[e.path.length - 1]; if (p) { v.x = p.x; v.y = p.y; } v.energy = e.energyLeft; if (e.path.length) { const a = e.path[0]!; if (p) v.facing = (p.x >= a.x ? 1 : -1) as Facing; } v.walk += 0.9; } break;
+      case "move": if (v) applyCharacterMove(v, e); break;
       case "fall": if (v) v.y = e.toY; break;
       case "fly": if (v) { v.x = e.x; v.y = e.y; } break;
       case "item": {
         if (v) v.energy = e.energyLeft;
         const d = own(ITEMS, e.key); if (!d) break;
         sfx("item"); this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
-        this.ui.turnBonus += d.damageBonus ?? 0; this.ui.extraShots += d.extraShots ?? 0; this.ui.triple ||= !!d.triple; this.ui.fly ||= !!d.fly;
+        this.ui.turnBonus += d.damageBonus ?? 0; if (d.triple) this.ui.turnBonus = (1 + this.ui.turnBonus) * 0.5 - 1; this.ui.extraShots += d.extraShots ?? 0; this.ui.triple ||= !!d.triple; this.ui.fly ||= !!d.fly;
         break;
       }
       case "crater": {
         sfx("boom");
-        this.terrain.carveCircle(e.x, e.y, e.radius); // mesma operação determinística do core, só para desenhar e medir o chão
-        this.tctx.globalCompositeOperation = "destination-out"; this.tctx.beginPath(); this.tctx.arc(e.x, e.y, e.radius, 0, 7); this.tctx.fill(); this.tctx.globalCompositeOperation = "source-over";
+        const shape = craterShape(e.ballId);
+        this.terrain.carveShape(e.x, e.y, shape);
+        // Recorta a imagem pela máscara atual; pixels indestrutíveis também permanecem visíveis.
+        const origin = craterOrigin(e.x, e.y, shape);
+        const x = Math.max(0, origin.x), y = Math.max(0, origin.y);
+        const w = Math.min(this.width, origin.x + shape.width) - x;
+        const h = Math.min(this.height, origin.y + shape.height) - y;
+        if (w > 0 && h > 0) {
+          const patch = this.tctx.getImageData(x, y, w, h), mask = this.terrain.getMask();
+          for (let row = 0; row < h; row++) for (let col = 0; col < w; col++) {
+            if (!mask[(y + row) * this.width + x + col]) patch.data[(row * w + col) * 4 + 3] = 0;
+          }
+          this.tctx.putImageData(patch, x, y);
+        }
         break;
       }
-      case "damage": if (v) v.hp = e.hp; sfx("hit"); break;
+      case "damage": if (v) { v.hp = e.hp; v.action = "hit"; v.actionStart = performance.now() / 1000; } sfx("hit"); break;
       case "fury": if (v) v.fury = e.fury; break;
       case "death": if (v) v.alive = false; sfx("death"); break;
       case "gameOver": { this.hud.over = true; this.hud.winner = e.winnerTeam; const mine = this.me ? this.chars.get(this.me)?.team : undefined; if (mine !== undefined) sfx(e.winnerTeam === mine ? "win" : "lose"); break; }
-      case "shot": this.anim = { points: e.points, i: 0 }; sfx("shoot"); break;
+      case "shot": if (v) { v.action = "shoot"; v.actionStart = performance.now() / 1000; } sfx("shoot"); break;
       case "turnEnd": if (v) v.delay = e.delay; break;
     }
   }
 
   /** Avança animações e o relógio exibido (o relógio de verdade é do core/servidor). */
   update(dt: number): void {
-    if (this.anim) { this.anim.i += Math.max(1, Math.round((900 * dt) / 8)); if (this.anim.i >= this.anim.points.length) this.anim = null; }
-    while (!this.anim && this.queue.length) { const e = this.queue.shift()!; this.apply(e); if (e.type === "shot") break; }
-    if (!this.busy && !this.hud.over) this.hud.timeLeft = Math.max(0, this.hud.timeLeft - dt);
+    for (const c of this.chars.values()) c.walk = Math.max(0, c.walk - dt);
+    const idleTime = this.playback.update(dt, e => this.apply(e));
+    if (!this.busy && !this.hud.over) this.hud.timeLeft = Math.max(0, this.hud.timeLeft - idleTime);
     // a faixa de ângulo da arma gira com a rampa; o ângulo é sempre o absoluto
     const c = this.current;
     if (c && !this.busy) this.ui.angle = clampAbsoluteAngle(this.ui.angle, own(WEAPONS, c.weaponId)!.angle, this.terrain.slopeDeg(c.x, c.y, c.facing));
@@ -132,7 +144,8 @@ export class MatchView {
   draw(ctx: CanvasRenderingContext2D, me: string | null): void {
     const cur = this.current;
     const W = this.width, H = this.height;
-    const target = this.anim ? this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!.x : cur?.x ?? 0;
+    const projectiles = this.playback.positions;
+    const target = projectiles.length ? projectiles.reduce((sum, p) => sum + p.x, 0) / projectiles.length : cur?.x ?? 0;
     this.cam += (Math.max(0, Math.min(W - VIEW_W, target - VIEW_W / 2)) - this.cam) * 0.15;
     if (this.bg) ctx.drawImage(this.bg, 0, 0, VIEW_W, VIEW_H);
     else { const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, "#7fb8ee"); g.addColorStop(1, "#dcefff"); ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
@@ -145,20 +158,20 @@ export class MatchView {
     }
     for (const c of this.chars.values()) {
       if (!c.alive) continue;
-      this.drawTank(ctx, c, c.id === this.hud.player && !this.anim);
+      this.drawTank(ctx, c, c.id === this.hud.player && !this.busy);
       const bx = c.x - 22, by = c.y - PLAYER_HITBOX.h - 22;
       ctx.fillStyle = "#0008"; ctx.fillRect(bx, by, 44, 5); ctx.fillStyle = "#5c5"; ctx.fillRect(bx, by, 44 * Math.max(0, c.hp / c.maxHp), 5);
       ctx.fillStyle = "#fff"; ctx.font = "bold 11px Nunito, system-ui"; ctx.textAlign = "center"; ctx.fillText(c.id, c.x, by - 3); ctx.textAlign = "left";
       if (c.id === me) { ctx.fillStyle = "#ffe98a"; ctx.beginPath(); ctx.moveTo(c.x, by - 16); ctx.lineTo(c.x - 5, by - 24); ctx.lineTo(c.x + 5, by - 24); ctx.fill(); }
     }
-    if (this.anim) { const p = this.anim.points[Math.min(this.anim.i, this.anim.points.length - 1)]!; ctx.fillStyle = "#101010"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, 7); ctx.fill(); ctx.stroke(); }
+    for (const p of projectiles) { ctx.fillStyle = "#101010"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, 7); ctx.fill(); ctx.stroke(); }
     ctx.restore();
 
   }
 
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
-    drawCharacter(ctx, c.look, { facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
-    if (!aiming) c.walk = 0;
+    const elapsed = performance.now() / 1000 - (c.actionStart ?? -Infinity);
+    drawCharacter(ctx, c.look, { action: elapsed < 0.24 ? c.action : undefined, actionElapsed: elapsed, facing: c.facing, angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
   }
 }
 

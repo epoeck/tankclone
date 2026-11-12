@@ -10,7 +10,7 @@ const HATS_COLOR = ["", "#c0392b", "#222a44", "#7a4bd1", "#9aa3b3"];
 const WEAPON_COLOR: Record<string, string> = { prism: "#ff8ad0", sledge: "#d6a43a", furnace: "#ff6d1f" };
 const INK = "#141a3a";
 
-export interface DollPose { facing: 1 | -1; angleDeg: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean }
+export interface DollPose { facing: 1 | -1; angleDeg: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean; action?: "shoot" | "hit"; actionElapsed?: number }
 
 export function drawDoll(ctx: CanvasRenderingContext2D, look: Look, pose: DollPose, x: number, y: number, scale = 1): void {
   const { appearance: a, equipped: e } = look;

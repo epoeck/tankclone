@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_PHYSICS, fitPhysics, requiredPower, samplesFromTables } from "../src/index";
+import { TABLE_PHYSICS, fitPhysics, requiredPower, samplesFromTables } from "../src/index";
 
 const file = process.argv[2] ?? new URL("../calibration/ddtank-tables.json", import.meta.url).pathname;
 const raw = JSON.parse(readFileSync(file, "utf8")) as { unitPx: number; tables: Record<string, number[]> };
 const samples = samplesFromTables(raw.tables, raw.unitPx);
 
-const fit = fitPhysics(samples, DEFAULT_PHYSICS);
+const fit = fitPhysics(samples, TABLE_PHYSICS);
 console.log(`unitPx=${raw.unitPx}  amostras=${samples.length}`);
 console.log(`speedPerPower: ${fit.cfg.speedPerPower.toFixed(4)}`);
 console.log(`drag:          ${fit.cfg.drag.toFixed(4)}`);
