@@ -219,6 +219,19 @@ describe("tiro, dano e fúria", () => {
     const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge" }, { id: "c", team: 1, x: 320, weaponId: "sledge" }, { id: "b", team: 2, x: 800, weaponId: "sledge" }]);
     expect(ev(ok(shoot(m, "a", 320)), "damage")).toHaveLength(0);
   });
+  it("o atirador sofre dano do próprio tiro, mas a vida desce no máximo até 1", () => {
+    const hit = (hp: number) => { const m = mk(duo({ hp }), flat(), {}, 1); return { es: ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 65, power: 12 })), m }; };
+    const a = hit(5000); const dmg = ev(a.es, "damage").find(e => e.playerId === "a");
+    expect(dmg).toBeTruthy(); expect(a.m.getChar("a")!.hp).toBe(5000 - dmg!.amount);
+    const b = hit(1); expect(b.m.getChar("a")!.alive).toBe(true); expect(b.m.getChar("a")!.hp).toBe(1);
+    const c = hit(30); expect(c.m.getChar("a")!.alive).toBe(true); expect(c.m.getChar("a")!.hp).toBeGreaterThanOrEqual(1);
+  });
+  it("voo (F): faixa 0–90° em vez da da arma", () => {
+    const run = (angle: number, fly: boolean) => { const m = mk(); if (fly) ok(m.submit({ type: "item", playerId: "a", key: "F" })); return ev(ok(m.submit({ type: "shoot", playerId: "a", angleDeg: angle, power: 40 })), "shot")[0]!.points; };
+    expect(run(5, false)).toEqual(run(20, false)); // Marreta prende em 20°
+    expect(run(5, true)).not.toEqual(run(20, true)); // com F, 5° vale
+    expect(run(100, true)).toEqual(run(90, true));
+  });
   it("morte por HP encerra a partida quando só resta um time", () => {
     const m = mk(duo({}, { hp: 50 }));
     const es = ok(shoot(m, "a", 320));

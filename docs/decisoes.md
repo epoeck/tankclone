@@ -52,3 +52,6 @@ Depois de testar, relatou flicker ao virar e pediu conferência da progressão d
 26. Print de conta forte: AGI 29551 → energia 1225 ⇒ base 240 (não 220). Atributos mágicos existem (Atq/Resist mágica). Ver pesquisa §6.
 32. Escala de stats da build PvP (decisão do dono, 2026-11-11): usar a escala ANTIGA (2011) — stats de equipamento na casa das centenas a poucos milhares, vida ~5000 — com a fórmula dos guias como está (K = 100). A escala de 2022 (conta de referência do print) só volta quando entrarem forja, pérolas e pets. Implementado em `core/src/builds.ts` (4 builds de teste) com teste de sanidade (tiro central sem itens, média × média: 5%–15% da vida). `REFERENCE_STATS` fica marcada como "escala 2022, não usar na build PvP".
 33. Itens de tiro (confirmado pelo dono): todos repetem no turno, exceto o 2 (tiro triplo), que só vale uma vez; +1 tiro = −10% por disparo, +2 tiros = −40%.
+
+- **Voo (F)** é tratado como uma arma de faixa 0–90° relativa ao corpo (`FLY_ANGLE`); na rampa a faixa gira junto, como nas armas. Pedido do Izzy em 2026-11-12.
+- **Dano próprio:** o atirador sofre dano dos próprios tiros, mas a vida desce no máximo até 1 (nunca morre por isso). Pode morrer andando/caindo para fora do mapa. Aliados continuam sem se ferir.

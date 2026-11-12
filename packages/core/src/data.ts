@@ -30,6 +30,9 @@ export interface ItemDef {
 }
 
 /** Teclas preservadas; custos e delays conferidos no TemplateAlllist.xml do DDTank41. */
+/** Voo (F): tratado como uma arma de faixa 0–90° relativa ao corpo; na rampa a faixa gira junto, como nas armas. */
+export const FLY_ANGLE: AngleRange = { min: 0, max: 90 };
+
 export const ITEMS: Record<ItemKey, ItemDef> = {
   "1": { key: "1", cost: 110, delay: 600, extraShots: 2, shotDamageMult: 0.6 },
   "2": { key: "2", cost: 110, delay: 600, triple: true },

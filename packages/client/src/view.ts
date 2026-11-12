@@ -6,7 +6,7 @@ import { drawCharacter } from "./chars";
 import { applyCharacterMove } from "./character-state";
 import { sfx, toggleMute } from "./sound";
 import {
-  BUILDS, DEFAULT_LOOK, MatchPlayback, craterShape, craterOrigin, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
+  BUILDS, DEFAULT_LOOK, MatchPlayback, craterShape, craterOrigin, FLY_ANGLE, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own,
   type Facing, type ItemKey, type Look, type MatchEvent,
 } from "@tankclone/core";
 
@@ -135,7 +135,7 @@ export class MatchView {
     if (!this.busy && !this.hud.over) this.hud.timeLeft = Math.max(0, this.hud.timeLeft - idleTime);
     // a faixa de ângulo da arma gira com a rampa; o ângulo é sempre o absoluto
     const c = this.current;
-    if (c && !this.busy) this.ui.angle = clampAbsoluteAngle(this.ui.angle, own(WEAPONS, c.weaponId)!.angle, this.terrain.slopeDeg(c.x, c.y, c.facing));
+    if (c && !this.busy) this.ui.angle = clampAbsoluteAngle(this.ui.angle, this.ui.fly ? FLY_ANGLE : own(WEAPONS, c.weaponId)!.angle, this.terrain.slopeDeg(c.x, c.y, c.facing));
   }
 
   /** Quem está na vez fica livre para agir quando nada está animando. */
