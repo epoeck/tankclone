@@ -117,7 +117,7 @@ export class MatchView {
         // Logs de servidores anteriores enviavam o ID da arma mesmo com o item F ativo.
         // O evento de item já é autoritativo e precede o disparo na mesma linha do tempo.
         if (this.ui.fly) e.ballId = FLY_BALL_ID;
-        this.ui.fired = true; this.clockPaused = false;
+        this.ui.fired = true;
         if (v) { v.action = "shoot"; v.actionStart = performance.now() / 1000; }
         const visual = this.projectileVisual(e.ballId, v?.weaponId);
         const key = `${e.playerId}:${e.at ?? "unknown"}`;
@@ -128,7 +128,7 @@ export class MatchView {
         break;
       }
       case "stateSync": if (v) { v.x = e.x; v.y = e.y; v.hp = e.hp; v.fury = e.fury; v.energy = e.energy; if (!e.alive && v.alive) v.deathAge = 0; v.alive = e.alive; } break;
-      case "turnEnd": if (v) v.delay = e.delay; this.clockPaused = false; break;
+      case "turnEnd": if (v) v.delay = e.delay; break;
       case "charge": this.clockPaused = e.on; break;
     }
   }

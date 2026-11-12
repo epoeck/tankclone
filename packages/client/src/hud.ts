@@ -150,7 +150,7 @@ export class Hud {
     }
     this.estouro.classList.toggle("is-off", !mine); if (v.ui.special) this.estouro.setAttribute("aria-selected", "true"); else this.estouro.removeAttribute("aria-selected");
     this.blue.textContent = `${alive.filter(c => c.team === 1).length} vivos`; this.red.textContent = `${alive.filter(c => c.team !== 1).length} vivos`;
-    el<HTMLButtonElement>(this.root, ".passbtn").disabled = v.clockPaused || v.ui.power > 0;
+    el<HTMLButtonElement>(this.root, ".passbtn").disabled = v.ui.power > 0;
     this.drawMinimap();
     if (v.hud.over) { this.banner.hidden = false; el<HTMLElement>(this.banner, "span").textContent = v.hud.winner === null ? "Empate" : `Time ${v.hud.winner === 1 ? "Azul" : "Vermelho"} venceu!`; }
     else this.banner.hidden = true;

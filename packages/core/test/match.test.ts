@@ -288,16 +288,21 @@ describe("chaves de protótipo", () => {
   });
 
 describe("carga da força e vários tiros", () => {
-  it("o relógio para enquanto carrega e volta ao soltar ou depois de 3 s", () => {
+  it("o relógio para ao começar a carregar e não volta mais neste turno (como no Reborn)", () => {
     const m = mk();
     m.tick(1); const t0 = m.timeLeft;
-    const on = ok(m.submit({ type: "charge", playerId: "a", on: true }));
-    expect(on[0]).toMatchObject({ type: "charge", on: true });
-    m.tick(2); expect(m.timeLeft).toBe(t0);
-    const off = m.tick(1.5);
-    expect(off[0]).toMatchObject({ type: "charge", on: false });
-    m.tick(1); expect(m.timeLeft).toBeCloseTo(t0 - 1, 5);
-    expect(m.submit({ type: "charge", playerId: "a", on: true }).ok).toBe(false); // já usou a carga deste tiro
+    expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))[0]).toMatchObject({ type: "charge", on: true });
+    m.tick(5); expect(m.timeLeft).toBe(t0);
+    expect(ok(m.submit({ type: "charge", playerId: "a", on: false }))).toEqual([]); // soltar sem atirar não retoma
+    m.tick(5); expect(m.timeLeft).toBe(t0);
+    expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))).toEqual([]);
+  });
+  it("o tempo parado tem limite: depois dele o turno passa sozinho", () => {
+    const m = mk();
+    ok(m.submit({ type: "charge", playerId: "a", on: true }));
+    let es: MatchEvent[] = [];
+    for (let i = 0; i < 25 && !es.length; i++) es = m.tick(1);
+    expect(ev(es, "turnStart")).toHaveLength(1);
   });
   it("com +1 tiro: o ângulo muda entre os tiros, itens travam e o turno só acaba no último", () => {
     const m = mk(duo({ agi: 3300 }));

@@ -64,5 +64,5 @@ Depois de testar, relatou flicker ao virar e pediu conferência da progressão d
 - **Ids de bala** vêm só da ficha de cada arma (`WEAPONS[...].ballId` e `special.ballId`) e de `FLY_BALL_ID`; o cliente não tem mais números mágicos.
 - **`view.ts` dividido:** `controls.ts` (teclado) e `terrain-layer.ts` (pintura do terreno e bordas de cratera).
 - **Páginas de desenvolvimento** (design, dano, projéteis, avatar, visualizador de física) ficam em `packages/client/dev/` (`/dev/*.html`); o jogo é `play.html` (rede) e `game.html` (local).
-- **Vários tiros:** cada tiro é uma intenção própria; o ângulo e a força podem mudar entre eles, itens travam depois do primeiro tiro. O relógio para enquanto se carrega a força (máx. 3 s por tiro).
+- **Vários tiros:** cada tiro é uma intenção própria; o ângulo e a força podem mudar entre eles, itens travam depois do primeiro tiro. O relógio para enquanto se carrega a força (não volta mais naquele turno, como no Reborn; limite de 20 s parado).
 - **Sons:** arquivos do Reborn ficam só locais em `packages/client/public/sfx-local/<id>.ogg` (gitignored), com som sintetizado de reserva.

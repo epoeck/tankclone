@@ -110,16 +110,18 @@ interface TurnState {
   triple: boolean;
   fly: boolean;
   elapsed: number;
-  /** Segurando a barra de força: o relógio do turno fica parado (no máximo CHARGE_MAX_SECONDS). */
-  charging: boolean;
-  chargeSeconds: number;
+  /** Como no Reborn: ao começar a carregar a força o relógio do turno para e não volta mais neste turno.
+   * `idleSeconds` limita o tempo parado (evita travar a partida soltando sem atirar). */
+  clockStopped: boolean;
+  idleSeconds: number;
   /** Tiros já disparados e restantes neste turno (vários tiros: o ângulo pode mudar entre eles). */
   shotsFired: number;
   shotsLeft: number;
   special: boolean;
 }
 
-export const CHARGE_MAX_SECONDS = 3;
+/** Tempo máximo, depois de começar a carregar, até o turno passar sozinho. */
+export const STOPPED_CLOCK_MAX_SECONDS = 20;
 
 export class Match {
   readonly terrain: Terrain;
@@ -213,11 +215,9 @@ export class Match {
   /** Passa o tempo; ao estourar o limite do turno, passa a vez automaticamente. */
   tick(dt: number): MatchEvent[] {
     if (this.over) return [];
-    if (this.ts.charging) { // relógio parado enquanto carrega; solta sozinho se passar do limite
-      this.ts.chargeSeconds += dt;
-      if (this.ts.chargeSeconds < CHARGE_MAX_SECONDS) return [];
-      this.ts.charging = false;
-      return [{ type: "charge", playerId: this.current.id, on: false }];
+    if (this.ts.clockStopped) {
+      this.ts.idleSeconds += dt;
+      return this.ts.idleSeconds >= STOPPED_CLOCK_MAX_SECONDS ? this.endTurn(this.ts.shotsFired === 0) : [];
     }
     this.ts.elapsed += dt;
     if (this.ts.elapsed >= this.turnTimeLimit()) return this.endTurn(this.ts.shotsFired === 0);
@@ -229,14 +229,13 @@ export class Match {
     if (intent.playerId !== this.current.id) return { ok: false, error: "não é a vez deste jogador" };
     if (!this.current.alive) return { ok: false, error: "jogador morto" };
     switch (intent.type) {
-      case "move": this.ts.charging = false; return this.doMove(intent.dir, intent.px);
+      case "move": return this.doMove(intent.dir, intent.px);
       case "charge": {
-        if (this.ts.charging === !!intent.on) return { ok: true, events: [] };
-        if (intent.on && this.ts.chargeSeconds >= CHARGE_MAX_SECONDS) return { ok: false, error: "força já carregada" };
-        this.ts.charging = !!intent.on;
-        return { ok: true, events: [{ type: "charge", playerId: this.current.id, on: this.ts.charging }] };
+        if (!intent.on || this.ts.clockStopped) return { ok: true, events: [] };
+        this.ts.clockStopped = true;
+        return { ok: true, events: [{ type: "charge", playerId: this.current.id, on: true }] };
       }
-      case "item": this.ts.charging = false; return this.doItem(intent.key);
+      case "item": return this.doItem(intent.key);
       case "shoot": return this.doShoot(intent.angleDeg, intent.power, !!intent.special);
       case "pass": return { ok: true, events: this.endTurn(true) };
     }
@@ -319,7 +318,6 @@ export class Match {
     let special = specialReq;
     const c = this.current, cfg = this.cfg, T = this.terrain, weapon = own(WEAPONS, c.weaponId)!;
     if (!Number.isFinite(angleDeg) || !Number.isFinite(power)) return { ok: false, error: "valores inválidos" };
-    this.ts.charging = false; this.ts.chargeSeconds = 0;
     if (this.ts.shotsFired > 0) special = this.ts.special; // o especial é decidido no primeiro tiro
     if (this.ts.shotsFired === 0 && special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
     const events: MatchEvent[] = [];
@@ -458,5 +456,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, charging: false, chargeSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false };
 }
