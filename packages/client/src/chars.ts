@@ -8,7 +8,7 @@ import { drawDoll, type DollPose } from "./doll";
 
 const CANVAS = { w: 96, h: 128 }, FEET = { x: 48, y: 124 }, SHOULDER = { x: 56, y: 82 }, ARM_PIVOT = { x: 8, y: 10 }, HAND = { x: 38, y: 10 }, GRIP = { x: 10, y: 27 };
 export const CHAR_SCALE = 0.433;
-const CROUCH_Y = 0.72, CROUCH_DROP = 34, SHOULDER_DROP = 12;
+const CROUCH_Y = 0.72, CROUCH_DROP = 14, SHOULDER_DROP = 12;
 
 type Entry = { img: HTMLImageElement; ok: boolean };
 const cache = new Map<string, Entry>();
@@ -46,6 +46,7 @@ const FILES = (look: Look, weaponId: string) => {
     { f: `chars/hair-back/hair-back-${a.hair + 1}.svg`, t: hair },
     { f: "chars/body/body-1.svg", t: skin },
     { f: `chars/outfit/outfit-${q.outfit + 1}.svg` },
+    { f: "chars/head/head-1.svg", t: skin },
     { f: `chars/face/face-${a.face + 1}.svg` },
     { f: `chars/hair-front/hair-front-${a.hair + 1}.svg`, t: hair },
     q.glasses ? { f: `chars/glasses/glasses-${q.glasses}.svg` } : null,
@@ -67,7 +68,7 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, look: Look, pose: D
   parts.forEach((p, i) => {
     const img = imgs[i]!;
     if (p.weapon || p.arm) return;
-    const head = /hair-|face|glasses|hat/.test(p.f);
+    const head = /hair-|head|face|glasses|hat/.test(p.f);
     if (!crouch) { ctx.drawImage(img, 0, 0, CANVAS.w, CANVAS.h); return; }
     // em partida: corpo achatado e só a cabeça chibi balança
     ctx.save();

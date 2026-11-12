@@ -17,56 +17,61 @@ export class Hud {
   private power: HTMLElement; private angle: HTMLElement; private angleVal: HTMLElement; private gauge: HTMLElement; private gaugeLabel: HTMLElement; private banner: HTMLElement;
   private slots = new Map<string, HTMLElement>(); private counts = new Map<string, HTMLElement>();
   private portraits = new Map<string, HTMLCanvasElement>();
-  private lastOrder = ""; private meCanvas!: HTMLCanvasElement;
+  private lastOrder = ""; private meCanvas!: HTMLCanvasElement; private estouro!: HTMLElement; private blue!: HTMLElement; private red!: HTMLElement;
 
   constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void, private onPass: () => void = () => {}) {
     root.className = "hud";
     root.innerHTML = `
-      <div class="me"><canvas width="96" height="120"></canvas><div class="me__name"><span class="title title--sm title--cream" data-k="name"></span><span class="chip chip--lvl" data-k="weapon"></span></div></div>
-      <div class="chatbox"><div class="chatbox__log" aria-live="polite"></div><input class="chatbox__in" maxlength="200" placeholder="Enter para conversar" autocomplete="off" hidden></div>
-      <div class="turns panel" style="padding:10px 12px;"></div>
-      <div class="windbox panel" style="padding:8px 16px;">
-        <div class="wind"><span class="label">Vento</span><div class="wind__arrow" data-dir="right"></div><span class="wind__value num">0,0</span></div>
+      <div class="me"><div class="me__name"><span data-k="name"></span><span class="chip chip--lvl" data-k="weapon"></span></div><div class="me__ring"><canvas width="110" height="150"></canvas></div></div>
+      <div class="feed"><div class="feed__lines" aria-live="polite"></div><input class="feed__in" maxlength="200" placeholder="Enter para conversar" autocomplete="off" hidden></div>
+      <div class="turns"></div>
+      <div class="windbox"><span class="wind__label">Vento</span><div class="wind"><div class="wind__arrow" data-dir="right"></div><span class="wind__value num">0,0</span></div></div>
+      <div class="clock"><span class="clock__num num">10</span><button class="btn btn--steel btn--sm passbtn" type="button">Passar (P)</button></div>
+      <div class="minimap well"><canvas width="300" height="130"></canvas></div>
+      <div class="roundinfo panel"><div><span style="color:var(--sky-300)">Azul</span><b class="num" data-k="blue"></b></div><div><span style="color:#ffb1a6">Vermelho</span><b class="num" data-k="red"></b></div></div>
+      <div class="itemcol"></div>
+      <div class="dial" style="--angle:45deg"><span class="dial__needle"></span><span class="dial__hub"></span><span class="dial__value num">45</span></div>
+      <div class="skills"></div>
+      <div class="powerbar"><span class="powerbar__label">Força</span>
+        <div class="powerbar__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div>
+        <div class="power" style="--power:0%; --last:0%"><span class="power__last"></span><span class="power__hint">Segure Espaço: a força vai até 100 e volta</span></div></div>
+      <div class="vitals2">
+        <div class="vitals2__row"><span>Energia</span><div class="bar bar--energy" style="--value:100%"><span class="bar__text num"></span></div></div>
+        <div class="vitals2__row"><span>Vida</span><div class="bar bar--hp bar--lg" style="--value:100%"><span class="bar__text num"></span></div></div>
       </div>
-      <div class="timer" style="--t:100%"><span class="num">10</span></div>
-      <button class="btn btn--steel btn--sm passbtn" type="button">PASSAR (P)</button>
-      <div class="minimap well"><canvas width="208" height="76"></canvas></div>
-      <div class="items"></div>
-      <div class="vitals panel">
-        <div class="vitals__row"><img src="/assets/ui/stats/stat-hp.svg" alt="Vida"><div class="bar bar--hp" style="--value:100%"><span class="bar__text num"></span></div></div>
-        <div class="vitals__row"><img src="/assets/ui/stats/stat-energy.svg" alt="Energia"><div class="bar bar--energy" style="--value:100%"><span class="bar__text num"></span></div></div>
-      </div>
-      <div class="powerwrap"><span class="label powerwrap__label">Força</span><div class="power" style="--power:0%; --last:0%"><span class="power__last"></span></div>
-        <div class="power__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div></div>
-      <div class="angle" style="--angle:45deg"><img class="angle__dial" src="/assets/ui/hud/angle-dial.svg" alt=""><span class="angle__needle"></span><span class="angle__value num">45°</span></div>
       <div class="gauge" style="--pressure:0"><img src="/assets/ui/hud/pressure-gauge.svg" alt=""><img class="gauge__needle" src="/assets/ui/hud/pressure-needle.svg" alt=""><span class="gauge__label">Pressão 0%</span></div>
       <div class="banner panel" hidden><span class="title title--lg title--cream"></span></div>`;
-    this.turns = el(root, ".turns"); this.wind = el(root, ".wind__arrow"); this.windVal = el(root, ".wind__value"); this.timer = el(root, ".timer"); this.timerNum = el(root, ".timer span");
+    this.turns = el(root, ".turns"); this.wind = el(root, ".wind__arrow"); this.windVal = el(root, ".wind__value"); this.timer = el(root, ".clock"); this.timerNum = el(root, ".clock__num");
     this.mini = el(root, ".minimap canvas"); this.name = el(root, '[data-k="name"]');
-    this.hpBar = el(root, ".bar--hp"); this.hpText = el(this.hpBar, ".bar__text"); this.enBar = el(root, ".bar--energy"); this.enText = el(this.enBar, ".bar__text");
-    this.power = el(root, ".power"); this.angle = el(root, ".angle"); this.angleVal = el(root, ".angle__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
+    this.hpBar = el(root, ".vitals2 .bar--hp"); this.hpText = el(this.hpBar, ".bar__text"); this.enBar = el(root, ".bar--energy"); this.enText = el(this.enBar, ".bar__text");
+    this.power = el(root, ".power"); this.angle = el(root, ".dial"); this.angleVal = el(root, ".dial__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
+    this.blue = el(root, '[data-k="blue"]'); this.red = el(root, '[data-k="red"]');
+    this.estouro = document.createElement("div"); this.estouro.className = "slot"; this.estouro.title = "Estouro (R)";
+    this.estouro.innerHTML = '<img src="/assets/ui/stats/stat-atk.svg" alt="Estouro"><span class="slot__key">R</span><span class="slot__tag">ESTOURO</span>';
+    this.estouro.onclick = () => { if (this.view.canAct) this.view.ui.special = !this.view.ui.special; };
+    el(root, ".skills").append(this.estouro);
     el<HTMLButtonElement>(root, ".passbtn").onclick = () => this.onPass();
     this.meCanvas = el(root, ".me canvas");
-    const items = el(root, ".items");
+    const items = el(root, ".itemcol"), skills = el(root, ".skills");
     KEYS.forEach(k => {
       const d = document.createElement("div"); d.className = "slot"; d.title = ITEM_NAMES[k]!;
       const tag = TAGS[k] ? `<span class="slot__tag">${TAGS[k]}</span>` : "";
       d.innerHTML = `<img src="/assets/ui/items/item-${k.toLowerCase()}.svg" alt="${ITEM_NAMES[k]}"><span class="slot__key">${k}</span>${tag}<span class="slot__cost">${ITEMS[k].cost}</span><span class="slot__count"></span>`;
       d.onclick = () => this.onItem(k);
-      items.append(d); this.slots.set(k, d); this.counts.set(k, el(d, ".slot__count"));
+      (k === "F" ? skills : items).append(d); this.slots.set(k, d); this.counts.set(k, el(d, ".slot__count"));
     });
   }
 
   /** Linha de chat da sala durante a partida (só textContent). */
   addChat(from: string, text: string): void {
-    const log = el(this.root, ".chatbox__log"), line = document.createElement("div");
+    const log = el(this.root, ".feed__lines"), line = document.createElement("div");
     const b = document.createElement("b"); b.textContent = from + ": "; line.append(b, document.createTextNode(text));
     log.append(line); while (log.children.length > 6) log.firstChild!.remove();
     setTimeout(() => line.classList.add("old"), 12000);
   }
   /** Liga o campo de conversa: Enter abre/envia. */
   bindChat(send: (text: string) => void): void {
-    const inp = el<HTMLInputElement>(this.root, ".chatbox__in");
+    const inp = el<HTMLInputElement>(this.root, ".feed__in");
     if (chatKey) removeEventListener("keydown", chatKey);
     chatKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter" || !this.root.isConnected) return;
@@ -126,6 +131,8 @@ export class Hud {
       d.classList.toggle("is-off", !can); if (n) d.setAttribute("aria-selected", "true"); else d.removeAttribute("aria-selected");
       this.counts.get(k)!.textContent = n > 1 ? `×${n}` : "";
     }
+    this.estouro.classList.toggle("is-off", !mine); if (v.ui.special) this.estouro.setAttribute("aria-selected", "true"); else this.estouro.removeAttribute("aria-selected");
+    this.blue.textContent = `${alive.filter(c => c.team === 1).length} vivos`; this.red.textContent = `${alive.filter(c => c.team !== 1).length} vivos`;
     this.drawMinimap();
     if (v.hud.over) { this.banner.hidden = false; el<HTMLElement>(this.banner, "span").textContent = v.hud.winner === null ? "Empate" : `Time ${v.hud.winner === 1 ? "Azul" : "Vermelho"} venceu!`; }
     else this.banner.hidden = true;
