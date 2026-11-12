@@ -94,8 +94,8 @@ export interface Hitbox {
   bottomOffset?: number;
 }
 
-/** Tamanho provisório do boneco (px). Ajustar quando a arte chegar. */
-export const PLAYER_HITBOX = { w: 36, h: 42 } as const;
+/** Caixa única do boneco (px), usada na colisão do projétil e no raio de dano; mesma medida do Reborn (30×30, 10 px abaixo dos pés). */
+export const PLAYER_HITBOX = { w: 30, h: 30, bottomOffset: 10 } as const;
 
 export function hitboxContains(b: Hitbox, x: number, y: number, radius = 0): boolean {
   const bottom = b.y + (b.bottomOffset ?? 0);

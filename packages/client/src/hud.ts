@@ -144,7 +144,7 @@ export class Hud {
     this.angle.style.setProperty("--angle", `${dialAngle(v.ui.angle, cur?.facing ?? 1)}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;
     const mine = !me || me === cur?.id;
     for (const k of KEYS) {
-      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && !v.ui.fired && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
+      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && !v.ui.fired && !v.clockPaused && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
       d.classList.toggle("is-off", !can); if (n) d.setAttribute("aria-selected", "true"); else d.removeAttribute("aria-selected");
       this.counts.get(k)!.textContent = n > 1 ? `×${n}` : "";
     }

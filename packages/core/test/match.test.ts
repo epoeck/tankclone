@@ -288,21 +288,35 @@ describe("chaves de protótipo", () => {
   });
 
 describe("carga da força e vários tiros", () => {
-  it("o relógio para ao começar a carregar e não volta mais neste turno (como no Reborn)", () => {
+  it("o relógio para ao começar a carregar e não volta; ligar/desligar não reabre andar nem itens", () => {
     const m = mk();
     m.tick(1); const t0 = m.timeLeft;
     expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))[0]).toMatchObject({ type: "charge", on: true });
-    m.tick(5); expect(m.timeLeft).toBe(t0);
-    expect(ok(m.submit({ type: "charge", playerId: "a", on: false }))).toEqual([]); // soltar sem atirar não retoma
-    m.tick(5); expect(m.timeLeft).toBe(t0);
-    expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))).toEqual([]);
+    m.tick(2); expect(m.timeLeft).toBe(t0);
+    expect(ok(m.submit({ type: "charge", playerId: "a", on: false }))).toEqual([]);
+    expect(m.submit({ type: "move", playerId: "a", dir: 1, px: 5 }).ok).toBe(false); // cliente malicioso: on → off → andar
+    expect(m.submit({ type: "item", playerId: "a", key: "4" }).ok).toBe(false);
+    m.tick(0.5); expect(m.timeLeft).toBe(t0);
+    expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))).toEqual([]); // não renova o prazo
   });
-  it("o tempo parado tem limite: depois dele o turno passa sozinho", () => {
+  it("carregar e ficar em silêncio: o turno passa sozinho depois do prazo", () => {
     const m = mk();
     ok(m.submit({ type: "charge", playerId: "a", on: true }));
     let es: MatchEvent[] = [];
-    for (let i = 0; i < 25 && !es.length; i++) es = m.tick(1);
+    for (let i = 0; i < 40 && !es.length; i++) es = m.tick(0.25);
     expect(ev(es, "turnStart")).toHaveLength(1);
+    expect(m.currentId).toBe("b");
+  });
+  it("+2 tiros com pausa entre eles: o relógio continua parado e cada tiro tem o seu prazo", () => {
+    const m = mk(duo({ agi: 3300 }));
+    ok(m.submit({ type: "item", playerId: "a", key: "1" }));
+    ok(m.submit({ type: "charge", playerId: "a", on: true }));
+    ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 40, power: 40 }));
+    const left = m.timeLeft;
+    m.tick(4); expect(m.timeLeft).toBe(left); expect(m.currentId).toBe("a"); // ajustando o ângulo, dentro dos 5 s
+    ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 40 }));
+    m.tick(4); expect(m.currentId).toBe("a"); // novo prazo para o terceiro
+    expect(m.tick(2).some(e => e.type === "turnStart")).toBe(true); // estourou o prazo: encerra o turno
   });
   it("com +1 tiro: o ângulo muda entre os tiros, itens travam e o turno só acaba no último", () => {
     const m = mk(duo({ agi: 3300 }));
