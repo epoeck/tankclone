@@ -3,13 +3,15 @@
  * Serve ao jogo local (game.ts) e ao jogo em rede (play.ts). O cliente só anima o que o core/servidor decidiu.
  */
 import { drawCharacter } from "./chars";
+import { applyCharacterTransform } from "./doll";
+import { UI_FPS, autoPropAlpha, classFrames, drawClass, propIcon } from "./reborn-ui";
 import { TerrainLayer } from "./terrain-layer";
 import { drawDeath } from "./death";
 import { applyCharacterMove } from "./character-state";
 import { drawImpact, drawProjectile, drawTrail, impactDuration, TRAIL_MAX_LIFE } from "./projectile-effects";
 import { preloadLocalSfx, projectileSfx, sfx, stopSfx } from "./sound";
 import {
-  BUILDS, DEFAULT_LOOK, MatchPlayback, allowedAbsoluteRange, FLY_ANGLE, FLY_BALL_ID, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
+  BUILDS, DEFAULT_LOOK, HANDCLIP_SECONDS, MatchPlayback, allowedAbsoluteRange, FLY_ANGLE, FLY_BALL_ID, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
   type Facing, type ItemKey, type Look, type MatchEvent,
 } from "@tankclone/core";
 
@@ -17,7 +19,9 @@ export interface PlayerInfo { id: string; team: number; weaponId: string; build:
 
 export interface CharView {
   id: string; team: number; weaponId: string; x: number; y: number; hp: number; maxHp: number;
-  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number; action?: "shoot" | "hit"; actionStart?: number; deathAge?: number;
+  fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number; action?: "shoot" | "hit" | "handclip"; actionStart?: number; deathAge?: number;
+  /** Itens usados neste instante: animação de pegar item e o ícone sobre a cabeça. */
+  itemFx?: Array<{ key: string; start: number }>;
 }
 
 export const VIEW_W = 1280, VIEW_H = 720;
@@ -28,7 +32,7 @@ export class MatchView {
   readonly order: string[] = [];
   hud = { wind: 0, turn: 0, player: "", timeLimit: 10, timeLeft: 10, over: false, winner: null as number | null };
   clockPaused = false; private lastTickSec = -1; private lastStep = 0;
-  ui = { fired: false, angle: 45, power: 0, last: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false, flyCooldown: false, spent: 0, used: {} as Record<string, number> };
+  ui = { pressed: null as { key: string; at: number } | null, fired: false, angle: 45, power: 0, last: 0, special: false, msg: "", turnBonus: 0, extraShots: 0, triple: false, fly: false, flyCooldown: false, spent: 0, used: {} as Record<string, number> };
   /** Quem somos (para sons de vitória/derrota e do início do nosso turno); null no jogo local. */
   me: string | null = null;
   private bg: HTMLImageElement | null = null;
@@ -103,7 +107,10 @@ export class MatchView {
       case "item": {
         if (v) v.energy = e.energyLeft;
         const d = own(ITEMS, e.key); if (!d) break;
-        sfx("item"); this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
+        // GamePlayer.__usingItem: som 039, boneco "bate a mão" (HANDCLIP) e o ícone do item sobe sobre a cabeça
+        sfx("useItem");
+        if (v) { const t = performance.now() / 1000; v.action = "handclip"; v.actionStart = t; (v.itemFx ??= []).push({ key: e.key, start: t }); }
+        this.ui.spent += d.cost; this.ui.used[e.key] = (this.ui.used[e.key] ?? 0) + 1;
         this.ui.turnBonus += d.damageBonus ?? 0; if (d.triple) this.ui.turnBonus = (1 + this.ui.turnBonus) * 0.5 - 1; this.ui.extraShots += d.extraShots ?? 0; this.ui.triple ||= !!d.triple; this.ui.fly ||= !!d.fly;
         break;
       }
@@ -209,6 +216,7 @@ export class MatchView {
         continue;
       }
       this.drawTank(ctx, c, c.id === this.hud.player && !this.busy);
+      this.drawCharFx(ctx, c);
       const bx = c.x - 22, by = c.y - PLAYER_HITBOX.h - 22;
       ctx.fillStyle = "#0008"; ctx.fillRect(bx, by, 44, 5); ctx.fillStyle = "#5c5"; ctx.fillRect(bx, by, 44 * Math.max(0, c.hp / c.maxHp), 5);
       ctx.fillStyle = "#fff"; ctx.font = "bold 11px Nunito, system-ui"; ctx.textAlign = "center"; ctx.fillText(c.id, c.x, by - 3); ctx.textAlign = "left";
@@ -227,8 +235,29 @@ export class MatchView {
 
   }
 
+  /** Efeitos do Reborn sobre o boneco (só com os assets locais): fogo de fúria cheia e a animação de pegar item. */
+  private drawCharFx(ctx: CanvasRenderingContext2D, c: CharView): void {
+    const now = performance.now() / 1000, slope = this.terrain.slopeDeg(c.x, c.y, c.facing);
+    if (c.fury >= 200) { // GamePlayer.__danderChanged: danderAsset em (3, corpo+5) dentro do sprite do jogador (y −3)
+      ctx.save(); applyCharacterTransform(ctx, c.x, c.y, c.facing, 1, slope); ctx.translate(3, 2);
+      drawClass(ctx, "gameii", "asset.game.danderAsset", now * UI_FPS); ctx.restore();
+    }
+    if (!c.itemFx?.length) return;
+    const pick = "asset.game.ghostPcikPropAsset", frames = classFrames("gameii", pick) || 52;
+    c.itemFx = c.itemFx.filter(fx => {
+      const t = now - fx.start, f = t * UI_FPS;
+      if (f < frames) { ctx.save(); ctx.translate(c.x, c.y - 10); drawClass(ctx, "gameii", pick, f); ctx.restore(); }
+      // headPropEffect no quadro 12 da animação: ícone 60×60 em (−5−20, −140)
+      const a = f >= 12 ? autoPropAlpha(t - 12 / UI_FPS) : 0;
+      const icon = propIcon(fx.key);
+      if (icon && a) { ctx.save(); ctx.globalAlpha = a; ctx.drawImage(icon, c.x - 25, c.y - 140, 60, 60); ctx.restore(); }
+      return f < frames || a !== null;
+    });
+  }
+
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
     const elapsed = performance.now() / 1000 - (c.actionStart ?? -Infinity);
-    drawCharacter(ctx, c.look, { action: elapsed < 0.24 ? c.action : undefined, actionElapsed: elapsed, facing: c.facing, slopeDeg: this.terrain.slopeDeg(c.x, c.y, c.facing), angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
+    const window = c.action === "handclip" ? HANDCLIP_SECONDS : 0.24;
+    drawCharacter(ctx, c.look, { action: elapsed < window ? c.action : undefined, actionElapsed: elapsed, facing: c.facing, slopeDeg: this.terrain.slopeDeg(c.x, c.y, c.facing), angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
   }
 }

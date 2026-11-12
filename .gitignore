@@ -13,3 +13,4 @@ packages/client/public/character-effects/
 packages/client/public/projectiles/
 packages/client/public/maps/original-*/
 packages/client/public/sfx-local/
+packages/client/public/ui-local/

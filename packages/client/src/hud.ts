@@ -3,6 +3,13 @@ import { ITEMS, WEAPONS, own, type ItemKey } from "@tankclone/core";
 import { drawCharPortrait } from "./chars";
 import { dialAngle } from "./character-state";
 import { VIEW_W, VIEW_H, type MatchView } from "./view";
+import { PROP_ICON, UI_FPS, drawClass, uiReady } from "./reborn-ui";
+import { sfx } from "./sound";
+
+/** Ícone original (assets locais) com volta ao ícone do jogo se o arquivo não existir. */
+function iconImg(key: string, fallback: string, alt: string): string {
+  return `<img src="${PROP_ICON(key)}" data-fallback="${fallback}" alt="${alt}" onerror="this.onerror=null;this.src=this.dataset.fallback">`;
+}
 
 const KEYS: ItemKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "F"];
 const ITEM_NAMES: Record<string, string> = { "1": "Rajada (+2 tiros)", "2": "Leque (triplo)", "3": "Bis (+1 tiro)", "4": "Pólvora +50%", "5": "Pólvora +40%", "6": "Pólvora +30%", "7": "Pólvora +20%", "8": "Pólvora +10%", F: "Voo" };
@@ -18,6 +25,7 @@ export class Hud {
   private power: HTMLElement; private angle: HTMLElement; private angleVal: HTMLElement; private gauge: HTMLElement; private gaugeLabel: HTMLElement; private banner: HTMLElement;
   private slots = new Map<string, HTMLElement>(); private counts = new Map<string, HTMLElement>();
   private portraits = new Map<string, HTMLCanvasElement>();
+  private dander!: HTMLCanvasElement;
   private lastOrder = ""; private meCanvas!: HTMLCanvasElement; private estouro!: HTMLElement; private blue!: HTMLElement; private red!: HTMLElement;
 
   constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void, private onPass: () => void = () => {}) {
@@ -57,8 +65,12 @@ export class Hud {
     this.power = el(root, ".power"); this.angle = el(root, ".dial"); this.angleVal = el(root, ".dial__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
     this.blue = el(root, '[data-k="blue"]'); this.red = el(root, '[data-k="red"]');
     this.estouro = document.createElement("div"); this.estouro.className = "slot"; this.estouro.title = "Estouro (R)";
-    this.estouro.innerHTML = '<img src="/assets/ui/stats/stat-atk.svg" alt="Estouro"><span class="slot__key">R</span><span class="slot__tag">ESTOURO</span>';
-    this.estouro.onclick = () => { if (this.view.canAct) this.view.ui.special = !this.view.ui.special; };
+    this.estouro.innerHTML = `${iconImg("pow", "/assets/ui/stats/stat-atk.svg", "POW")}<span class="slot__key">R</span><span class="slot__tag">POW</span>`;
+    this.estouro.onclick = () => this.togglePow();
+    // medidor de fúria do Reborn (DanderBar) por cima do manômetro, quando houver os assets locais
+    this.dander = document.createElement("canvas"); this.dander.width = 104; this.dander.height = 106; this.dander.className = "dander";
+    this.dander.onclick = () => this.togglePow();
+    this.gauge.append(this.dander);
     el(root, ".skills").append(this.estouro);
     el<HTMLButtonElement>(root, ".passbtn").onclick = () => this.onPass();
     this.meCanvas = el(root, ".me canvas");
@@ -66,10 +78,33 @@ export class Hud {
     KEYS.forEach(k => {
       const d = document.createElement("div"); d.className = "slot"; d.title = ITEM_NAMES[k]!;
       const tag = TAGS[k] ? `<span class="slot__tag">${TAGS[k]}</span>` : "";
-      d.innerHTML = `<img src="/assets/ui/items/item-${k.toLowerCase()}.svg" alt="${ITEM_NAMES[k]}"><span class="slot__key">${k}</span>${tag}<span class="slot__cost">${ITEMS[k].cost}</span><span class="slot__count"></span>`;
-      d.onclick = () => this.onItem(k);
+      d.innerHTML = `${iconImg(k, `/assets/ui/items/item-${k.toLowerCase()}.svg`, ITEM_NAMES[k]!)}<span class="slot__key">${k}</span>${tag}<span class="slot__cost">${ITEMS[k].cost}</span><span class="slot__count"></span>`;
+      d.onclick = () => { sfx("click"); this.view.ui.pressed = { key: k, at: performance.now() }; this.onItem(k); };
       (k === "F" ? skills : items).append(d); this.slots.set(k, d); this.counts.set(k, el(d, ".slot__count"));
     });
+  }
+
+  /** POW: só com a fúria cheia e na sua vez, antes do primeiro tiro. */
+  private togglePow(): void {
+    const v = this.view, cur = v.current, me = this.me();
+    if (!cur || (me && me !== cur.id) || v.ui.fired || cur.fury < 200 || v.hud.over) return;
+    sfx("click"); v.ui.special = !v.ui.special;
+  }
+
+  /** DanderBar: fundo, preenchimento em setor de 90° a −180° (270° no total), brilho e a animação de POW pronto. */
+  private drawDander(fury: number, ready: boolean): boolean {
+    if (!uiReady("game")) return false;
+    const c = this.dander.getContext("2d")!; c.clearRect(0, 0, 104, 106);
+    c.save(); c.translate(2, 2);
+    c.save(); c.translate(-2, -2); drawClass(c, "game", "asset.game.dander.bg"); c.restore();
+    const p = Math.max(0, Math.min(1, fury / 200));
+    if (p > 0) {
+      c.save(); c.beginPath(); c.moveTo(52, 52); c.arc(52, 52, 52, Math.PI / 2, (90 - 270 * p) * Math.PI / 180, true); c.closePath(); c.clip();
+      c.translate(-1, -1); drawClass(c, "game", "asset.game.dander.back"); c.restore();
+    }
+    c.save(); c.translate(29, 35); drawClass(c, "game", "asset.game.dander.animate.back"); c.restore();
+    if (ready) { c.save(); c.translate(34, 33); c.scale(0.8, 0.8); drawClass(c, "game", "asset.game.dande.animate", performance.now() / 1000 * UI_FPS); c.restore(); }
+    c.restore(); return true;
   }
 
   /** Linha de chat da sala durante a partida (só textContent). */
@@ -131,6 +166,9 @@ export class Hud {
       const en = who === cur ? who.energy : who.maxEnergy;
       this.enBar.style.setProperty("--value", `${(en / Math.max(1, who.maxEnergy)) * 100}%`);
       this.enText.textContent = `${fmt(en)}${who === cur && v.ui.spent ? ` · itens −${v.ui.spent}` : ""}`;
+      const full = who.fury >= 200;
+      this.gauge.classList.toggle("gauge--reborn", this.drawDander(who.fury, full));
+      if (full) this.gauge.setAttribute("data-full", ""); else this.gauge.removeAttribute("data-full");
       this.gauge.style.setProperty("--pressure", String(who.fury / 200)); this.gaugeLabel.textContent = `Pressão ${Math.round(who.fury / 2)}%${v.ui.special ? " · ESTOURO" : ""}`;
     }
     this.power.style.setProperty("--power", `${v.ui.power}%`); this.power.style.setProperty("--last", `${v.ui.last}%`);
@@ -144,11 +182,15 @@ export class Hud {
     this.angle.style.setProperty("--angle", `${dialAngle(v.ui.angle, cur?.facing ?? 1)}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;
     const mine = !me || me === cur?.id;
     for (const k of KEYS) {
-      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && !v.ui.fired && !v.clockPaused && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
+      // itens valem também enquanto carrega a força (Reborn); só o primeiro tiro os encerra
+      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && !v.ui.fired && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
       d.classList.toggle("is-off", !can); if (n) d.setAttribute("aria-selected", "true"); else d.removeAttribute("aria-selected");
       this.counts.get(k)!.textContent = n > 1 ? `×${n}` : "";
+      // PropCell: ao escolher, o ícone cresce 1,2× e sobe 3,6 px por um instante
+      d.classList.toggle("is-pressed", v.ui.pressed?.key === k && performance.now() - v.ui.pressed.at < 180);
     }
-    this.estouro.classList.toggle("is-off", !mine); if (v.ui.special) this.estouro.setAttribute("aria-selected", "true"); else this.estouro.removeAttribute("aria-selected");
+    this.estouro.classList.toggle("is-off", !mine || (cur?.fury ?? 0) < 200);
+    this.estouro.classList.toggle("is-ready", mine && (cur?.fury ?? 0) >= 200 && !v.ui.fired); if (v.ui.special) this.estouro.setAttribute("aria-selected", "true"); else this.estouro.removeAttribute("aria-selected");
     this.blue.textContent = `${alive.filter(c => c.team === 1).length} vivos`; this.red.textContent = `${alive.filter(c => c.team !== 1).length} vivos`;
     el<HTMLButtonElement>(this.root, ".passbtn").disabled = v.ui.power > 0;
     this.drawMinimap();

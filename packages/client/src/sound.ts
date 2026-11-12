@@ -1,11 +1,14 @@
 /** Sons de interface sintetizados e sons de projéteis da referência. Tecla M liga/desliga. */
 export type SfxName = "shoot" | "boom" | "hit" | "item" | "turn" | "death" | "win" | "lose"
-  | "tick" | "alert" | "whistle" | "turnChange" | "pass" | "angle" | "charge" | "release" | "steps" | "gameEnd";
+  | "tick" | "alert" | "whistle" | "turnChange" | "pass" | "angle" | "charge" | "release" | "steps" | "gameEnd"
+  | "click" | "useItem" | "cardFlip";
 
 /** Sons do Reborn (só locais, gitignored): public/sfx-local/<id>.ogg. Ids do original; sem o arquivo, usa o som sintetizado. */
 export const LOCAL_SFX: Partial<Record<SfxName, string>> = {
   tick: "014", alert: "067", whistle: "016", turnChange: "038", pass: "008", angle: "006", charge: "020", release: "019",
   steps: "044", gameEnd: "040", win: "063", lose: "064",
+  // 008: clique de botão (escolher item, carta); 039: usar item (GamePlayer.doUseItemAnimation); 048: virar carta (LuckyCard.play)
+  click: "008", useItem: "039", cardFlip: "048",
 };
 const files = new Map<string, { audio: HTMLAudioElement; ok: boolean }>();
 const playing = new Map<string, HTMLAudioElement>();
@@ -82,6 +85,9 @@ export function sfx(name: SfxName): void {
     case "angle": tone(c, "square", 900, 900, 0.015, 0.04); break;
     case "charge": tone(c, "triangle", 400, 500, 0.04, 0.05); break;
     case "release": break;
+    case "click": tone(c, "square", 700, 600, 0.03, 0.06); break;
+    case "useItem": tone(c, "triangle", 660, 990, 0.12, 0.12); break;
+    case "cardFlip": noise(c, 0.12, 0.2, 4000, 800); break;
     case "steps": tone(c, "triangle", 150, 100, 0.04, 0.06); break;
     case "gameEnd": tone(c, "sine", 392, 392, 0.3, 0.1); break;
     case "shoot": noise(c, 0.18, 0.25, 3000, 300); tone(c, "sawtooth", 220, 60, 0.2, 0.12); break;

@@ -10,7 +10,7 @@ const HATS_COLOR = ["", "#c0392b", "#222a44", "#7a4bd1", "#9aa3b3"];
 const WEAPON_COLOR: Record<string, string> = { prism: "#ff8ad0", sledge: "#d6a43a", furnace: "#ff6d1f" };
 const INK = "#141a3a";
 
-export interface DollPose { facing: 1 | -1; angleDeg: number; slopeDeg?: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean; action?: "shoot" | "hit"; actionElapsed?: number }
+export interface DollPose { facing: 1 | -1; angleDeg: number; slopeDeg?: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean; action?: "shoot" | "hit" | "handclip"; actionElapsed?: number }
 
 /** Transforma o espaço local do avatar em torno dos pés, preservando o mesmo eixo em ambos os lados. */
 export function applyCharacterTransform(ctx: CanvasRenderingContext2D, x: number, y: number, facing: 1 | -1, scale: number, slopeDeg: number): void {

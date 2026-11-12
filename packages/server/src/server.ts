@@ -1,7 +1,9 @@
 /** Servidor WebSocket. Autoritativo: roda o core, valida intenções, transmite eventos. */
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
-import { Db, unlocksAt } from "./db";
+import { randomInt } from "node:crypto";
+import { Db, levelForXp, unlocksAt } from "./db";
+import { CARD_PICK_MS, CardTable, type CardReward } from "./cards";
 import { ChatLimiter, cleanChat } from "./chat";
 import { loadMaps } from "./maps";
 import { AuthLimiter, DEFAULT_LIMITS, type LimitConfig } from "./limits";
@@ -55,12 +57,22 @@ export function startServer(opts: ServerOptions = {}) {
       return out;
     },
   };
+  const cards = new CardTable(n => randomInt(0, n));
+  /** Concede a carta e conta ao jogador (o resto do baralho vai junto para ele ver o que perdeu). */
+  const grantCard = (nick: string, c: { index: number; reward: CardReward; deck: CardReward[] }, auto: boolean) => {
+    const acc = c.reward.kind === "xp" ? db.addXp(nick, c.reward.amount) : null;
+    const gold = c.reward.kind === "gold" ? db.addGold(nick, c.reward.amount) : db.getGold(nick);
+    const xp = acc?.xp ?? db.getXp(nick);
+    sendNick(nick, { t: "card", index: c.index, reward: c.reward, deck: c.deck, auto, level: levelForXp(xp), xp, gold });
+  };
   const pushRoom = (room: Room) => outbox.broadcast(room, { t: "room", room: room.info() });
 
   function afterEvents(room: Room, now: number) {
     if (room.readyToFinish(now)) {
       const res = room.finish(outbox);
-      outbox.broadcast(room, { t: "end", winnerTeam: res.winnerTeam, xp: res.xp });
+      const humans = Object.keys(res.xp);
+      cards.deal(humans, now);
+      outbox.broadcast(room, { t: "end", winnerTeam: res.winnerTeam, xp: res.xp, cards: { pickMs: CARD_PICK_MS } });
       pushRoom(room);
     }
   }
@@ -75,6 +87,7 @@ export function startServer(opts: ServerOptions = {}) {
         afterEvents(room, now);
       } catch (e) { log("erro no tick da sala", room.id, e); }
     }
+    for (const c of cards.expire(now)) grantCard(c.nick, c, true);
     lobby.prune();
   }, tickMs);
   const pruneTimer = setInterval(() => limiter.prune(), 60_000);
@@ -105,7 +118,7 @@ export function startServer(opts: ServerOptions = {}) {
       const old = sessions.get(r.nick);
       if (old && old.ws !== s.ws) { send(old.ws, { t: "error", msg: "login em outro lugar" }); old.nick = undefined; old.ws.close(); }
       s.nick = r.nick; sessions.set(r.nick, s);
-      send(s.ws, { t: "authOk", nick: r.nick, level: r.level, xp: r.xp, unlocks: unlocksAt(r.level), look: r.look });
+      send(s.ws, { t: "authOk", nick: r.nick, level: r.level, xp: r.xp, gold: db.getGold(r.nick), unlocks: unlocksAt(r.level), look: r.look });
       const room = lobby.roomOf(r.nick); // reconexão no meio da partida
       if (room) {
         const mem = room.members.get(r.nick)!; mem.connected = true;
@@ -129,7 +142,7 @@ export function startServer(opts: ServerOptions = {}) {
         const look = db.setLook(nick, m.look);
         const r = lobby.roomOf(nick);
         if (r && r.status === "lobby") { r.members.get(nick)!.look = look; pushRoom(r); }
-        return send(s.ws, { t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), unlocks: unlocksAt(db.getLevel(nick)), look });
+        return send(s.ws, { t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), gold: db.getGold(nick), unlocks: unlocksAt(db.getLevel(nick)), look });
       }
       case "chat": {
         const text = cleanChat(m.text);
@@ -148,6 +161,7 @@ export function startServer(opts: ServerOptions = {}) {
         outbox.broadcast(r, { t: "start", setup: res.setup, events: res.events });
         return;
       }
+      case "pickCard": { const r = cards.pick(nick, m.index); if (typeof r === "string") return err(r); grantCard(nick, r, false); return; }
       case "intent": {
         const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
         const res = r.intent(nick, m.intent, Date.now());

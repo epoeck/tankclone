@@ -1,12 +1,12 @@
 /** Leitor das linhas de tempo SWF exportadas para imagens e matrizes Canvas. */
 type Placement = { d?: number; id?: number; m?: number[]; mv?: number; rm?: number; ct?: number[] };
-type Part = { k: string; img?: string; r?: number[]; tl?: { n: number; f: Placement[][] } };
+type Part = { k: string; img?: string; r?: number[]; w?: number; h?: number; tl?: { n: number; f: Placement[][] } };
 export type CharacterLibrary = { frameRate: number; chars: Record<string, Part>; classes: Record<string, { id: number }> };
 export type TimelineAsset = { library: CharacterLibrary; images: Map<string, HTMLImageElement> };
 export function loadCharacterTimeline(path: string): Promise<TimelineAsset> {
   return fetch(`${path}/library.json`).then(r => { if (!r.ok) throw Error(path); return r.json() as Promise<CharacterLibrary>; }).then(library => {
     const images = new Map<string, HTMLImageElement>();
-    for (const c of Object.values(library.chars)) if (c.k === 'shape' && c.img && !images.has(c.img)) {
+    for (const c of Object.values(library.chars)) if ((c.k === 'shape' || c.k === 'bitmap') && c.img && !images.has(c.img)) {
       const image = new Image(); image.src = `${path}/${c.img}`; images.set(c.img, image);
     }
     return { library, images };
@@ -17,6 +17,10 @@ export function drawCharacterTimeline(ctx: CanvasRenderingContext2D, asset: Time
   if (c.k === 'shape' && c.img && c.r) {
     const image = asset.images.get(c.img); if (!image?.complete || !image.naturalWidth) return false;
     ctx.drawImage(image, c.r[0]!, c.r[1]!, c.r[2]!, c.r[3]!); return true;
+  }
+  if (c.k === 'bitmap' && c.img) {
+    const image = asset.images.get(c.img); if (!image?.complete || !image.naturalWidth) return false;
+    ctx.drawImage(image, 0, 0, c.w ?? image.naturalWidth, c.h ?? image.naturalHeight); return true;
   }
   if (!c.tl) return false;
   const index = state === null ? Math.max(0, frame) % c.tl.n : Math.min(state, c.tl.n - 1);

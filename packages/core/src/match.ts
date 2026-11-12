@@ -247,7 +247,8 @@ export class Match {
         this.ts.clockStopped = true; this.ts.idleSeconds = 0;
         return { ok: true, events: first ? [{ type: "charge", playerId: this.current.id, on: true }] : [] };
       }
-      case "item": if (this.ts.clockStopped) return { ok: false, error: "já está atirando" }; return this.doItem(intent.key);
+      // Reborn: itens valem enquanto carrega (antes do primeiro tiro); doItem recusa depois do primeiro tiro
+      case "item": return this.doItem(intent.key);
       case "shoot": return this.doShoot(intent.angleDeg, intent.power, !!intent.special);
       case "pass": return { ok: true, events: this.endTurn(true) };
     }

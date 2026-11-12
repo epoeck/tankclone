@@ -4,6 +4,7 @@ import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/sr
 import { drawCharPortrait as drawPortrait } from "./chars";
 import { loadClientMaps } from "./maps";
 import { Hud } from "./hud";
+import { EndScreen } from "./end-screen";
 import { Controls } from "./controls";
 import { MatchView, VIEW_H, VIEW_W } from "./view";
 
@@ -28,13 +29,14 @@ function connect() {
 connect();
 
 // ---------- estado ----------
-let me: { nick: string; level: number; xp: number; unlocks: string[]; look: Look } | null = null;
+let me: { nick: string; level: number; xp: number; gold?: number; unlocks: string[]; look: Look } | null = null;
 let room: RoomInfo | null = null;
 let view: MatchView | null = null;
 let controls: Controls | null = null;
 let hud: Hud | null = null;
 let endInfo: Record<string, { gained: number; level: number }> | null = null;
 let endPending = false;
+let endCards = false, endWinner: number | null = null, endScreen: EndScreen | null = null;
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   endPending = false;
@@ -51,7 +53,7 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
 function onMsg(m: ServerMsg) {
   handlers.forEach(h => h(m));
   switch (m.t) {
-    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, unlocks: m.unlocks, look: m.look }; renderMe(); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
+    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
     case "error": toast(m.msg); break;
     case "rooms": renderRooms(m.rooms); break;
     case "room": room = m.room; if (room) { if (!view) { renderRoom(); show("s-room"); } } else { show("s-lobby"); send({ t: "rooms" }); } break;
@@ -63,7 +65,13 @@ function onMsg(m: ServerMsg) {
       endInfo = m.xp;
       const mine = me ? m.xp[me.nick] : undefined;
       toast(mine ? `+${mine.gained} XP · nível ${mine.level}` : "partida encerrada");
-      endPending = true;
+      endPending = true; endCards = !!m.cards && !!mine; endWinner = m.winnerTeam;
+      break;
+    }
+    case "card": {
+      if (me) { me.xp = m.xp; me.level = m.level; me.gold = m.gold; renderMe(); }
+      const what = m.reward.kind === "gold" ? `+${m.reward.amount} gold` : `+${m.reward.amount} XP`;
+      if (endScreen) endScreen.reveal(m.index, m.deck, m.auto, what); else toast(`Carta: ${what}`);
       break;
     }
   }
@@ -103,7 +111,7 @@ $("btn-wardrobe").onclick = () => { renderWardrobe(); show("s-wardrobe"); };
 $("btn-wardrobe-back").onclick = () => show(room ? "s-room" : "s-lobby");
 function renderMe() {
   if (!me) return;
-  $("me-nick").textContent = me.nick; $("me-level").textContent = `Nv ${me.level}`;
+  $("me-nick").textContent = me.nick; $("me-level").textContent = `Nv ${me.level} · ${me.xp} XP · ${(me.gold ?? 0).toLocaleString("pt-BR")} gold`;
   $("me-unlocks").textContent = me.unlocks.length ? `liberado: ${me.unlocks.join(", ")}` : "";
   drawPortrait($("portrait-mini") as HTMLCanvasElement, me.look);
 }
@@ -187,7 +195,10 @@ function frame(now: number) {
     controls?.update(dt); view.update(dt); view.draw(ctx, me?.nick ?? null); hud?.update();
     if (endPending && !view.busy && view.hud.over) {
       endPending = false; const finishedView = view;
-      setTimeout(() => { if (view !== finishedView) return; view = null; show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); }, 4000);
+      const myTeam = me ? view.chars.get(me.nick)?.team : undefined;
+      const won = endWinner === null || myTeam === undefined ? null : endWinner === myTeam;
+      const back = () => { endScreen = null; if (view !== finishedView) return; view = null; show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); };
+      endScreen = new EndScreen(document.querySelector("#match .stage") as HTMLElement, won, endCards, i => send({ t: "pickCard", index: i }), back);
     }
   }
   requestAnimationFrame(frame);

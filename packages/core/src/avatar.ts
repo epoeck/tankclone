@@ -44,7 +44,12 @@ export const SHOW_FRAME = { width: 250, height: 312, feetX: 125, feetY: 305 } as
 const WALK = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5];
 const IDLE = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,7,7,8,8,9,9,9,9,8,8,7,7,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10];
 
-export function avatarFrames(timeSeconds: number, walking: boolean, aiming: boolean, action?: "shoot" | "hit", actionElapsed = 0): { face: number; upper: number; weapon: number } {
+/** GameCharacter.HANDCLIP: o boneco "bate a mão" ao usar item (quadros 13–15, 50 passos a 25 fps = 2 s). */
+export const HANDCLIP_SECONDS = 2;
+const HANDCLIP = [13, 13, 14, 14, 15, 15, 14, 14];
+
+export function avatarFrames(timeSeconds: number, walking: boolean, aiming: boolean, action?: "shoot" | "hit" | "handclip", actionElapsed = 0): { face: number; upper: number; weapon: number } {
+  if (action === "handclip") { const f = HANDCLIP[Math.floor(Math.max(0, actionElapsed) * 25) % HANDCLIP.length]!; return { face: f, upper: f, weapon: f }; }
   if (action === "hit") return { face: 12, upper: 12, weapon: 12 };
   if (action === "shoot") {
     const frame = [22, 23, 26, 27][Math.min(3, Math.max(0, Math.floor(actionElapsed * 25)))]!;

@@ -288,14 +288,15 @@ describe("chaves de protótipo", () => {
   });
 
 describe("carga da força e vários tiros", () => {
-  it("o relógio para ao começar a carregar e não volta; ligar/desligar não reabre andar nem itens", () => {
+  it("o relógio para ao começar a carregar e não volta; ligar/desligar não reabre andar; itens valem até o primeiro tiro", () => {
     const m = mk();
     m.tick(1); const t0 = m.timeLeft;
     expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))[0]).toMatchObject({ type: "charge", on: true });
     m.tick(2); expect(m.timeLeft).toBe(t0);
     expect(ok(m.submit({ type: "charge", playerId: "a", on: false }))).toEqual([]);
     expect(m.submit({ type: "move", playerId: "a", dir: 1, px: 5 }).ok).toBe(false); // cliente malicioso: on → off → andar
-    expect(m.submit({ type: "item", playerId: "a", key: "4" }).ok).toBe(false);
+    // Reborn: dá para escolher item enquanto carrega (isAttacking só cai ao soltar); depois do 1º tiro, não
+    expect(m.submit({ type: "item", playerId: "a", key: "4" }).ok).toBe(true);
     m.tick(0.5); expect(m.timeLeft).toBe(t0);
     expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))).toEqual([]); // não renova o prazo
   });

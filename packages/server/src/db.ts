@@ -37,6 +37,7 @@ export class Db {
       xp INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL)`);
     const cols = this.db.prepare("PRAGMA table_info(accounts)").all() as Array<{ name: string }>;
     if (!cols.some(c => c.name === "look")) this.db.exec("ALTER TABLE accounts ADD COLUMN look TEXT"); // migração de bancos antigos
+    if (!cols.some(c => c.name === "gold")) this.db.exec("ALTER TABLE accounts ADD COLUMN gold INTEGER NOT NULL DEFAULT 0");
   }
 
   /** scrypt assíncrono: não bloqueia o laço de eventos (~60 ms de CPU fora da thread principal). */
@@ -63,6 +64,12 @@ export class Db {
     const row = this.db.prepare("SELECT nick, xp, look FROM accounts WHERE nick = ?").get(nick) as { nick: string; xp: number; look: string | null } | undefined;
     return row ? { nick: row.nick, xp: row.xp, level: levelForXp(row.xp), look: parseLook(row.look) } : null;
   }
+
+  addGold(nick: string, amount: number): number {
+    this.db.prepare("UPDATE accounts SET gold = gold + ? WHERE nick = ?").run(amount, nick);
+    return this.getGold(nick);
+  }
+  getGold(nick: string): number { return (this.db.prepare("SELECT gold FROM accounts WHERE nick = ?").get(nick) as { gold: number } | undefined)?.gold ?? 0; }
 
   getXp(nick: string): number { return (this.db.prepare("SELECT xp FROM accounts WHERE nick = ?").get(nick) as { xp: number } | undefined)?.xp ?? 0; }
   getLevel(nick: string): number { return levelForXp(this.getXp(nick)); }

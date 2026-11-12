@@ -1,5 +1,6 @@
 /** Protocolo JSON sobre WebSocket. O servidor é autoritativo: o cliente só envia intenções e só anima eventos. */
 import type { Intent, Look, MatchEvent } from "@tankclone/core";
+import type { CardReward } from "./cards";
 
 export type ClientIntent = Exclude<Intent, never> extends infer I ? (I extends { playerId: string } ? Omit<I, "playerId"> : never) : never;
 
@@ -15,7 +16,9 @@ export type ClientMsg =
   | { t: "setLook"; look: unknown }
   | { t: "chat"; text: string }
   | { t: "start" }
-  | { t: "intent"; intent: ClientIntent };
+  | { t: "intent"; intent: ClientIntent }
+  /** Carta escolhida na tela de fim de partida (0–8). */
+  | { t: "pickCard"; index: number };
 
 export interface RoomInfo {
   id: string;
@@ -33,7 +36,7 @@ export interface MatchSetup {
 }
 
 export type ServerMsg =
-  | { t: "authOk"; nick: string; level: number; xp: number; unlocks: string[]; look: Look }
+  | { t: "authOk"; nick: string; level: number; xp: number; gold?: number; unlocks: string[]; look: Look }
   | { t: "error"; msg: string }
   | { t: "rooms"; rooms: RoomInfo[] }
   | { t: "room"; room: RoomInfo | null }
@@ -43,4 +46,6 @@ export type ServerMsg =
   | { t: "events"; events: MatchEvent[] }
   /** Chat efêmero: só da sala ou só do saguão; nunca vai para o banco. */
   | { t: "chat"; from: string; text: string; scope: "room" | "lobby" }
-  | { t: "end"; winnerTeam: number | null; xp: Record<string, { gained: number; level: number }> };
+  | { t: "end"; winnerTeam: number | null; xp: Record<string, { gained: number; level: number }>; cards?: { pickMs: number } }
+  /** Resultado da carta: a escolhida (ou a automática, se o tempo acabou) e as 9 reveladas. */
+  | { t: "card"; index: number; reward: CardReward; deck: CardReward[]; auto: boolean; level: number; xp: number; gold: number };

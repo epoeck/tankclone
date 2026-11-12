@@ -17,3 +17,14 @@
 .hud .feed__lines div.old { opacity: .35; }
 .hud .feed { pointer-events: none; }
 .hud .clock .btn, .hud .itemcol .slot, .hud .skills .slot { pointer-events: auto; }
+
+/* Reborn: medidor de fúria (DanderBar) e POW; itens com o leve "pulo" ao escolher e o brilho ao passar o mouse */
+.hud .gauge .dander { position: absolute; left: 10px; top: 9px; width: 104px; height: 106px; display: none; pointer-events: auto; cursor: pointer; }
+.hud .gauge.gauge--reborn .dander { display: block; }
+.hud .gauge.gauge--reborn > img { visibility: hidden; }
+.hud .gauge { pointer-events: auto; }
+.hud .slot img { transition: transform .08s ease-out; }
+.hud .slot.is-pressed img, .hud .slot:not(.is-off):hover img { transform: translateY(-3.6px) scale(1.2); }
+.hud .slot:not(.is-off):hover img { filter: drop-shadow(0 0 4px #ffff33); }
+.hud .slot.is-ready { box-shadow: 0 0 0 3px #ffcc00, 0 0 14px 4px #ff7a00; animation: powReady .6s ease-in-out infinite alternate; }
+@keyframes powReady { from { box-shadow: 0 0 0 3px #ffcc00, 0 0 6px 2px #ff7a00; } to { box-shadow: 0 0 0 3px #fff2a8, 0 0 18px 6px #ff7a00; } }

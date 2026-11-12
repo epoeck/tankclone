@@ -34,10 +34,12 @@ export class Controls {
     if (ad && !e.repeat && !this.charging) { this.view.ui.angle += ad; sfx("angle"); this.angleAcc = 0; this.angleKey = ad; }
     const k = e.key.toUpperCase();
     if (k === "M") { this.view.ui.msg = toggleMute() ? "som desligado" : "som ligado"; return; }
-    if (!this.canControl() || !this.view.canAct || this.charging || this.burst || this.view.ui.fired) return;
-    if (own(ITEMS, k)) this.send({ type: "item", key: k });
-    else if (k === "P") { sfx("pass"); this.send({ type: "pass" }); }
-    else if (k === "R") this.view.ui.special = !this.view.ui.special;
+    if (!this.canControl() || this.view.hud.over || this.burst || this.view.ui.fired) return;
+    // Reborn: itens e POW também valem enquanto carrega a força (isAttacking só cai ao soltar); andar e passar, não
+    if (own(ITEMS, k)) { sfx("click"); this.send({ type: "item", key: k }); this.view.ui.pressed = { key: k, at: performance.now() }; return; }
+    if (k === "R" || k === "B") { this.togglePow(); return; }
+    if (this.charging || !this.view.canAct) return;
+    if (k === "P") { sfx("pass"); this.send({ type: "pass" }); }
   }
   private up(e: KeyboardEvent) {
     this.keys.delete(e.code);
@@ -52,6 +54,11 @@ export class Controls {
       this.burst = left > 0 ? { power, special, left, nextAt: performance.now() + SHOT_INTERVAL_SECONDS * 1000 } : null;
       ui.power = 0;
     }
+  }
+  /** POW (estouro): só com a fúria cheia; o especial é decidido no primeiro tiro. */
+  togglePow(): void {
+    const me = this.view.current; if (!me || me.fury < 200) { this.view.ui.special = false; return; }
+    sfx("click"); this.view.ui.special = !this.view.ui.special;
   }
   /** Mesma conta do servidor (Match.doShoot): voo não tem extras; +1/+2 e o especial somam tiros. */
   private extraShots(special: boolean): number {
