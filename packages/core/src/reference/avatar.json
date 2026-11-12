@@ -461,15 +461,15 @@
   },
   "weapons": {
     "prism": {
-      "game": "arm/bomb/1/0/game.png",
+      "game": "arm/bomb/1/1/game.png",
       "show": "arm/bomb/1/0/show.png"
     },
     "sledge": {
-      "game": "arm/brick/1/0/game.png",
+      "game": "arm/brick/1/1/game.png",
       "show": "arm/brick/1/0/show.png"
     },
     "furnace": {
-      "game": "arm/bombpack/1/0/game.png",
+      "game": "arm/bombpack/1/1/game.png",
       "show": "arm/bombpack/1/0/show.png"
     }
   },
@@ -1137,30 +1137,30 @@
       "height": 312,
       "sha256": "38f3e87084fecab2ba8ec3340019de60e67911c29d3e0c0be85267220c9c1ba2"
     },
-    "arm/bomb/1/0/game.png": {
+    "arm/bomb/1/1/game.png": {
       "width": 1482,
       "height": 285,
-      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+      "sha256": "e2697cf7a5a5f2352f882054de2f15e19f69fedd0144b0cba25cbc8ed35dca01"
     },
     "arm/bomb/1/0/show.png": {
       "width": 250,
       "height": 312,
       "sha256": "fffa78b59e99eaa37f35f8d0084d16349c53750bb1ac5cb88cb841f66ba85cd1"
     },
-    "arm/brick/1/0/game.png": {
+    "arm/brick/1/1/game.png": {
       "width": 1482,
       "height": 285,
-      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+      "sha256": "f1fecdc7681fc4fd2e46ef883b06c208a4276bc20e9a7da1eeccf0c9f191db3e"
     },
     "arm/brick/1/0/show.png": {
       "width": 250,
       "height": 312,
       "sha256": "93046850d3de2de004536e7e486743f1f001e36b2cfc6eae7a24c5a533f90c51"
     },
-    "arm/bombpack/1/0/game.png": {
+    "arm/bombpack/1/1/game.png": {
       "width": 1482,
       "height": 285,
-      "sha256": "8e02cf196744307b200883dbf7d273661e8500e50cecbfd68f57fc7b0aac47dd"
+      "sha256": "1c42bb463cbff0aa9dda018cdf605f6fb898ae253c22a06ef85d88677d48690d"
     },
     "arm/bombpack/1/0/show.png": {
       "width": 250,
