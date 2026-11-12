@@ -364,8 +364,8 @@ export class Match {
     const dmgRadius = special ? weapon.special.damageRadius : weapon.damageRadius;
     for (const t of this.chars) {
       if (!t.alive) continue;
-      const self = t.id === shooter.id; // o próprio atirador sofre dano dos seus tiros (mas nunca morre por eles)
-      if (!self && !cfg.friendlyFire && t.team === shooter.team) continue;
+      const ally = t.team === shooter.team; // como no Reborn: a bomba fere o atirador e os aliados
+      if (ally && !cfg.friendlyFire) continue;
       // distância do impacto à caixa do alvo
       const dx = Math.max(t.x - PLAYER_HITBOX.w / 2 - hit.x, 0, hit.x - (t.x + PLAYER_HITBOX.w / 2));
       const dy = Math.max(t.y - PLAYER_HITBOX.h - hit.y, 0, hit.y - t.y);
@@ -374,12 +374,14 @@ export class Match {
       const falloff = 1 - cfg.falloffEdge * (d / dmgRadius);
       const crit = rollCritical(shooter.stats.luck, this.combatRng.next());
       const input = { weapon, attacker: shooter.stats, target: t.stats, bonus: this.ts.bonus, shotMult: mult, falloff, crit };
-      let amount = this.damageFn(input);
-      if (self) amount = Math.max(0, Math.min(amount, t.hp - 1)); // a vida desce até 1, no máximo
-      t.hp = Math.max(self ? 1 : 0, t.hp - amount);
-      events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit });
-      const baseDamage = this.damageFn === defaultDamage ? damageBreakdown(input).base : this.damageFn({ ...input, crit: false });
-      if (t.hp > 0 && !self) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
+      let amount = this.damageFn(input), shownCrit = crit;
+      // Dano em si/aliado que mataria vira "vida − 1", com crítico zerado (mesma fórmula do Reborn)
+      const spared = ally && amount >= t.hp;
+      if (spared) { amount = Math.max(0, t.hp - 1); shownCrit = false; }
+      t.hp = Math.max(ally ? 1 : 0, t.hp - amount);
+      events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit: shownCrit });
+      const baseDamage = spared ? amount : this.damageFn === defaultDamage ? damageBreakdown(input).base : this.damageFn({ ...input, crit: false });
+      if (t.hp > 0) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
       events.push({ type: "fury", playerId: t.id, fury: t.fury });
       if (t.hp <= 0) { t.alive = false; events.push({ type: "death", playerId: t.id, reason: "hp" }); }
     }

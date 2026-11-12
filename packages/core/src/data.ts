@@ -135,7 +135,7 @@ export const DEFAULT_MATCH: MatchConfig = {
   furyOnPass: 20,
   maxFury: 200,
   falloffEdge: 0.25,
-  friendlyFire: false,
+  friendlyFire: true,
   maxWind: 10,
   windMultiplier: 1,
   maxTurns: 0,

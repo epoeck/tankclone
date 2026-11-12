@@ -55,3 +55,4 @@ Depois de testar, relatou flicker ao virar e pediu conferência da progressão d
 
 - **Voo (F)** é tratado como uma arma de faixa 0–90° relativa ao corpo (`FLY_ANGLE`); na rampa a faixa gira junto, como nas armas. Pedido do Izzy em 2026-11-12.
 - **Dano próprio:** o atirador sofre dano dos próprios tiros, mas a vida desce no máximo até 1 (nunca morre por isso). Pode morrer andando/caindo para fora do mapa. Aliados continuam sem se ferir.
+- **Dano em si e em aliados (igual ao Reborn, decisão do Izzy em 2026-11-12):** a bomba fere o atirador e os aliados jogadores; se o dano mataria, vira vida − 1 (crítico zerado). Quem leva dano vivo ganha fúria pela fórmula `floor((floor(dano×2/5)+5)/2)`, inclusive dano próprio/aliado (no caso cortado para vida 1, usa-se o dano realmente aplicado). `friendlyFire` passou a ser true por padrão. Substitui a decisão anterior de dano próprio sem fúria.

@@ -216,15 +216,20 @@ describe("tiro, dano e fúria", () => {
     expect(ev(es, "shot")).toHaveLength(WEAPONS.furnace!.special.balls);
     expect(m.getChar("a")!.fury).toBe(20);
   });
-  it("aliados não se ferem (friendlyFire off)", () => {
-    const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge" }, { id: "c", team: 1, x: 320, weaponId: "sledge" }, { id: "b", team: 2, x: 800, weaponId: "sledge" }]);
+  it("aliados não se ferem com friendlyFire desligado", () => {
+    const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge" }, { id: "c", team: 1, x: 320, weaponId: "sledge" }, { id: "b", team: 2, x: 800, weaponId: "sledge" }], flat(), { friendlyFire: false });
     expect(ev(ok(shoot(m, "a", 320)), "damage")).toHaveLength(0);
+  });
+  it("aliado é ferido, mas nunca morre pelo tiro (vida 1, crítico zerado)", () => {
+    const m = mk([{ id: "a", team: 1, x: 200, weaponId: "sledge" }, { id: "c", team: 1, x: 320, weaponId: "sledge", hp: 20 }, { id: "b", team: 2, x: 800, weaponId: "sledge" }]);
+    const d = ev(ok(shoot(m, "a", 320)), "damage").find(e => e.playerId === "c")!;
+    expect(d).toMatchObject({ hp: 1, crit: false }); expect(m.getChar("c")!.alive).toBe(true);
   });
   it("o atirador sofre dano do próprio tiro, mas a vida desce no máximo até 1", () => {
     const hit = (hp: number) => { const m = mk(duo({ hp }), flat(), {}, 1); return { es: ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 65, power: 12 })), m }; };
     const a = hit(5000); const dmg = ev(a.es, "damage").find(e => e.playerId === "a");
     expect(dmg).toBeTruthy(); expect(a.m.getChar("a")!.hp).toBe(5000 - dmg!.amount);
-    expect(a.m.getChar("a")!.fury).toBe(20); // só a fúria de atacar; o dano próprio não dá fúria
+    expect(a.m.getChar("a")!.fury).toBeGreaterThan(20); // atacar (+20) e levar dano (fórmula do Reborn)
     const b = hit(1); expect(b.m.getChar("a")!.alive).toBe(true); expect(b.m.getChar("a")!.hp).toBe(1);
     const c = hit(30); expect(c.m.getChar("a")!.alive).toBe(true); expect(c.m.getChar("a")!.hp).toBeGreaterThanOrEqual(1);
   });
