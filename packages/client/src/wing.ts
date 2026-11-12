@@ -2,6 +2,7 @@ import { wingLibraryPath } from '@tankclone/core';
 import { drawCharacterTimeline, loadCharacterTimeline, type TimelineAsset } from './character-timeline';
 /** Bibliotecas por asa (1 = wing002 do Reborn; 2.. = CN 14.7 convertidas localmente). null = indisponível. */
 const assets = new Map<number, TimelineAsset | null | undefined>();
+export const SHOW_WING_SCALE = 1.7;
 type Ids = { back?: number; front?: number; show?: number; junction: [number, number] };
 const ids = new Map<number, Ids>();
 function resolve(asset: TimelineAsset): Ids {
@@ -42,7 +43,9 @@ export function drawWing(ctx: CanvasRenderingContext2D, time: number, mode: 'gam
     id = found.show;
     // wing002: junção ≈(50,117) em (−100,−213) atrás dos ombros do corpo SHOW (ajustado a olho no vestiário).
     // Outras asas: mesma regra a partir da junção medida no clipe.
-    if (wing === 1) ctx.translate(-100, -213); else ctx.translate(-found.junction[0] - 50, -found.junction[1] - 102);
+    const [jx, jy] = found.junction, [tx, ty] = wing === 1 ? [-100, -213] : [-jx - 50, -jy - 102];
+    // No vestiário as asas ficavam pequenas atrás do corpo: ampliadas em torno da junção (ombros).
+    ctx.translate(tx + jx, ty + jy); ctx.scale(SHOW_WING_SCALE, SHOW_WING_SCALE); ctx.translate(-jx, -jy);
   }
   const result = id ? drawCharacterTimeline(ctx, asset, id, frame, state) : false;
   ctx.restore(); return result;
