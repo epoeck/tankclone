@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { MAPS, Match, Terrain } from "@tankclone/core";
 import { loadMaps } from "../src/maps";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 describe("mapas assados", () => {
   const res = loadMaps();
   it("carrega os cinco mapas provisórios e os cinco clássicos", () => {
-    expect(res.skipped).toEqual([]);
-    expect(res.loaded.sort()).toEqual(["colinas", "ferro", "forja", "ilhas", "nuvens", "original-1001", "original-1002", "original-1003", "original-1004", "original-1005"]);
+    // os clássicos (original-*) ficam só no disco, fora do git; num clone limpo eles aparecem como ignorados
+    const classics = ["original-1001", "original-1002", "original-1003", "original-1004", "original-1005"];
+    const local = existsSync(resolve(import.meta.dirname, "../../client/public/maps/original-1001"));
+    expect(res.skipped.map(s => s.id).sort()).toEqual(local ? [] : classics);
+    expect(res.loaded.sort()).toEqual(["colinas", "ferro", "forja", "ilhas", "nuvens", ...(local ? classics : [])]);
   });
   it("2 mapas com chão indestrutível e 3 tatuzáveis", () => {
     const ind = ["colinas", "ferro", "forja", "ilhas", "nuvens"].filter(id => MAPS[id]!.indestructible).sort();
