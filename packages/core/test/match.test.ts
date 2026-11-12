@@ -198,6 +198,7 @@ describe("tiro, dano e fúria", () => {
     const m = mk(duo({ agi: 3300 }, { x: 900 }));
     ok(m.submit({ type: "item", playerId: "a", key: "F" }));
     const es = ok(shoot(m, "a", 500));
+    expect(ev(es, "shot")[0]!.ballId).toBe(3);
     expect(ev(es, "fly")).toHaveLength(1);
     expect(m.getChar("a")!.x).toBeGreaterThan(400);
     expect(ev(es, "damage")).toHaveLength(0);

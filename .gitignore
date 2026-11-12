@@ -5,3 +5,10 @@ dist
 data/
 backup/
 *.sqlite
+
+# assets do cliente original (placeholders): ficam só no disco local, nunca no git
+packages/client/public/assets/avatar/
+packages/client/public/assets/craters/
+packages/client/public/character-effects/
+packages/client/public/projectiles/
+packages/client/public/maps/original-*/

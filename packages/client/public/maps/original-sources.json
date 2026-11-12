@@ -1,0 +1,86 @@
+{
+  "source": "thurdev/ddtank-reborn dab2b445f153a6852b48182d4afe5c43ebbe3e16; imagens locais do overlay merged",
+  "files": {
+    "original-1001": {
+      "statesSha256": "96769c056d695fab846421ec3b625c573971b887f840d5e433e2ff8941ebce3b",
+      "ddtm": "8e614a7bbf537a9055aabdfc9842917e7409a990c242fae1a8f26b7c7702903b",
+      "input": {
+        "fore.png": "462faa2b7da87e3e0ce9a2e99fb2cfedcec61d873fa91cdd8048ea469e72fbdd",
+        "back.jpg": "fa02afc18a4b4e6f1a74570b42fec52bf26fe01b7a5ae988ab17558223a53d23",
+        "samll_map.png": "6c4c25f373dbcde58716be5a26aa862e3cf190139feddf3ade5032cb9d2d94a4"
+      },
+      "output": {
+        "art.png": "db430afa10e67a3aa6fc9faba3255a3ebaaafcaf7e05941d5c9aabed09612d44",
+        "mask.png": "e508cc9186ed297650cdbfbca2a056b8c103af92539db6cf58fb68fd1eafefbd",
+        "background.jpg": "fa02afc18a4b4e6f1a74570b42fec52bf26fe01b7a5ae988ab17558223a53d23",
+        "thumbnail.png": "6c4c25f373dbcde58716be5a26aa862e3cf190139feddf3ade5032cb9d2d94a4",
+        "manifest.json": "ab647362539630839f0e96d1e49313a664d0c783d91eab1624045b7495536e1e"
+      }
+    },
+    "original-1002": {
+      "statesSha256": "80e6e6fecf69871b0e8e62cfe9f494b771a4b392f0f5fe3451230371b1a72b87",
+      "ddtm": "72f594690c05620d8b61a56822d9262cdb11c54371159594055d53bc26cfdf7e",
+      "input": {
+        "fore.png": "1ddc679c28018a1843b06f2a18b751671f7ea7fe7383a5795c850eca732fa38d",
+        "back.jpg": "fc91fb4174fcc6d5f287c7a80d8f7a57a6be5049d9229b0b378cb18c3d9edf42",
+        "samll_map.png": "9d0e9ec63656f8903af46e481154df7162c165b324f10755aacbcd89cb943ef7"
+      },
+      "output": {
+        "art.png": "1836b32919247e60d2a5f6f78b69cdc82d057873a0566fef0f17d4c9497a1d23",
+        "mask.png": "e07af8bd2d20fdef9ff3b7e0e0c5dc5cde8157890d7478924bf6a8d522112e62",
+        "background.jpg": "fc91fb4174fcc6d5f287c7a80d8f7a57a6be5049d9229b0b378cb18c3d9edf42",
+        "thumbnail.png": "9d0e9ec63656f8903af46e481154df7162c165b324f10755aacbcd89cb943ef7",
+        "manifest.json": "303dbc74414865a0ada802b94fe9445ff90cd60ceb6c7703536d30d920e456bf"
+      }
+    },
+    "original-1003": {
+      "statesSha256": "a6e33b6f422d8ada3e925a0faf148c83a1d1810707199d7d0625c3a70c7005d3",
+      "ddtm": "ede3736c683ad91acecce13139a5a4614260db5fd59b162a0191a548af50bb7e",
+      "input": {
+        "fore.png": "717fd9f2110c93e8fee448863ce895a3c3cf80dd3ab05005409d1bd2d318cca8",
+        "back.jpg": "87439f0e9f396008120eaf2ec31358de204816e161400484dca9baaf4b73f385",
+        "samll_map.png": "c3c2dfecd78e77ed2117b1327707450f2789eeb952ab8d431c8817b92ad1346b",
+        "dead.png": "ff098fd20d088b307de7776608ca97a6f76cef738a877e8b3bb46e6e0f8c0b0b"
+      },
+      "output": {
+        "art.png": "d8599c256e5d0206c3365d1b55090fa25565c79c102c500713a70bdfc274a8b5",
+        "mask.png": "258ecef47d2563638ebf89d5c546cdf6718e509e68ac6c1c5eefd63eed3e8c36",
+        "background.jpg": "87439f0e9f396008120eaf2ec31358de204816e161400484dca9baaf4b73f385",
+        "thumbnail.png": "c3c2dfecd78e77ed2117b1327707450f2789eeb952ab8d431c8817b92ad1346b",
+        "manifest.json": "91207c7869a09392ca48408594d469cb57ed5d80f267049b40b057e534b80ad8"
+      }
+    },
+    "original-1004": {
+      "statesSha256": "c41835ae9cdcf83ef1bb49b5f322d66b012498adad113cf00d58094fdfcf17a1",
+      "ddtm": "dde3fa9be9965e3880e238a5aad3b558e345e4cf183594487d6c353e2f7733c0",
+      "input": {
+        "fore.png": "9846a32f7a6ad686991e0a618aa9ab4c5a7cd23daffef13b83b45a7737fc94a9",
+        "back.jpg": "2bee7f3d56371f68919d95ea9d730b1d17b090e60cd67d88b38e665d3ff46339",
+        "samll_map.png": "4566032893977f357dc4323e4962c3e826e6d5d736c688696af11fd816bfd9af"
+      },
+      "output": {
+        "art.png": "20cd6b68fbff72439b4774d7f7e70437604f218995281b5288b10637a3f4c022",
+        "mask.png": "d89d00ca1b831c42df7060881c8d7d6ab68e28bdd389d8a091c70547d3eab672",
+        "background.jpg": "2bee7f3d56371f68919d95ea9d730b1d17b090e60cd67d88b38e665d3ff46339",
+        "thumbnail.png": "4566032893977f357dc4323e4962c3e826e6d5d736c688696af11fd816bfd9af",
+        "manifest.json": "96cb162458868ea4c0e77c0a77cbf8bf16a8e067c160adaf837bc191c0c127b3"
+      }
+    },
+    "original-1005": {
+      "statesSha256": "fae21e0a0187ebcbc2d7d9aca56c6edad9964ec8c5b79daf67c81882b356cf87",
+      "ddtm": "8b2d95dc68e1868d2a934f94fe3b3e3b1bd14a22090953cd7a913a7f21b0e71e",
+      "input": {
+        "fore.png": "2621a0a86e56e6cb17330d89f7b5cbda7c2e35f18ae416570ddfff5a67538322",
+        "back.jpg": "b0f4530290f160ab36a75e3bcff7e3ca57915e0f20f182fea9189119f7bb1ebb",
+        "samll_map.png": "5c4dde87edef1d974a71c6e3915f231e7713f30c5d7e6e28c62050c0e0a7efef"
+      },
+      "output": {
+        "art.png": "e9bbf2778a58033b783074cb23e2abf91be3789b14fdc057b23d5ece5e6a0f49",
+        "mask.png": "bfdcafb568dc103531ac130bfb75e08a62b4d9c7a2744466a79bdbad6ec73631",
+        "background.jpg": "b0f4530290f160ab36a75e3bcff7e3ca57915e0f20f182fea9189119f7bb1ebb",
+        "thumbnail.png": "5c4dde87edef1d974a71c6e3915f231e7713f30c5d7e6e28c62050c0e0a7efef",
+        "manifest.json": "57d65aa1c80c633304b72604141e07d1f25e2ad9132a744a8eb8adf2f355256f"
+      }
+    }
+  }
+}

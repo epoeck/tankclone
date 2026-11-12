@@ -27,11 +27,17 @@ describe("linha de animação", () => {
     expect(playback.busy).toBe(false);
     expect(seen.at(-1)).toMatchObject({ type: "damage", hp: 40 });
   });
+  it("notifica impacto imediato de duração zero", () => {
+    const p = new MatchPlayback(), ended: number[] = [];
+    p.push([flight(0, 0, 0)]);
+    p.update(0, () => {}, shot => ended.push(shot.index));
+    expect(ended).toEqual([0]);
+  });
   it("leva o tempo que sobra no frame para o próximo disparo", () => {
     const p = new MatchPlayback();
     p.push([flight(0, 0, 1), flight(1, 1, 2)]);
     p.update(1.5, () => {});
-    expect(p.positions).toEqual([{ x: 0.5, y: 1 }]);
+    expect(p.positions[0]).toMatchObject({ x: 0.5, y: 1, playerId: "a", elapsed: 0.5, angle: 0 });
     expect(p.update(3, () => {})).toBe(1.5);
   });
   it("30, 60 e 144 FPS preservam a posição e a ordem dos eventos", () => {
@@ -65,7 +71,7 @@ describe("partida com máscaras e leques", () => {
     { id: "a", team: 1, x: 200, weaponId: "sledge", hp: 10000 },
     { id: "b", team: 2, x: 1000, weaponId: "sledge", hp: 10000 },
   ] });
-  it("combinação 12 produz três leques sequenciais e pausa pela duração máxima de cada leque", () => {
+  it("combinação 12 inicia leques a cada segundo e espera o último impacto", () => {
     const m = create();
     m.submit({ type: "item", playerId: "a", key: "1" });
     m.submit({ type: "item", playerId: "a", key: "2" });
@@ -75,9 +81,9 @@ describe("partida com máscaras e leques", () => {
     expect(shots).toHaveLength(9);
     let end = 0;
     for (let i = 0; i < 9; i += 3) {
-      const group = shots.slice(i, i + 3);
-      expect(group.map(s => s.at)).toEqual([end, end, end]);
-      end += Math.max(...group.map(s => s.duration));
+      const group = shots.slice(i, i + 3), start = i / 3;
+      expect(group.map(s => s.at)).toEqual([start, start, start]);
+      end = Math.max(end, ...group.map(s => start + s.duration));
     }
     expect(playbackDuration(result.events)).toBe(end);
     expect(playbackDuration(result.events)).toBeLessThan(shots.reduce((sum, s) => sum + s.duration, 0));

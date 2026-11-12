@@ -4,9 +4,9 @@ import { loadMaps } from "../src/maps";
 
 describe("mapas assados", () => {
   const res = loadMaps();
-  it("carrega os 5 mapas provisórios da pasta pública do cliente", () => {
+  it("carrega os cinco mapas provisórios e os cinco clássicos", () => {
     expect(res.skipped).toEqual([]);
-    expect(res.loaded.sort()).toEqual(["colinas", "ferro", "forja", "ilhas", "nuvens"]);
+    expect(res.loaded.sort()).toEqual(["colinas", "ferro", "forja", "ilhas", "nuvens", "original-1001", "original-1002", "original-1003", "original-1004", "original-1005"]);
   });
   it("2 mapas com chão indestrutível e 3 tatuzáveis", () => {
     const ind = ["colinas", "ferro", "forja", "ilhas", "nuvens"].filter(id => MAPS[id]!.indestructible).sort();
@@ -16,7 +16,7 @@ describe("mapas assados", () => {
     for (const id of res.loaded) {
       const def = MAPS[id]!, t: Terrain = def.build();
       for (const team of ["1", "2"] as const) for (const x of def.spawns![team]) expect(t.surfaceY(x, 0), `${id} ${team} ${x}`).toBeGreaterThan(0);
-      const players = [1, 2].flatMap(team => [0, 1, 2, 3].map(i => ({ id: `t${team}p${i}`, team, x: def.spawns![String(team) as "1" | "2"][i]!, weaponId: "sledge", facing: (team === 1 ? 1 : -1) as 1 | -1 })));
+      const players = [1, 2].flatMap(team => [0, 1, 2, 3].map(i => ({ id: `t${team}p${i}`, team, x: def.spawns![String(team) as "1" | "2"][i]!, spawnY: def.spawnsY?.[String(team) as "1" | "2"][i], weaponId: "sledge", facing: (team === 1 ? 1 : -1) as 1 | -1 })));
       expect(() => new Match({ seed: 1, terrain: def.build(), players })).not.toThrow();
     }
   });

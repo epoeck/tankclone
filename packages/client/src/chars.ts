@@ -1,7 +1,8 @@
 /** Avatar clássico: sprites PNG por item, máscaras de cor e folhas GAME/SHOW do cliente original.
  * Todos os recursos são locais; não usa Flash nem consulta CDNs durante a partida. */
 import { avatarFrames, avatarFrameRect, avatarLayers, avatarTint, GAME_FRAME, SHOW_FRAME, type AvatarLayer, type AvatarMode, type Look } from "@tankclone/core";
-import { drawDoll, type DollPose } from "./doll";
+import { applyCharacterTransform, drawDoll, type DollPose } from "./doll";
+import { drawWing } from "./wing";
 
 export const CHAR_SCALE = 1;
 type ImageEntry = { img: HTMLImageElement; loaded: boolean; ready: Promise<void> };
@@ -75,12 +76,13 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, look: Look, pose: D
   if (!ready) { drawDoll(ctx, look, pose, x, y, scale); return; }
   const now = performance.now() / 1000;
   const frames = avatarFrames(now + x * 0.013, pose.walk > 0, pose.aiming, pose.action, pose.actionElapsed);
-  ctx.save(); ctx.translate(x, y); ctx.scale(pose.facing * scale, scale);
-  if (ready.wing) ctx.drawImage(ready.wing, -32, -61, 60, 60);
+  ctx.save(); applyCharacterTransform(ctx, x, y, pose.facing, scale, pose.slopeDeg ?? 0);
+  if (ready.wing && !drawWing(ctx, now, "game", "back", pose.walk > 0 || !!pose.action, pose.action === "shoot")) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -28, -61, 60, 60); ctx.restore(); }
   for (const group of ["weapon", "face", "upper"] as const) {
     const rect = avatarFrameRect(frames[group]);
     ctx.drawImage(ready[group], rect.x, rect.y, rect.w, rect.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, rect.w, rect.h);
   }
+  if (ready.wing) drawWing(ctx, now, "game", "front", pose.walk > 0 || !!pose.action, pose.action === "shoot");
   ctx.restore();
 }
 
@@ -108,11 +110,22 @@ export function drawCharPortrait(target: HTMLCanvasElement, look: Look, weaponId
   }
   const scale = Math.min(target.width / 185, target.height / 305);
   ctx.save(); ctx.translate(target.width / 2, target.height - 2); ctx.scale(scale, scale);
-  if (ready.wing) ctx.drawImage(ready.wing, -65, -150, 130, 130);
+  if (ready.wing && !drawWing(ctx, performance.now() / 1000, "show")) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(ready.wing, -65, -150, 130, 130); ctx.restore(); }
   const faceFrame = performance.now() % 4500 > 4350 ? 2 : 0;
   for (const group of ["face", "upper", "weapon"] as const) {
     ctx.drawImage(ready[group], group === "face" ? faceFrame * SHOW_FRAME.width : 0, 0, SHOW_FRAME.width, SHOW_FRAME.height,
       -SHOW_FRAME.feetX, -SHOW_FRAME.feetY, SHOW_FRAME.width, SHOW_FRAME.height);
   }
+  ctx.restore();
+}
+
+/** Composição SOUL original: rosto reduzido sobre as camadas do quadro 36, em cinza. */
+export function drawSoul(ctx: CanvasRenderingContext2D, look: Look, weaponId: string, x: number, y: number, facing: 1 | -1): void {
+  const ready = prepare(look, weaponId, "game"); if (!ready) return;
+  const soul = avatarFrameRect(36), face = avatarFrameRect(0);
+  ctx.save(); ctx.translate(x, y); ctx.scale(facing, 1); ctx.filter = "grayscale(1)";
+  ctx.drawImage(ready.weapon, soul.x, soul.y, soul.w, soul.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, soul.w, soul.h);
+  ctx.drawImage(ready.face, face.x, face.y, face.w, face.h, -GAME_FRAME.feetX + 7, -GAME_FRAME.feetY + 5, face.w * .75, face.h * .75);
+  ctx.drawImage(ready.upper, soul.x, soul.y, soul.w, soul.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, soul.w, soul.h);
   ctx.restore();
 }

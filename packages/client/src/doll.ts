@@ -3,19 +3,26 @@
  * Pés em (0, 0), olhando para a direita, ~52 px de altura (hitbox 36×52). Camadas, de trás para frente (LAYER_ORDER):
  * hair-back, body, outfit, face, hair-front, hat; o braço com a arma gira com o ângulo de tiro.
  */
-import { HAIR_COLORS, SKIN_TONES, type Look } from "@tankclone/core";
+import { HAIR_COLORS, SKIN_TONES, relativeAngle, type Look } from "@tankclone/core";
 
 const OUTFITS = ["#4f7fd6", "#d65f4f", "#4fb06a", "#e0b43a", "#8a5bd6", "#3a3f58"];
 const HATS_COLOR = ["", "#c0392b", "#222a44", "#7a4bd1", "#9aa3b3"];
 const WEAPON_COLOR: Record<string, string> = { prism: "#ff8ad0", sledge: "#d6a43a", furnace: "#ff6d1f" };
 const INK = "#141a3a";
 
-export interface DollPose { facing: 1 | -1; angleDeg: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean; action?: "shoot" | "hit"; actionElapsed?: number }
+export interface DollPose { facing: 1 | -1; angleDeg: number; slopeDeg?: number; walk: number; weaponId: string; aiming: boolean; crouch?: boolean; action?: "shoot" | "hit"; actionElapsed?: number }
+
+/** Transforma o espaço local do avatar em torno dos pés, preservando o mesmo eixo em ambos os lados. */
+export function applyCharacterTransform(ctx: CanvasRenderingContext2D, x: number, y: number, facing: 1 | -1, scale: number, slopeDeg: number): void {
+  ctx.translate(x, y); ctx.scale(facing * scale, scale); ctx.rotate(-slopeDeg * Math.PI / 180);
+}
 
 export function drawDoll(ctx: CanvasRenderingContext2D, look: Look, pose: DollPose, x: number, y: number, scale = 1): void {
   const { appearance: a, equipped: e } = look;
   const skin = SKIN_TONES[a.skin]!, hairC = HAIR_COLORS[a.hairColor]!, cloth = OUTFITS[e.outfit]!;
-  ctx.save(); ctx.translate(x, y); ctx.scale(pose.facing * scale, scale);
+  ctx.save(); applyCharacterTransform(ctx, x, y, pose.facing, scale, pose.slopeDeg ?? 0);
+  // O placeholder acompanha o agachamento em repouso, levantando durante o tiro.
+  if (!pose.walk && pose.action !== "shoot") ctx.scale(1, 0.8);
   ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.lineWidth = 2; ctx.strokeStyle = INK;
   const bob = Math.abs(Math.sin(pose.walk)) * 1.5;
 
@@ -63,7 +70,7 @@ export function drawDoll(ctx: CanvasRenderingContext2D, look: Look, pose: DollPo
     if (e.hat === 4) { ctx.beginPath(); ctx.arc(0, -41, 11.5, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
   }
   // braço + arma (gira em torno do ombro com o ângulo absoluto)
-  const ang = pose.aiming ? (pose.angleDeg * Math.PI) / 180 : 0.35;
+  const ang = pose.aiming ? (relativeAngle(pose.angleDeg, pose.slopeDeg ?? 0) * Math.PI) / 180 : 0.35;
   ctx.save(); ctx.translate(4, -27); ctx.rotate(-ang);
   ctx.fillStyle = skin; ctx.beginPath(); ctx.roundRect(0, -2.5, 10, 5, 2.5); ctx.fill(); ctx.stroke();
   ctx.fillStyle = WEAPON_COLOR[pose.weaponId] ?? "#999"; ctx.beginPath(); ctx.roundRect(8, -3.5, 18, 7, 2); ctx.fill(); ctx.stroke();

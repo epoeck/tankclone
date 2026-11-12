@@ -54,7 +54,7 @@ export function avatarFrames(timeSeconds: number, walking: boolean, aiming: bool
     const frame = WALK[Math.floor(Math.max(0, timeSeconds) * 25) % WALK.length]!;
     return { face: frame, upper: frame, weapon: frame };
   }
-  if (aiming) return { face: 23, upper: 23, weapon: 23 };
+  // A mira não levanta o personagem; SHOWGUN pertence à ação de disparo.
   const frame = IDLE[Math.floor(Math.max(0, timeSeconds) * 25) % IDLE.length]!;
   return { face: frame, upper: frame === 0 || frame === 10 ? 7 : frame, weapon: frame };
 }

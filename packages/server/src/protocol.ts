@@ -29,7 +29,7 @@ export interface RoomInfo {
 export interface MatchSetup {
   seed: number;
   mapId: string;
-  players: Array<{ id: string; team: number; x: number; weaponId: string; build: string; look: Look; facing: 1 | -1 }>;
+  players: Array<{ id: string; team: number; x: number; spawnY?: number; weaponId: string; build: string; look: Look; facing: 1 | -1 }>;
 }
 
 export type ServerMsg =

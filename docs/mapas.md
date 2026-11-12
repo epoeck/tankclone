@@ -56,3 +56,24 @@ Ele lê cada pasta, confere (tamanhos, % de ar/destrutível/indestrutível, bord
 
 ## Trava de segurança
 O `npm test` compara cada `mask.png` com o `mask.bin`. Se você trocou a máscara e esqueceu o comando acima, o teste falha com a mensagem **"rode npm run maps:build"**. Sempre faça commit do `mask.bin` junto com o `mask.png`.
+
+## Cinco mapas clássicos
+
+`original-1001` a `original-1005` importam terreno, imagem e fundo da referência
+local Reborn. As dimensões e os pontos X/Y vêm de `maps.json`; a camada `fore`
+do pacote DDTM define solo destrutível e `dead` define solo indestrutível. O
+mapa 1003 possui ambas. O arquivo `original-sources.json` registra SHA-256 das
+fontes e saídas. Para reproduzir com Pillow e NumPy instalados:
+
+```sh
+python scripts/import-original-maps.py /caminho/ddtank-reborn
+npm run maps:build -w @tankclone/core
+```
+
+As imagens `samll_map.png` originais são copiadas como `thumbnail.png`; o
+minimapa da partida desenha a máscara atual, incluindo crateras. Clique ou
+arraste nele para mover a câmera nos dois eixos. O número em unidades é a
+separação horizontal até o ponto selecionado, usando 100 px por unidade,
+como a régua existente; o próximo tiro ou turno retoma o acompanhamento.
+O algoritmo de terreno e o modelo de fundo continuam os do projeto, não uma
+reprodução integral do motor e paralaxe do cliente Flash.

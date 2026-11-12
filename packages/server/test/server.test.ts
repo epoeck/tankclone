@@ -128,6 +128,11 @@ describe("servidor", () => {
     const victim = r.match!.chars.find(c => c.id !== cur)!;
     victim.hp = 0; victim.alive = false;
     (cur === "alice" ? a : b).send({ t: "intent", intent: { type: "shoot", angleDeg: 45, power: 30 } });
+    const finalEvents = await a.waitFor("events", e => e.events.some(event => event.type === "gameOver"));
+    expect(finalEvents.events.some(event => event.type === "shot")).toBe(true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(a.msgs.some(message => message.t === "end")).toBe(false);
+    expect(r.status).toBe("playing");
     const end = await a.waitFor("end");
     const winner = r.members.get(cur)!.team;
     expect(end.winnerTeam).toBe(winner);

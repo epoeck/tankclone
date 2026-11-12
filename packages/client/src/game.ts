@@ -20,9 +20,10 @@ async function main() {
     { id: "B2", team: 2, x: S2[1]!, weaponId: "prism", build: "tanque", facing: -1 as const, look: sanitizeLook({ appearance: { skin: 5, face: 4, hair: 0, hairColor: 0 }, equipped: { outfit: 1, hat: 1, glasses: 1 } }) },
   ];
 
+  players.forEach(p => Object.assign(p, { spawnY: map.spawnsY?.[p.team === 1 ? "1" : "2"]?.[p.id.endsWith("1") ? 0 : 1] }));
   const match = new Match({
     seed: (Date.now() & 0xffff) | 1, terrain: map.build(), config: { windMultiplier: map.windMultiplier ?? 1 },
-    players: players.map(p => ({ id: p.id, team: p.team, x: p.x, weaponId: p.weaponId, facing: p.facing, stats: BUILDS[p.build] })),
+    players: players.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: (p as typeof p & { spawnY?: number }).spawnY, weaponId: p.weaponId, facing: p.facing, stats: BUILDS[p.build] })),
   });
   const view = new MatchView(mapId, players);
   view.push(match.startEvents);

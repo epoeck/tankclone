@@ -43,9 +43,9 @@ describe("avatar clássico", () => {
     expect(avatarFrameRect(-1)).toEqual(avatarFrameRect(0));
     expect(avatarFrameRect(999)).toEqual(avatarFrameRect(0));
   });
-  it("caminhar usa a sequência original; mirar, disparar e receber dano têm quadros próprios", () => {
+  it("caminhar usa a sequência original; mirar permanece agachado; disparar e receber dano têm quadros próprios", () => {
     expect(Array.from({ length: 10 }, (_, i) => avatarFrames(i / 25 + 1e-9, true, true).face)).toEqual([1,1,2,2,3,3,4,4,5,5]);
-    expect(avatarFrames(0, false, true)).toEqual({ face: 23, upper: 23, weapon: 23 });
+    expect(avatarFrames(0, false, true)).toEqual(avatarFrames(0, false, false));
     expect(avatarFrames(0, false, false, "shoot", 0.09).face).toBe(26);
     expect(avatarFrames(0, false, false, "hit").face).toBe(12);
   });

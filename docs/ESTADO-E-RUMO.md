@@ -17,6 +17,10 @@ tankclone. O tankclone desenha em Canvas 2D e usa Node, WebSocket e SQLite.
 
 ## O que mudou nesta atualização
 
+### Apresentação de combate
+
+As bordas originais persistem sobre o terreno destrutível; o cache é reconstruído ao carregar a arte tardiamente. Projéteis e impactos usam recursos originais e a trajetória autoritativa, e a mira acompanha a inclinação ao andar ou virar. O rastro usa partículas originais amostradas da trajetória. Detalhes: [crateras e mira](crateras-e-mira.md), [projéteis](projeteis.md).
+
 ### Tiro, combate e terreno
 
 - O perfil padrão passou da aproximação por tabelas para os parâmetros do DDTank41: passos de

@@ -59,3 +59,33 @@ describe("progressão do vento", () => {
     }
   });
 });
+
+describe("orientação visual", () => {
+  it("inclina o eixo dos pés ao terreno nos dois sentidos e mantém a mira absoluta", async () => {
+    const { applyCharacterTransform } = await import("../../client/src/doll");
+    const { relativeAngle } = await import("../src/angle");
+    for (const facing of [1, -1] as const) {
+      const slope = 30 * facing;
+      let sx = 1, sy = 1, rotation = 0;
+      const ctx = {
+        translate: () => {},
+        scale: (x: number, y: number) => { sx = x; sy = y; },
+        rotate: (angle: number) => { rotation = angle; },
+      } as unknown as CanvasRenderingContext2D;
+      applyCharacterTransform(ctx, 100, 200, facing, 1, slope);
+      // Vetor local para a frente segue a tangente do chão em coordenadas de tela.
+      expect(sx * Math.cos(rotation)).toBeCloseTo(facing * Math.cos(Math.PI / 6));
+      expect(sy * Math.sin(rotation)).toBeCloseTo(-Math.sin(Math.PI / 6) * facing);
+      // A rotação local da arma cancela a inclinação para preservar a mira absoluta.
+      expect(-(rotation - relativeAngle(45, slope) * Math.PI / 180)).toBeCloseTo(Math.PI / 4);
+    }
+  });
+  it("aponta a agulha para o lado de tiro sem mudar o número do ângulo", async () => {
+    const { dialAngle } = await import("../../client/src/character-state");
+    for (const facing of [1, -1] as const) {
+      const cssRotation = -dialAngle(45, facing) * Math.PI / 180;
+      expect(Math.cos(cssRotation)).toBeCloseTo(facing * Math.SQRT1_2);
+      expect(Math.sin(cssRotation)).toBeCloseTo(-Math.SQRT1_2);
+    }
+  });
+});

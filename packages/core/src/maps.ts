@@ -17,6 +17,9 @@ export interface MapManifest {
   background?: string;
   /** Pontos de nascimento (x em px) por time, na ordem de entrada na sala; até 4 por time. */
   spawns: { "1": number[]; "2": number[] };
+  /** Altura inicial por spawn (mapas com múltiplos andares). */
+  spawnsY?: { "1": number[]; "2": number[] };
+  thumbnail?: string;
   /** Multiplicador do vento sentido neste mapa (hazards futuros). Padrão 1. */
   windMultiplier?: number;
 }
@@ -30,6 +33,7 @@ export interface MapDef {
   indestructible: boolean;
   build(): Terrain;
   spawns?: { "1": number[]; "2": number[] };
+  spawnsY?: { "1": number[]; "2": number[] };
   windMultiplier?: number;
   /** Pasta pública da arte (cliente): `/maps/<id>/`. */
   artBase?: string;
@@ -121,7 +125,7 @@ export function mapFromStates(manifest: MapManifest, states: Uint8Array, artBase
     id: manifest.id, name: manifest.name, width: manifest.width, height: manifest.height,
     indestructible: states.includes(INDESTRUCTIBLE),
     build: () => Terrain.fromStates(manifest.width, manifest.height, states),
-    spawns: manifest.spawns, windMultiplier: manifest.windMultiplier ?? 1, artBase, manifest,
+    spawns: manifest.spawns, spawnsY: manifest.spawnsY, windMultiplier: manifest.windMultiplier ?? 1, artBase, manifest,
   };
 }
 

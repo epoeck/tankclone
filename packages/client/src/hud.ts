@@ -1,7 +1,8 @@
 /** HUD da partida em HTML/CSS por cima do canvas (classes do design). Só lê o estado do MatchView; nunca decide regra. */
 import { ITEMS, WEAPONS, own, type ItemKey } from "@tankclone/core";
 import { drawCharPortrait } from "./chars";
-import type { MatchView } from "./view";
+import { dialAngle } from "./character-state";
+import { VIEW_W, VIEW_H, type MatchView } from "./view";
 
 const KEYS: ItemKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "F"];
 const ITEM_NAMES: Record<string, string> = { "1": "Rajada (+2 tiros)", "2": "Leque (triplo)", "3": "Bis (+1 tiro)", "4": "Pólvora +50%", "5": "Pólvora +40%", "6": "Pólvora +30%", "7": "Pólvora +20%", "8": "Pólvora +10%", F: "Voo" };
@@ -13,7 +14,7 @@ const el = <T extends HTMLElement>(root: ParentNode, sel: string) => root.queryS
 let chatKey: ((e: KeyboardEvent) => void) | null = null;
 export class Hud {
   private turns: HTMLElement; private wind: HTMLElement; private windVal: HTMLElement; private timer: HTMLElement; private timerNum: HTMLElement;
-  private mini: HTMLCanvasElement; private name: HTMLElement; private hpBar: HTMLElement; private hpText: HTMLElement; private enBar: HTMLElement; private enText: HTMLElement;
+  private mini: HTMLCanvasElement; private measureX: number | null = null; private name: HTMLElement; private hpBar: HTMLElement; private hpText: HTMLElement; private enBar: HTMLElement; private enText: HTMLElement;
   private power: HTMLElement; private angle: HTMLElement; private angleVal: HTMLElement; private gauge: HTMLElement; private gaugeLabel: HTMLElement; private banner: HTMLElement;
   private slots = new Map<string, HTMLElement>(); private counts = new Map<string, HTMLElement>();
   private portraits = new Map<string, HTMLCanvasElement>();
@@ -30,7 +31,7 @@ export class Hud {
       <div class="minimap well"><canvas width="300" height="130"></canvas></div>
       <div class="roundinfo panel"><div><span style="color:var(--sky-300)">Azul</span><b class="num" data-k="blue"></b></div><div><span style="color:#ffb1a6">Vermelho</span><b class="num" data-k="red"></b></div></div>
       <div class="itemcol"></div>
-      <div class="dial" style="--angle:45deg"><span class="dial__needle"></span><span class="dial__hub"></span><span class="dial__value num">45</span></div>
+      <div class="dial" style="--angle:45deg"><span class="dial__range"></span><span class="dial__needle"></span><span class="dial__hub"></span><span class="dial__value num">45</span></div>
       <div class="skills"></div>
       <div class="powerbar"><span class="powerbar__label">Força</span>
         <div class="powerbar__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div>
@@ -42,7 +43,16 @@ export class Hud {
       <div class="gauge" style="--pressure:0"><img src="/assets/ui/hud/pressure-gauge.svg" alt=""><img class="gauge__needle" src="/assets/ui/hud/pressure-needle.svg" alt=""><span class="gauge__label">Pressão 0%</span></div>
       <div class="banner panel" hidden><span class="title title--lg title--cream"></span></div>`;
     this.turns = el(root, ".turns"); this.wind = el(root, ".wind__arrow"); this.windVal = el(root, ".wind__value"); this.timer = el(root, ".clock"); this.timerNum = el(root, ".clock__num");
-    this.mini = el(root, ".minimap canvas"); this.name = el(root, '[data-k="name"]');
+    this.mini = el(root, ".minimap canvas");
+    const moveCamera = (event: PointerEvent) => {
+      const rect = this.mini.getBoundingClientRect();
+      const x = Math.max(0, Math.min(this.view.width, (event.clientX - rect.left) / rect.width * this.view.width));
+      const y = Math.max(0, Math.min(this.view.height, (event.clientY - rect.top) / rect.height * this.view.height));
+      this.measureX = x; this.view.moveCameraTo(x, y);
+    };
+    this.mini.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); this.mini.setPointerCapture(event.pointerId); moveCamera(event); });
+    this.mini.addEventListener("pointermove", event => { if (this.mini.hasPointerCapture(event.pointerId)) moveCamera(event); });
+ this.name = el(root, '[data-k="name"]');
     this.hpBar = el(root, ".vitals2 .bar--hp"); this.hpText = el(this.hpBar, ".bar__text"); this.enBar = el(root, ".bar--energy"); this.enText = el(this.enBar, ".bar__text");
     this.power = el(root, ".power"); this.angle = el(root, ".dial"); this.angleVal = el(root, ".dial__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
     this.blue = el(root, '[data-k="blue"]'); this.red = el(root, '[data-k="red"]');
@@ -124,10 +134,17 @@ export class Hud {
       this.gauge.style.setProperty("--pressure", String(who.fury / 200)); this.gaugeLabel.textContent = `Pressão ${Math.round(who.fury / 2)}%${v.ui.special ? " · ESTOURO" : ""}`;
     }
     this.power.style.setProperty("--power", `${v.ui.power}%`); this.power.style.setProperty("--last", `${v.ui.last}%`);
-    this.angle.style.setProperty("--angle", `${v.ui.angle}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;
+    if (cur) {
+      const range = v.aimRange;
+      // Conic gradients começam em cima e crescem no sentido horário.
+      const start = cur.facing === 1 ? 90 - range.max : 270 + range.min;
+      this.angle.style.setProperty("--range-start", `${start}deg`);
+      this.angle.style.setProperty("--range-size", `${range.max - range.min}deg`);
+    }
+    this.angle.style.setProperty("--angle", `${dialAngle(v.ui.angle, cur?.facing ?? 1)}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;
     const mine = !me || me === cur?.id;
     for (const k of KEYS) {
-      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && v.ui.fly);
+      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
       d.classList.toggle("is-off", !can); if (n) d.setAttribute("aria-selected", "true"); else d.removeAttribute("aria-selected");
       this.counts.get(k)!.textContent = n > 1 ? `×${n}` : "";
     }
@@ -143,6 +160,11 @@ export class Hud {
     c.clearRect(0, 0, w, h); c.fillStyle = "#0c1130"; c.fillRect(0, 0, w, h);
     c.drawImage(v.terrainCanvas, 0, 0, v.width, v.height, 0, 0, w, h);
     for (const ch of v.chars.values()) if (ch.alive) { c.fillStyle = ch.team === 1 ? "#4a90ff" : "#ff5a47"; c.beginPath(); c.arc((ch.x / v.width) * w, (ch.y / v.height) * h - 2, 3, 0, 7); c.fill(); }
-    c.strokeStyle = "#fff6e0"; c.lineWidth = 2; c.strokeRect((v.camX / v.width) * w, 1, (1280 / v.width) * w, h - 2);
+    if (v.current && this.measureX !== null) {
+      const x0 = v.current.x / v.width * w, x1 = this.measureX / v.width * w;
+      c.strokeStyle = "#ffe279"; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, h - 17); c.lineTo(x1, h - 17); c.stroke();
+      c.fillStyle = "#fff"; c.font = "bold 12px sans-serif"; c.fillText(`${(Math.abs(this.measureX - v.current.x) / 100).toFixed(1)} un`, Math.max(2, Math.min(w - 52, x1 - 20)), h - 22);
+    }
+    c.strokeStyle = "#fff6e0"; c.lineWidth = 2; c.strokeRect((v.camX / v.width) * w, (v.camY / v.height) * h, Math.min(1, VIEW_W / v.width) * w, Math.min(1, VIEW_H / v.height) * h);
   }
 }

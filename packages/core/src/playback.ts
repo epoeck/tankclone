@@ -26,8 +26,17 @@ export class MatchPlayback {
   private tail = 0;
 
   get busy(): boolean { return this.queue.length > 0 || this.flights.length > 0; }
-  get positions(): Array<{ x: number; y: number }> {
-    return this.flights.map(({ shot, start }) => sampleTrajectory(shot.points, this.clock - start, shot.stepSeconds, shot.duration));
+  get positions() {
+    return this.flights.map(({ shot, start }) => {
+      const elapsed = this.clock - start;
+      const pos = sampleTrajectory(shot.points, elapsed, shot.stepSeconds, shot.duration);
+      const prev = sampleTrajectory(shot.points, Math.max(0, elapsed - shot.stepSeconds), shot.stepSeconds, shot.duration);
+      const next = sampleTrajectory(shot.points, Math.min(shot.duration, elapsed + shot.stepSeconds), shot.stepSeconds, shot.duration);
+      const trailLength = Math.min(14, Math.floor(elapsed / 0.04) + 1);
+      const trail = Array.from({ length: trailLength }, (_, i) =>
+        sampleTrajectory(shot.points, elapsed - (trailLength - 1 - i) * 0.04, shot.stepSeconds, shot.duration));
+      return { ...pos, playerId: shot.playerId, ballId: shot.ballId, elapsed, angle: Math.atan2(next.y - prev.y, next.x - prev.x), trail };
+    });
   }
 
   push(events: readonly MatchEvent[]): void {
@@ -38,14 +47,16 @@ export class MatchPlayback {
   }
 
   /** Devolve a fração do frame que sobrou depois das animações, para o contador do turno. */
-  update(dt: number, apply: (event: MatchEvent) => void): number {
+  update(dt: number, apply: (event: MatchEvent) => void, onFlightEnd?: (shot: Extract<MatchEvent, { type: "shot" }>, remaining: number) => void): number {
     let remaining = Math.max(0, dt);
     while (true) {
+      for (const f of this.flights) if (f.end <= this.clock) onFlightEnd?.(f.shot, remaining);
       this.flights = this.flights.filter(f => f.end > this.clock);
       while (this.queue.length && this.queue[0]!.at <= this.clock) {
         const { event, at } = this.queue.shift()!;
         if (event.type === "shot" && event.duration > 0) this.flights.push({ shot: event, start: at, end: at + event.duration });
         apply(event);
+        if (event.type === "shot" && event.duration <= 0) onFlightEnd?.(event, remaining);
       }
       if (!this.busy || remaining === 0) return this.busy ? 0 : remaining;
       const next = Math.min(this.queue[0]?.at ?? Infinity, ...this.flights.map(f => f.end));

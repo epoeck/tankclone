@@ -9,3 +9,8 @@ export function applyCharacterMove(c: MovingCharacter, e: Extract<MatchEvent, { 
   c.energy = e.energyLeft;
   c.facing = e.facing;
 }
+
+/** CSS da agulha usa rotação negativa; o valor exibido continua relativo ao olhar. */
+export function dialAngle(angleDeg: number, facing: Facing): number {
+  return facing === -1 ? -180 - angleDeg : angleDeg;
+}

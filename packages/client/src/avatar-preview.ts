@@ -1,5 +1,6 @@
 import { COUNTS, DEFAULT_LOOK, HAIR_COLORS, SKIN_TONES, WEAPONS } from "@tankclone/core";
 import { drawCharacter, drawCharPortrait } from "./chars";
+import { drawDeath } from "./death";
 
 const look = structuredClone(DEFAULT_LOOK);
 const portrait = document.getElementById("portrait") as HTMLCanvasElement;
@@ -22,16 +23,19 @@ for (const [key, label] of [["outfit", "Roupa"], ["hat", "Chapéu"], ["glasses",
   select(label, Array.from({ length: COUNTS[key] }, (_, i) => [String(i), key !== "outfit" && i === 0 ? "Sem item" : String(key === "outfit" ? i + 1 : i)]), String(look.equipped[key]), v => (look.equipped[key] = +v));
 }
 select("Arma", Object.values(WEAPONS).map(w => [w.id, w.name]), weaponId, v => (weaponId = v));
-select("Animação", [["idle", "Parado"], ["walk", "Andando"], ["aim", "Mirando"], ["shoot", "Atirando"], ["hit", "Recebendo dano"]], action, v => (action = v));
+select("Animação", [["idle", "Parado"], ["walk", "Andando"], ["aim", "Mirando"], ["shoot", "Atirando"], ["hit", "Recebendo dano"], ["death", "Morte"]], action, v => (action = v));
 function frame() {
   drawCharPortrait(portrait, look, weaponId);
   ctx.clearRect(0, 0, battle.width, battle.height);
   ctx.fillStyle = "#8ba880"; ctx.fillRect(0, 226, battle.width, 34);
   const elapsed = performance.now() / 1000 % 0.8;
-  for (const [x, facing] of [[170, 1], [450, -1]] as const) drawCharacter(ctx, look, {
+  for (const [x, facing] of [[170, 1], [450, -1]] as const) {
+    if (action === "death") { drawDeath(ctx, look, weaponId, x, 226, facing, performance.now() / 1000, 0); continue; }
+    drawCharacter(ctx, look, {
     facing, weaponId, angleDeg: 45, walk: action === "walk" ? 1 : 0, aiming: action === "aim",
     action: elapsed < 0.24 && (action === "shoot" || action === "hit") ? action : undefined, actionElapsed: elapsed,
   }, x, 226, 2);
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

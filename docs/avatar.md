@@ -55,7 +55,7 @@ O catálogo inicial contém:
 - 3 rostos, 3 cabelos, 3 roupas, 2 chapéus, 1 óculos e as 3 armas;
 - paletas de pele/cabelo existentes, aplicadas às máscaras próprias;
 - animações básicas de parado, andando, mirando, disparando e recebendo dano;
-- 1 asa clássica em **representação estática**: a animação SWF da asa não foi portada.
+- 1 asa clássica com animação GAME/SHOW da biblioteca SWF convertida.
 
 Contas antigas sem `appearance.sex` recebem `m`, mantendo os outros índices. Não há migração destrutiva,
 alteração de senha ou mudança de stats. Os testes de banco/rede verificam persistência e envio do sexo.
@@ -83,3 +83,7 @@ a conta. A escolha permanente continua no vestiário de `/play.html`.
 Testes cobrem hashes e dimensões de todos os PNGs, todas as opções do catálogo, variantes A/B,
 quadros, máscaras de cor, persistência na conta, setup da partida, direção e continuidade do vento.
 O retrato e a batalha foram inspecionados no navegador com os dois sexos e equipamentos combinados.
+
+## Asa, alma e lápide
+
+A asa `wing002` usa a biblioteca convertida `wings` do clone local Reborn, incluindo os quadros GAME e SHOW. No GAME os clipes esquerdo e direito ficam, respectivamente, atrás e à frente do corpo; os quadros selecionam repouso ou disparo, enquanto o clipe interno anima durante movimento e ação. O registro usa `weaponX` e `weaponY` de `GameCharacter` e `GamePlayer.addWing`. A lápide usa `asset.game.tombAsset` de `game.swf`; a alma recompõe o quadro 36 e o rosto reduzido em escala de cinza, com os corpos animados `ghostManMovieAsset` e `ghostGirlMovieAsset` do `gameii.swf`, seguindo `GameCharacter.drawSoul`, `doAction` e `GamePlayer.die`. O movimento suave da alma é uma aproximação. Os hashes dos arquivos importados constam em `packages/client/public/character-effects/manifest.json`; a importação é reproduzida por `python scripts/import-character-effects.py /caminho/ddtank-reborn`. Conversão SWF local do clone `dab2b445f153a6852b48182d4afe5c43ebbe3e16`.

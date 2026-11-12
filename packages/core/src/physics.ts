@@ -105,13 +105,16 @@ export interface Hitbox {
   y: number;
   w: number;
   h: number;
+  /** Extensão da caixa abaixo dos pés, em pixels. */
+  bottomOffset?: number;
 }
 
 /** Tamanho provisório do boneco (px). Ajustar quando a arte chegar. */
 export const PLAYER_HITBOX = { w: 36, h: 42 } as const;
 
-export function hitboxContains(b: Hitbox, x: number, y: number): boolean {
-  return x >= b.x - b.w / 2 && x <= b.x + b.w / 2 && y >= b.y - b.h && y <= b.y;
+export function hitboxContains(b: Hitbox, x: number, y: number, radius = 0): boolean {
+  const bottom = b.y + (b.bottomOffset ?? 0);
+  return x >= b.x - b.w / 2 - radius && x <= b.x + b.w / 2 + radius && y >= bottom - b.h - radius && y <= bottom + radius;
 }
 
 export interface SimOptions {
@@ -119,6 +122,10 @@ export interface SimOptions {
   hitboxes?: readonly Hitbox[];
   /** Id de quem atirou: sua caixa é ignorada enquanto o projétil ainda estiver dentro dela. */
   shooterId?: string;
+  /** Metade do tamanho da caixa do projétil ao testar personagens. */
+  hitboxRadius?: number;
+  /** Saída definitiva do mapa: encerra como erro antes de testar sólidos ou jogadores. */
+  outOfBounds?: (x: number, y: number) => boolean;
   /** Passo máximo (px) da varredura entre dois passos da simulação. Padrão 1. */
   sweepPx?: number;
 }
@@ -152,7 +159,7 @@ export function simulateShot(
   const sweep = opts.sweepPx ?? 1;
   // caixas que já contêm o ponto inicial (normalmente a do atirador) ficam isentas até o projétil sair delas
   const exempt = new Set<string>();
-  for (const b of boxes) if (b.id === opts.shooterId && hitboxContains(b, p.x, p.y)) exempt.add(b.id);
+  for (const b of boxes) if (b.id === opts.shooterId && hitboxContains(b, p.x, p.y, opts.hitboxRadius)) exempt.add(b.id);
 
   for (let i = 1; i <= cfg.maxSteps; i++) {
     const px = p.x, py = p.y;
@@ -162,8 +169,12 @@ export function simulateShot(
     for (let k = 1; k <= n; k++) {
       const t = k / n;
       const x = px + (p.x - px) * t, y = py + (p.y - py) * t;
+      if (opts.outOfBounds?.(x, y)) {
+        points.push({ x, y });
+        return { points, hit: null, hitKind: null, targetId: null, steps: i, duration: (i - 1 + t) * cfg.dt };
+      }
       for (const b of boxes) {
-        const inside = hitboxContains(b, x, y);
+        const inside = hitboxContains(b, x, y, opts.hitboxRadius);
         if (exempt.has(b.id)) { if (!inside) exempt.delete(b.id); continue; }
         if (inside) {
           points.push({ x, y });

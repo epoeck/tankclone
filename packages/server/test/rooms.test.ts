@@ -29,3 +29,16 @@ it("pausa pelo último impacto do triplo, sem somar as três durações", () => 
   expect(shots).toHaveLength(3);
   expect(room.pausedUntil).toBe(1000 + Math.max(...shots.map(s => s.duration)) * 1000);
 });
+
+it("mantém a partida encerrada disponível até terminar a animação", () => {
+  const room = new Room("fim", "colinas", 2, "a"); room.add("a", 1); room.add("b", 2); room.start("a", 1000);
+  const id = room.match!.currentId, victim = id === "a" ? "b" : "a";
+  room.match!.getChar(victim)!.hp = 1;
+  // O teste força um fim após um tiro já agendado, sem depender da pontaria do mapa.
+  const result = room.intent(id, { type: "shoot", angleDeg: 45, power: 40 }, 1000);
+  if ("error" in result) throw new Error(result.error);
+  Object.defineProperty(room.match!, "over", { value: true });
+  expect(room.readyToFinish(room.pausedUntil - 1)).toBe(false);
+  expect(room.readyToFinish(room.pausedUntil)).toBe(true);
+  expect(room.status).toBe("playing"); expect(room.log).toContainEqual(result.events[0]);
+});

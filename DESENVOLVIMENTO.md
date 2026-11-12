@@ -49,7 +49,7 @@ O **nível não dá stats**; só libera sistemas: 1–9 tutorial (slots de equip
 | Escala | tela de 1000 px; 1 distância = 100 px; distância 10 = 1 tela | decisão (resolução do original desconhecida) |
 | Vento | 0 a 10, uma casa decimal; sorteio favorece ≤ 5; o mapa pode modificar | dono |
 | Força | barra 0–100 de **segurar e soltar** (enche com o tempo) | gênero |
-| Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50), aplicada relativa ao corpo inclinado na rampa; o valor exibido é o **ângulo absoluto real**, então numa rampa o jogador precisa compensar | dono |
+| Ângulo | **faixa por arma** (ex.: 55–70, 20–65, 20–50), aplicada relativa ao corpo inclinado na rampa; o valor exibido é o **ângulo absoluto real**, e acompanha a mudança da inclinação ao andar ou virar, preservando a mira relativa ao corpo | dono |
 | Tempo de turno | 10 s; 5 s quando todos estão acima de um limiar de FC | dono |
 | Ordem de turno | **delay acumulado**: começa quem tem mais agilidade; depois joga quem tem menor delay; mover/itens somam delay; agilidade reduz o delay ganho; passar a vez soma pouco | pesquisa |
 | Energia | **240 + AGI/30** por turno (~1 por px andando); volta cheia no próximo turno. Confere exato com a conta de referência (AGI 29551 → 1225). Com 240 só cabe "14" (195); "1446" (350) exige AGI ≈ 3300 | dono + print |

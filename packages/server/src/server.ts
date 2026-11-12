@@ -57,8 +57,8 @@ export function startServer(opts: ServerOptions = {}) {
   };
   const pushRoom = (room: Room) => outbox.broadcast(room, { t: "room", room: room.info() });
 
-  function afterEvents(room: Room) {
-    if (room.over) {
+  function afterEvents(room: Room, now: number) {
+    if (room.readyToFinish(now)) {
       const res = room.finish(outbox);
       outbox.broadcast(room, { t: "end", winnerTeam: res.winnerTeam, xp: res.xp });
       pushRoom(room);
@@ -71,7 +71,8 @@ export function startServer(opts: ServerOptions = {}) {
       if (room.status !== "playing") continue;
       try {
         const events = room.tick(tickMs / 1000, now);
-        if (events.length) { outbox.broadcast(room, { t: "events", events }); afterEvents(room); }
+        if (events.length) outbox.broadcast(room, { t: "events", events });
+        afterEvents(room, now);
       } catch (e) { log("erro no tick da sala", room.id, e); }
     }
     lobby.prune();
@@ -152,7 +153,7 @@ export function startServer(opts: ServerOptions = {}) {
         const res = r.intent(nick, m.intent, Date.now());
         if ("error" in res) return err(res.error);
         outbox.broadcast(r, { t: "events", events: res.events });
-        afterEvents(r);
+        afterEvents(r, Date.now());
         return;
       }
       default: return err("mensagem desconhecida");

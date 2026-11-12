@@ -33,8 +33,10 @@ let view: MatchView | null = null;
 let controls: Controls | null = null;
 let hud: Hud | null = null;
 let endInfo: Record<string, { gained: number; level: number }> | null = null;
+let endPending = false;
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
+  endPending = false;
   view = new MatchView(setup.mapId, setup.players);
   view.me = me?.nick ?? null;
   view.push(events);
@@ -60,7 +62,7 @@ function onMsg(m: ServerMsg) {
       endInfo = m.xp;
       const mine = me ? m.xp[me.nick] : undefined;
       toast(mine ? `+${mine.gained} XP · nível ${mine.level}` : "partida encerrada");
-      setTimeout(() => { view = null; show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); }, 4000);
+      endPending = true;
       break;
     }
   }
@@ -85,7 +87,13 @@ $("login-form").addEventListener("submit", e => { e.preventDefault(); auth("logi
 $("btn-register").onclick = () => auth("register");
 
 // ---------- saguão ----------
-const fillMaps = () => { const sel = $("new-map"); sel.replaceChildren(); for (const [id, def] of Object.entries(MAPS)) { const o = el("option", def.name + (def.indestructible ? " (chão firme)" : "")); o.value = id; sel.append(o); } };
+const updateMapPreview = () => {
+  const def = MAPS[$<HTMLSelectElement>("new-map").value], img = $<HTMLImageElement>("new-map-preview");
+  const file = def?.manifest?.thumbnail;
+  img.hidden = !(file && def?.artBase); if (file && def?.artBase) img.src = def.artBase + file;
+};
+const fillMaps = () => { const sel = $("new-map"); sel.replaceChildren(); for (const [id, def] of Object.entries(MAPS)) { const o = el("option", def.name + (def.indestructible ? " (chão firme)" : "")); o.value = id; sel.append(o); } updateMapPreview(); };
+$("new-map").addEventListener("change", updateMapPreview);
 fillMaps();
 void loadClientMaps().then(fillMaps);
 $("btn-refresh").onclick = () => send({ t: "rooms" });
@@ -174,7 +182,13 @@ const ctx = canvas.getContext("2d")!;
 let last = performance.now();
 function frame(now: number) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (view) { controls?.update(dt); view.update(dt); view.draw(ctx, me?.nick ?? null); hud?.update(); }
+  if (view) {
+    controls?.update(dt); view.update(dt); view.draw(ctx, me?.nick ?? null); hud?.update();
+    if (endPending && !view.busy && view.hud.over) {
+      endPending = false; const finishedView = view;
+      setTimeout(() => { if (view !== finishedView) return; view = null; show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); }, 4000);
+    }
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
