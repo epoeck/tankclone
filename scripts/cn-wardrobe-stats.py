@@ -31,5 +31,7 @@ for sex, slots in cat['sexes'].items():
             found += 1
             p['templateId'] = int(d['TemplateID']); p['name'] = d.get('Name', '')
             p['stats'] = {'atk': int(d['Attack']), 'def': int(d['Defence']), 'agi': int(d['Agility']), 'luck': int(d['Luck'])}
+            # chapéu: Property1 = 1 deixa o cabelo inteiro (variante B); 0 usa o cabelo cortado (A) — PlayerInfo.getHairType/BaseLayer
+            if slot == 'head': p['keepsHair'] = d.get('Property1') == '1'
 CAT.write_text(json.dumps(cat, ensure_ascii=False, separators=(',', ':')) + '\n')
 print(f'atributos em {found}/{total} peças')

@@ -1,7 +1,7 @@
 /** Composição do avatar clássico: GameCharacterLoader / ShowCharacterLoader do cliente 4.1.
  * Recursos PNG compatíveis do mesmo pacote doador usado pelo Reborn. Ver docs/avatar.md. */
 import catalog from "./reference/avatar.json";
-import { cnPiece } from "./wardrobe-catalog";
+import { cnPiece, hatKeepsHair } from "./wardrobe-catalog";
 import { wingIcon } from "./wings";
 import { WEAPON_ART } from "./forge";
 import { HAIR_COLORS, PIECE_COLORS, SKIN_TONES, sanitizeLook, type Look } from "./appearance";
@@ -30,7 +30,8 @@ export function avatarLayers(raw: Look, weaponId: string, mode: AvatarMode): Ava
   const part = (slot: "face" | "cloth" | "hair" | "head" | "glass", index: number) => {
     const item = sex[slot][index] ?? cnPiece(a.sex, slot, index)!;
     const variants = item.variants as Record<string, { game: string[]; show: string[] }>;
-    const files = variants[slot === "hair" ? e.hat ? "A" : "B" : "default"]![mode];
+    // cabelo: B = inteiro (sem chapéu ou chapéu-acessório), A = cortado para caber sob o chapéu (getHairType do original)
+    const files = variants[slot === "hair" ? e.hat && !hatKeepsHair(a.sex, e.hat - 1) ? "A" : "B" : "default"]![mode];
     const group = slot === "face" ? "face" : "upper";
     const colorMap = slot === "face" ? look.tints?.face : slot === "cloth" ? look.tints?.outfit : slot === "head" ? look.tints?.hat : undefined;
     const key = slot === "head" ? index + 1 : index;

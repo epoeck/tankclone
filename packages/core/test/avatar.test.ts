@@ -84,3 +84,14 @@ it("cor original do cabelo: só a arte colorida, sem a máscara tingida; vale ta
   expect(sanitizeLook(JSON.parse(JSON.stringify(original)))).toEqual(original);
   expect(sanitizeLook({ appearance: { hairColor: -2 } }).appearance.hairColor).not.toBe(-2);
 });
+
+it("chapéu-acessório (Property1 = 1) deixa o cabelo inteiro; chapéu fechado usa o cabelo cortado", async () => {
+  const { cnPieces, legacyCount } = await import("../src/wardrobe-catalog");
+  const heads = cnPieces("m", "head") as Array<{ complete: boolean; keepsHair?: boolean }>;
+  const idx = (keeps: boolean) => heads.findIndex(h => h.complete && h.keepsHair === keeps) + legacyCount("head") + 1; // hat é 1-based
+  const hairFiles = (hat: number) => avatarLayers(sanitizeLook({ appearance: { sex: "m", hair: 0 }, equipped: { hat } }), "sledge", "show").filter(p => p.slot === "hair").map(p => p.file);
+  const none = hairFiles(0), open = hairFiles(idx(true)), closed = hairFiles(idx(false)), legacy = hairFiles(1);
+  expect(open).toEqual(none);
+  expect(closed).not.toEqual(none);
+  expect(legacy).toEqual(closed); // head1/head2 clássicos têm Property1 = 0
+});

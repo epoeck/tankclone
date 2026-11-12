@@ -18,6 +18,10 @@ export function legacyCount(slot: WardrobeSlot): number { return legacy[slot]; }
 
 /** Atributos de uma peça (TemplateAlllist do CN 14.7: quase todas dão +5 em cada). Peças clássicas antigas não têm. */
 export type PieceStats = { atk: number; def: number; agi: number; luck: number };
+/** Chapéu-acessório (Property1 = 1 no original): o cabelo aparece inteiro. Os demais usam o cabelo cortado. */
+export function hatKeepsHair(sex: AvatarSex, hatIndex: number): boolean {
+  return !!(cnPiece(sex, "head", hatIndex) as { keepsHair?: boolean } | undefined)?.keepsHair;
+}
 export const NO_STATS: PieceStats = { atk: 0, def: 0, agi: 0, luck: 0 };
 export function pieceInfo(sex: AvatarSex, slot: WardrobeSlot, index: number): { name?: string; templateId?: number; stats: PieceStats } {
   const p = cnPiece(sex, slot, index) as (CatalogPiece & { name?: string; templateId?: number; stats?: PieceStats }) | undefined;
