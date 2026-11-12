@@ -77,7 +77,7 @@ Créditos em `third_party/classic-avatar/NOTICE.md`.
 
 ## Prévia e validação
 
-`/avatar.html` permite inspecionar os dois lados, trocar peças/cores/sexo e testar animações sem alterar
+`/dev/avatar.html` permite inspecionar os dois lados, trocar peças/cores/sexo e testar animações sem alterar
 a conta. A escolha permanente continua no vestiário de `/play.html`.
 
 Testes cobrem hashes e dimensões de todos os PNGs, todas as opções do catálogo, variantes A/B,

@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { MAPS, Terrain } from "../src/index";
-vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false }));
+vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false, stopSfx: () => {}, preloadLocalSfx: () => {} }));
 import { MatchView } from "../../client/src/view";
 
 // Um canvas mínimo em memória, com composição de pixels verificável sem navegador.

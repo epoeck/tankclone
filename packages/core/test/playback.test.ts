@@ -75,21 +75,20 @@ describe("partida com máscaras e leques", () => {
     const m = create();
     m.submit({ type: "item", playerId: "a", key: "1" });
     m.submit({ type: "item", playerId: "a", key: "2" });
-    const result = m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 });
-    if (!result.ok) throw new Error(result.error);
-    const shots = result.events.filter(e => e.type === "shot");
+    const events: MatchEvent[] = [];
+    for (let i = 0; i < 3; i++) { const r = m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 }); if (!r.ok) throw new Error(r.error); events.push(...r.events); }
+    const shots = events.filter(e => e.type === "shot");
     expect(shots).toHaveLength(9);
+    // cada leque começa quando o anterior termina (um tiro por intenção, ângulo livre entre eles)
     let end = 0;
     for (let i = 0; i < 9; i += 3) {
-      const group = shots.slice(i, i + 3), start = i / 3;
-      expect(group.map(s => s.at)).toEqual([start, start, start]);
-      end = Math.max(end, ...group.map(s => start + s.duration));
+      const group = shots.slice(i, i + 3);
+      expect(group.map(s => s.at)).toEqual([end, end, end]);
+      end = Math.max(...group.map(s => end + s.duration));
     }
-    expect(playbackDuration(result.events)).toBe(end);
-    expect(playbackDuration(result.events)).toBeLessThan(shots.reduce((sum, s) => sum + s.duration, 0));
-    expect(result.events.map(e => e.at)).toEqual(result.events.map(e => e.at).sort((a, b) => a! - b!));
-    const last = result.events.at(-1)!;
-    expect(last).toMatchObject({ type: "turnStart", at: end });
+    expect(playbackDuration(events)).toBeCloseTo(end, 9);
+    expect(events.map(e => e.at)).toEqual(events.map(e => e.at).sort((a, b) => a! - b!));
+    expect(events.at(-1)).toMatchObject({ type: "turnStart", at: end });
   });
   it("reaplicar os eventos no cliente reconstrói exatamente a máscara autoritativa", () => {
     const m = create(), terrain = m.terrain.clone();

@@ -1,6 +1,6 @@
 import { COUNTS, DEFAULT_LOOK, HAIR_COLORS, SKIN_TONES, WEAPONS } from "@tankclone/core";
-import { drawCharacter, drawCharPortrait } from "./chars";
-import { drawDeath } from "./death";
+import { drawCharacter, drawCharPortrait } from "../chars";
+import { drawDeath } from "../death";
 
 const look = structuredClone(DEFAULT_LOOK);
 const portrait = document.getElementById("portrait") as HTMLCanvasElement;

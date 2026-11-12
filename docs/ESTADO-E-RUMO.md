@@ -58,7 +58,7 @@ A composição foi reimplementada diretamente em Canvas 2D:
 - retratos e sprites de batalha em camadas, com máscaras de pele/cabelo e cabelo adaptado ao chapéu;
 - catálogo inicial de rostos, cabelos, roupas, chapéus, óculos, armas e uma asa;
 - animações básicas de parado, andar, mirar, disparar e receber dano;
-- prévia independente em `/avatar.html`, sem alterar a conta.
+- prévia independente em `/dev/avatar.html`, sem alterar a conta.
 
 São 139 PNGs locais, de aproximadamente 2 MB, provenientes do pacote clássico compatível indicado
 na pesquisa do Reborn. Isso não representa o catálogo gráfico completo do 4.1. A asa é estática;
@@ -126,7 +126,7 @@ reprodução em 30/60/144 FPS, direção, vento, catálogo/hashes dos PNGs e per
 Esses testes não substituem a avaliação do feeling durante partidas.
 
 Para jogar pela instalação de um clique, usar `scripts/ddclank.sh`; para desenvolvimento, usar o
-servidor e o cliente descritos em [operação](operacao.md). A prévia de avatar fica em `/avatar.html`.
+servidor e o cliente descritos em [operação](operacao.md). A prévia de avatar fica em `/dev/avatar.html`.
 
 As correções feitas na instalação independente do Reborn e seus atalhos no menu do Linux não fazem
 parte deste repositório. Os avisos de terceiros e os importadores desta adaptação estão em

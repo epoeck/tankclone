@@ -144,12 +144,13 @@ export class Hud {
     this.angle.style.setProperty("--angle", `${dialAngle(v.ui.angle, cur?.facing ?? 1)}deg`); this.angleVal.textContent = `${Math.round(v.ui.angle)}°`;
     const mine = !me || me === cur?.id;
     for (const k of KEYS) {
-      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
+      const d = this.slots.get(k)!, n = v.ui.used[k] ?? 0, can = mine && !v.ui.fired && (cur?.energy ?? 0) >= ITEMS[k].cost && !(k === "2" && v.ui.triple) && !(k === "F" && (v.ui.fly || v.ui.flyCooldown));
       d.classList.toggle("is-off", !can); if (n) d.setAttribute("aria-selected", "true"); else d.removeAttribute("aria-selected");
       this.counts.get(k)!.textContent = n > 1 ? `×${n}` : "";
     }
     this.estouro.classList.toggle("is-off", !mine); if (v.ui.special) this.estouro.setAttribute("aria-selected", "true"); else this.estouro.removeAttribute("aria-selected");
     this.blue.textContent = `${alive.filter(c => c.team === 1).length} vivos`; this.red.textContent = `${alive.filter(c => c.team !== 1).length} vivos`;
+    el<HTMLButtonElement>(this.root, ".passbtn").disabled = v.clockPaused || v.ui.power > 0;
     this.drawMinimap();
     if (v.hud.over) { this.banner.hidden = false; el<HTMLElement>(this.banner, "span").textContent = v.hud.winner === null ? "Empate" : `Time ${v.hud.winner === 1 ? "Azul" : "Vermelho"} venceu!`; }
     else this.banner.hidden = true;

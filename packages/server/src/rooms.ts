@@ -151,6 +151,7 @@ export function validateIntent(i: ClientIntent): string | null {
     case "item": return own(ITEMS, i.key) ? null : "item inválido";
     case "shoot": return Number.isFinite(i.angleDeg) && Number.isFinite(i.power) ? null : "tiro inválido";
     case "pass": return null;
+    case "charge": return typeof i.on === "boolean" ? null : "carga inválida";
     default: return "intenção desconhecida";
   }
 }

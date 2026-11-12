@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { Match, Terrain, type MatchEvent } from "../src/index";
 const calls = vi.hoisted(() => ({ sound: vi.fn(), projectile: vi.fn(() => true), impact: vi.fn(() => true) }));
-vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: calls.sound, toggleMute: () => false }));
+vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: calls.sound, toggleMute: () => false, stopSfx: () => {}, preloadLocalSfx: () => {} }));
 vi.mock("../../client/src/projectile-effects", () => ({ drawProjectile: calls.projectile, drawImpact: calls.impact, drawTrail: () => false, impactDuration: () => 2, TRAIL_MAX_LIFE: 0.5 }));
 vi.mock("../../client/src/chars", () => ({ drawCharacter: () => {} }));
 vi.mock("../../client/src/death", () => ({ drawDeath: () => {} }));

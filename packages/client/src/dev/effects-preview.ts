@@ -1,5 +1,5 @@
-import { drawImpact, drawProjectile, drawTrail } from './projectile-effects';
-import { projectileSfx } from './sound';
+import { drawImpact, drawProjectile, drawTrail } from '../projectile-effects';
+import { projectileSfx } from '../sound';
 const canvas = document.querySelector<HTMLCanvasElement>('#effects')!;
 const ctx = canvas.getContext('2d')!;
 const weapons = ['prism', 'sledge', 'furnace', 'fly'];

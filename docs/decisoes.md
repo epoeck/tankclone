@@ -57,3 +57,12 @@ Depois de testar, relatou flicker ao virar e pediu conferência da progressão d
 - **Dano próprio:** o atirador sofre dano dos próprios tiros, mas a vida desce no máximo até 1 (nunca morre por isso). Pode morrer andando/caindo para fora do mapa. Aliados continuam sem se ferir.
 - **Dano em si e em aliados (igual ao Reborn, decisão do Izzy em 2026-11-12):** a bomba fere o atirador e os aliados jogadores; se o dano mataria, vira vida − 1 (crítico zerado). Quem leva dano vivo ganha fúria pela fórmula `floor((floor(dano×2/5)+5)/2)`, inclusive dano próprio/aliado (no caso cortado para vida 1, usa-se o dano realmente aplicado). `friendlyFire` passou a ser true por padrão. Substitui a decisão anterior de dano próprio sem fúria.
   Nota: com 1 de vida, cada auto-acerto ainda rende floor((0+5)/2) = 2 de fúria; mantido (aceito pela revisão; confirmar com o Reborn se necessário).
+
+## Limpeza de 2026-11-12 (aprovada pelo Izzy)
+- **Física antiga aposentada:** `TABLE_PHYSICS`, o ajuste por tabelas (`calibration.ts`, `scripts/calibrate.ts`, `calibration/`) e seus testes foram removidos; só existe o motor float32 do Reborn (`DEFAULT_PHYSICS`). Os valores históricos (gravity 507,32 etc.) ficam só no histórico do git.
+- **`MUZZLE_HEIGHT` (30,18) continua herdado do motor antigo.** Falta medir a ponta da arma no boneco agachado (precisa dos sprites locais); até lá, pode haver ~5 px de diferença visual entre o cano e a saída do tiro.
+- **Ids de bala** vêm só da ficha de cada arma (`WEAPONS[...].ballId` e `special.ballId`) e de `FLY_BALL_ID`; o cliente não tem mais números mágicos.
+- **`view.ts` dividido:** `controls.ts` (teclado) e `terrain-layer.ts` (pintura do terreno e bordas de cratera).
+- **Páginas de desenvolvimento** (design, dano, projéteis, avatar, visualizador de física) ficam em `packages/client/dev/` (`/dev/*.html`); o jogo é `play.html` (rede) e `game.html` (local).
+- **Vários tiros:** cada tiro é uma intenção própria; o ângulo e a força podem mudar entre eles, itens travam depois do primeiro tiro. O relógio para enquanto se carrega a força (máx. 3 s por tiro).
+- **Sons:** arquivos do Reborn ficam só locais em `packages/client/public/sfx-local/<id>.ogg` (gitignored), com som sintetizado de reserva.

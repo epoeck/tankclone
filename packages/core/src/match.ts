@@ -5,7 +5,7 @@
  */
 import { craterShape } from "./craters";
 import { clampAbsoluteAngle } from "./angle";
-import { DEFAULT_MATCH, FLY_ANGLE, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
+import { DEFAULT_MATCH, FLY_ANGLE, FLY_BALL_ID, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
 import { combatPower, statDamage, damageBreakdown, withStats, rollCritical, turnDelay, furyFromDamage, type Stats } from "./stats";
@@ -53,6 +53,7 @@ export type Intent =
   | { type: "move"; playerId: string; dir: Facing; px: number }
   | { type: "item"; playerId: string; key: ItemKey }
   | { type: "shoot"; playerId: string; angleDeg: number; power: number; special?: boolean }
+  | { type: "charge"; playerId: string; on: boolean }
   | { type: "pass"; playerId: string };
 
 export type MatchEvent = (
@@ -66,6 +67,7 @@ export type MatchEvent = (
   | { type: "damage"; playerId: string; amount: number; hp: number; crit: boolean }
   | { type: "fly"; playerId: string; x: number; y: number }
   | { type: "fury"; playerId: string; fury: number }
+  | { type: "charge"; playerId: string; on: boolean }
   | { type: "death"; playerId: string; reason: "hp" | "out_of_map" }
   | { type: "stateSync"; playerId: string; x: number; y: number; hp: number; fury: number; energy: number; alive: boolean }
   | { type: "turnEnd"; playerId: string; delay: number }
@@ -108,7 +110,16 @@ interface TurnState {
   triple: boolean;
   fly: boolean;
   elapsed: number;
+  /** Segurando a barra de força: o relógio do turno fica parado (no máximo CHARGE_MAX_SECONDS). */
+  charging: boolean;
+  chargeSeconds: number;
+  /** Tiros já disparados e restantes neste turno (vários tiros: o ângulo pode mudar entre eles). */
+  shotsFired: number;
+  shotsLeft: number;
+  special: boolean;
 }
+
+export const CHARGE_MAX_SECONDS = 3;
 
 export class Match {
   readonly terrain: Terrain;
@@ -202,8 +213,14 @@ export class Match {
   /** Passa o tempo; ao estourar o limite do turno, passa a vez automaticamente. */
   tick(dt: number): MatchEvent[] {
     if (this.over) return [];
+    if (this.ts.charging) { // relógio parado enquanto carrega; solta sozinho se passar do limite
+      this.ts.chargeSeconds += dt;
+      if (this.ts.chargeSeconds < CHARGE_MAX_SECONDS) return [];
+      this.ts.charging = false;
+      return [{ type: "charge", playerId: this.current.id, on: false }];
+    }
     this.ts.elapsed += dt;
-    if (this.ts.elapsed >= this.turnTimeLimit()) return this.endTurn(true);
+    if (this.ts.elapsed >= this.turnTimeLimit()) return this.endTurn(this.ts.shotsFired === 0);
     return [];
   }
 
@@ -212,8 +229,14 @@ export class Match {
     if (intent.playerId !== this.current.id) return { ok: false, error: "não é a vez deste jogador" };
     if (!this.current.alive) return { ok: false, error: "jogador morto" };
     switch (intent.type) {
-      case "move": return this.doMove(intent.dir, intent.px);
-      case "item": return this.doItem(intent.key);
+      case "move": this.ts.charging = false; return this.doMove(intent.dir, intent.px);
+      case "charge": {
+        if (this.ts.charging === !!intent.on) return { ok: true, events: [] };
+        if (intent.on && this.ts.chargeSeconds >= CHARGE_MAX_SECONDS) return { ok: false, error: "força já carregada" };
+        this.ts.charging = !!intent.on;
+        return { ok: true, events: [{ type: "charge", playerId: this.current.id, on: this.ts.charging }] };
+      }
+      case "item": this.ts.charging = false; return this.doItem(intent.key);
       case "shoot": return this.doShoot(intent.angleDeg, intent.power, !!intent.special);
       case "pass": return { ok: true, events: this.endTurn(true) };
     }
@@ -269,6 +292,7 @@ export class Match {
     const def = own(ITEMS, key), c = this.current;
     if (!def) return { ok: false, error: "item desconhecido" };
     if (c.energy < def.cost) return { ok: false, error: "energia insuficiente" };
+    if (this.ts.shotsFired > 0) return { ok: false, error: "itens só antes do primeiro tiro" };
     if (def.triple && this.ts.triple) return { ok: false, error: "tiro triplo só uma vez por turno" };
     if (def.fly && this.ts.fly) return { ok: false, error: "voar já ativo" };
     if (def.fly && c.flyCooldown > 0) return { ok: false, error: "voar em recarga neste turno" };
@@ -291,10 +315,13 @@ export class Match {
     return this.chars.filter(c => c.alive).map(c => ({ id: c.id, x: c.x, y: c.y, w: 30, h: 30, bottomOffset: 10 }));
   }
 
-  private doShoot(angleDeg: number, power: number, special: boolean): Outcome {
+  private doShoot(angleDeg: number, power: number, specialReq: boolean): Outcome {
+    let special = specialReq;
     const c = this.current, cfg = this.cfg, T = this.terrain, weapon = own(WEAPONS, c.weaponId)!;
     if (!Number.isFinite(angleDeg) || !Number.isFinite(power)) return { ok: false, error: "valores inválidos" };
-    if (special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
+    this.ts.charging = false; this.ts.chargeSeconds = 0;
+    if (this.ts.shotsFired > 0) special = this.ts.special; // o especial é decidido no primeiro tiro
+    if (this.ts.shotsFired === 0 && special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
     const events: MatchEvent[] = [];
     const slope = T.slopeDeg(c.x, c.y, c.facing);
     const ang = clampAbsoluteAngle(angleDeg, this.ts.fly ? FLY_ANGLE : weapon.angle, slope);
@@ -304,23 +331,23 @@ export class Match {
 
     // Lista de projéteis do disparo: cada elemento = um tiro simulado em sequência
     type Proj = { ang: number; mult: number; power: number };
-    const volleys: Proj[][] = [];
     const base = ts.fly ? 1 : ts.mult * (special ? weapon.special.damageMult : 1);
-    const shotsCount = 1 + (ts.fly ? 0 : ts.extraShots + (special ? weapon.special.shots : 0));
-    for (let i = 0; i < shotsCount; i++) {
-      const count = ts.fly ? 1 : special ? weapon.special.balls : ts.triple ? 3 : 1;
-      // Living.ShootImp: o primeiro é central; os laterais usam força 0.9 e 1.1.
-      // O ângulo absoluto do servidor é espelhado ao mirar para a esquerda.
-      volleys.push(Array.from({ length: count }, (_, n) => ({
-        ang: ang + (n === 1 ? 1 : n === 2 ? -1 : 0) * cfg.tripleSpreadDeg * c.facing,
-        power: pow * (n === 1 ? 0.9 : n === 2 ? 1.1 : 1), mult: base,
-      })));
+    if (ts.shotsFired === 0) {
+      ts.special = special;
+      ts.shotsLeft = 1 + (ts.fly ? 0 : ts.extraShots + (special ? weapon.special.shots : 0));
     }
+    ts.shotsFired++; ts.shotsLeft--;
+    const count = ts.fly ? 1 : special ? weapon.special.balls : ts.triple ? 3 : 1;
+    // Living.ShootImp: o primeiro é central; os laterais usam força 0.9 e 1.1.
+    // O ângulo absoluto do servidor é espelhado ao mirar para a esquerda.
+    const volley: Proj[] = Array.from({ length: count }, (_, n) => ({
+      ang: ang + (n === 1 ? 1 : n === 2 ? -1 : 0) * cfg.tripleSpreadDeg * c.facing,
+      power: pow * (n === 1 ? 0.9 : n === 2 ? 1.1 : 1), mult: base,
+    }));
 
     let index = 0;
-    const startTime = this.animationTime;
-    for (const [volleyIndex, volley] of volleys.entries()) {
-      const start = startTime + volleyIndex;
+    {
+      const start = this.animationTime;
       const results = volley.map(p => ({ mult: p.mult, r: simulateShot(
         { x: c.x, y: c.y - MUZZLE_HEIGHT, angleDeg: p.ang, power: p.power, facing: c.facing, wind },
         (x, y) => T.isSolid(x, y), this.physics, { hitboxes: this.hitboxes(), shooterId: c.id, hitboxRadius: 3, outOfBounds: (x, y) => x < 0 || x >= T.width || y >= T.height }),
@@ -328,7 +355,7 @@ export class Match {
       // As bolas do leque saem juntas. Os impactos são aplicados em ordem de chegada.
       for (const { r, mult } of results) events.push({
         type: "shot", playerId: c.id, index: index++, points: r.points, hit: r.hit, hitKind: r.hitKind,
-        targetId: r.targetId, damageMult: mult, ballId: ts.fly ? 3 : special ? weapon.special.ballId : weapon.ballId, stepSeconds: this.physics.dt, duration: r.duration, at: start,
+        targetId: r.targetId, damageMult: mult, ballId: ts.fly ? FLY_BALL_ID : special ? weapon.special.ballId : weapon.ballId, stepSeconds: this.physics.dt, duration: r.duration, at: start,
       });
       for (const { r, mult } of [...results].sort((a, b) => a.r.duration - b.r.duration)) {
         const effects: MatchEvent[] = [];
@@ -339,10 +366,12 @@ export class Match {
       this.animationTime = Math.max(this.animationTime, start + Math.max(...results.map(({ r }) => r.duration)));
     }
 
+    // (um tiro por intenção: o ângulo pode mudar entre os tiros)
     // A simulação original é síncrona por disparo; voos sobrepostos podem terminar em outra ordem visual.
     // Consolida o estado autoritativo após a última animação para replay/reconexão.
     for (const t of this.chars) events.push({ type: "stateSync", playerId: t.id, x: t.x, y: t.y, hp: t.hp, fury: t.fury, energy: t.energy, alive: t.alive });
     this.checkOver(events);
+    if (ts.shotsLeft > 0 && !this.over && c.alive) return { ok: true, events: events.map(e => ({ ...e, at: e.at ?? this.animationTime })) };
     c.fury = Math.min(cfg.maxFury, (special ? 0 : c.fury) + cfg.furyOnAttack);
     events.push({ type: "fury", playerId: c.id, fury: c.fury });
     if (!this.over) events.push(...this.endTurn(false));
@@ -429,5 +458,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0 };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, charging: false, chargeSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false };
 }

@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false }));
+vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false, stopSfx: () => {}, preloadLocalSfx: () => {} }));
 vi.mock("../../client/src/projectile-effects", () => ({ drawImpact: () => false, drawProjectile: () => false, drawTrail: () => false, impactDuration: () => 2, TRAIL_MAX_LIFE: 0.5 }));
 import { MatchView } from "../../client/src/view";
 

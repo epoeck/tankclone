@@ -2,7 +2,8 @@
 import { BUILDS, Match, MAPS, sanitizeLook, type Intent } from "@tankclone/core";
 import { loadClientMaps } from "./maps";
 import { Hud } from "./hud";
-import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
+import { Controls } from "./controls";
+import { MatchView, VIEW_H, VIEW_W } from "./view";
 
 const canvas = document.getElementById("c") as HTMLCanvasElement;
 canvas.width = VIEW_W; canvas.height = VIEW_H;

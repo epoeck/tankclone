@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false }));
+vi.mock("../../client/src/sound", () => ({ sfx: () => {}, projectileSfx: () => {}, toggleMute: () => false, stopSfx: () => {}, preloadLocalSfx: () => {} }));
 import { MatchView } from "../../client/src/view";
 
 it("mantém a mira relativa ao andar e virar, inclusive durante playback", () => {

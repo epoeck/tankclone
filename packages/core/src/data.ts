@@ -76,6 +76,9 @@ export interface WeaponDef {
   special: SpecialDef;
 }
 
+/** Bola do voo (F): não tem arma própria nem cratera. */
+export const FLY_BALL_ID = 3;
+
 export const WEAPONS: Record<string, WeaponDef> = {
   prism: { id: "prism", name: "Prisma", baseDamage: 200, damageRadius: 55, delay: 2, ballDelay: 200, angle: { min: 55, max: 70 }, ballId: 101, windFactor: 1,
     special: { shots: 0, damageMult: 1, ballId: 111, damageRadius: 65, balls: 1 } },

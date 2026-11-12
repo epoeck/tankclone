@@ -42,7 +42,8 @@ for sex in ("m", "f"):
         categories[slot] = options
     catalog["sexes"][sex] = categories
 for weapon, pic in [("prism", "bomb"), ("sledge", "brick"), ("furnace", "bombpack")]:
-    catalog["weapons"][weapon] = {mode: image(f"arm/{pic}/1/0/{mode}.png") for mode in ("game", "show")}
+    # GAME usa a folha 1/1 (arma desenhada nas costas, mesmo índice de quadro do corpo); SHOW continua 1/0
+    catalog["weapons"][weapon] = {mode: image(f"arm/{pic}/1/{1 if mode == 'game' else 0}/{mode}.png") for mode in ("game", "show")}
 catalog["wings"]["1"] = image("equip/wing/wing002/icon.png")
 
 

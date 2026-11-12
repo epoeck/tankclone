@@ -10,7 +10,7 @@ Guia de formato entre a arte e o código. Nome do jogo, pela logo do Izzy: **DDC
 
 ## Telas de referência
 
-`packages/client/design.html` (abra com `npm run dev -w @tankclone/client` e vá em `/design.html`). São 6 telas 1280×720 em HTML estático com as classes prontas:
+`packages/client/dev/design.html` (abra com `npm run dev -w @tankclone/client` e vá em `/dev/design.html`). São 6 telas 1280×720 em HTML estático com as classes prontas:
 
 1. Entrada (apelido + senha)
 2. Saguão (lista de salas, quem está online, conversa geral)

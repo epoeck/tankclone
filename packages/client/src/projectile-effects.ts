@@ -1,9 +1,11 @@
+import { FLY_BALL_ID, WEAPONS } from "@tankclone/core";
 /** Bibliotecas convertidas dos SWFs do cliente de referência; ver docs/projeteis.md. */
 type Place = { d?: number; id?: number; m?: number[]; mv?: number; rm?: number; ct?: number[] };
 type Character = { k: string; img?: string; r?: number[]; tl?: { n: number; f: Place[][] } };
 type Library = { frameRate: number; chars: Record<string, Character>; classes: Record<string, { id: number }> };
 type Loaded = { lib: Library; images: Map<string, HTMLImageElement> };
-const ids: Record<string, [number, number]> = { prism: [101, 111], sledge: [381, 391], furnace: [161, 171], fly: [3, 3] };
+// ids das bolas vêm da ficha de cada arma (core/data.ts)
+const ids: Record<string, [number, number]> = { ...Object.fromEntries(Object.values(WEAPONS).map(w => [w.id, [w.ballId, w.special.ballId]])), fly: [FLY_BALL_ID, FLY_BALL_ID] };
 const libraries = new Map<string, Loaded | null>();
 function library(name: string): Loaded | null {
   if (!libraries.has(name)) {

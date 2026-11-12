@@ -57,8 +57,9 @@ describe("energia e itens", () => {
   it("+1 tiro causa −10% e +2 tiros −40% por disparo", () => {
     const one = mk(duo({ agi: 3300 })), two = mk(duo({ agi: 3300 }));
     ok(one.submit({ type: "item", playerId: "a", key: "3" })); ok(two.submit({ type: "item", playerId: "a", key: "1" }));
-    expect(ev(ok(one.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 })), "shot").map(s => s.damageMult)).toEqual([0.9, 0.9]);
-    expect(ev(ok(two.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 })), "shot").map(s => s.damageMult)).toEqual([0.6, 0.6, 0.6]);
+    const all = (m: Match, n: number) => Array.from({ length: n }, () => ev(ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 })), "shot")).flat();
+    expect(all(one, 2).map(s => s.damageMult)).toEqual([0.9, 0.9]);
+    expect(all(two, 3).map(s => s.damageMult)).toEqual([0.6, 0.6, 0.6]);
   });
   it("só o jogador da vez age", () => {
     const m = mk();
@@ -186,7 +187,10 @@ describe("tiro, dano e fúria", () => {
   it("+2 tiros dispara 3 vezes e triplo dispara 3 projéteis", () => {
     const m = mk(duo({ agi: 3300 }));
     ok(m.submit({ type: "item", playerId: "a", key: "1" }));
-    expect(ev(ok(shoot(m, "a", 320)), "shot")).toHaveLength(3);
+    const turns: MatchEvent[] = [];
+    for (let i = 0; i < 3; i++) { const es = ok(shoot(m, "a", 320)); turns.push(...es); if (i < 2) expect(ev(es, "turnStart")).toHaveLength(0); }
+    expect(ev(turns, "shot")).toHaveLength(3);
+    expect(ev(turns, "turnStart")).toHaveLength(1); // o turno só acaba no último tiro
     const t = mk(duo({ agi: 3300 }));
     ok(t.submit({ type: "item", playerId: "a", key: "2" }));
     const shots = ev(ok(shoot(t, "a", 320)), "shot");
@@ -282,4 +286,29 @@ describe("chaves de protótipo", () => {
   it("arma '__proto__' ou 'constructor' é recusada ao criar a partida", () => {
     for (const weaponId of ["__proto__", "constructor", "toString"]) expect(() => mk(duo({ weaponId }))).toThrow();
   });
+
+describe("carga da força e vários tiros", () => {
+  it("o relógio para enquanto carrega e volta ao soltar ou depois de 3 s", () => {
+    const m = mk();
+    m.tick(1); const t0 = m.timeLeft;
+    const on = ok(m.submit({ type: "charge", playerId: "a", on: true }));
+    expect(on[0]).toMatchObject({ type: "charge", on: true });
+    m.tick(2); expect(m.timeLeft).toBe(t0);
+    const off = m.tick(1.5);
+    expect(off[0]).toMatchObject({ type: "charge", on: false });
+    m.tick(1); expect(m.timeLeft).toBeCloseTo(t0 - 1, 5);
+    expect(m.submit({ type: "charge", playerId: "a", on: true }).ok).toBe(false); // já usou a carga deste tiro
+  });
+  it("com +1 tiro: o ângulo muda entre os tiros, itens travam e o turno só acaba no último", () => {
+    const m = mk(duo({ agi: 3300 }));
+    ok(m.submit({ type: "item", playerId: "a", key: "3" }));
+    const first = ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 30, power: 40 }));
+    expect(ev(first, "turnStart")).toHaveLength(0);
+    expect(m.currentId).toBe("a");
+    expect(m.submit({ type: "item", playerId: "a", key: "4" }).ok).toBe(false);
+    const second = ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 50, power: 40 }));
+    expect(ev(second, "shot")[0]!.points).not.toEqual(ev(first, "shot")[0]!.points);
+    expect(ev(second, "turnEnd")).toHaveLength(1);
+  });
+});
 });

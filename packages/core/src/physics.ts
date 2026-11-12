@@ -10,11 +10,8 @@ import { eulerStep } from "./euler";
 export interface PhysicsConfig {
   /** Passo fixo da simulação (s). */
   dt: number;
-  /** O servidor C# transmite as velocidades iniciais como inteiros. */
-  integerLaunch?: boolean;
-  /** Preserva os arredondamentos do EulerVector C#; legado por tabelas usa double. */
-  float32?: boolean;
-  mass?: number;
+  /** Massa do projétil (kg do motor original). */
+  mass: number;
   /** Gravidade (px/s²), positiva = puxa para baixo. */
   gravity: number;
   /** Velocidade inicial (px/s) por ponto de força (força vai de 0 a 100). */
@@ -27,12 +24,6 @@ export interface PhysicsConfig {
   maxSteps: number;
 }
 
-/** Perfil anterior, mantido só para comparar com as tabelas históricas da comunidade. */
-export const TABLE_PHYSICS: PhysicsConfig = {
-  dt: 1 / 60, gravity: 507.32, speedPerPower: 16.748,
-  windAccel: 17, drag: 0.1416, maxSteps: 60 * 20,
-};
-
 /** DDTank41: mapa Weight=10, DragIndex=2; bola Mass=10, Weight=70, Wind=240, DragIndex=1.
  * BombObject + EulerVector: g=10×70, arrasto=2×1/10, vento=240/10.
  * Barra 0–100 corresponde à força 0–2000. Ver docs/ddtank41.md.
@@ -40,11 +31,11 @@ export const TABLE_PHYSICS: PhysicsConfig = {
 export const DEFAULT_PHYSICS: PhysicsConfig = {
   dt: 0.04, gravity: 700, speedPerPower: 20,
   windAccel: 24, drag: 0.2, maxSteps: 25 * 20,
-  integerLaunch: true, float32: true, mass: 10,
+  mass: 10,
 };
 
-/** Altura (px) do ponto de saída do tiro acima do chão onde o tanque está. Resultado do ajuste. */
-// Mantida em 30.18: a calibração das tabelas de tiro depende dela (com 25.2, o teste de 20° estoura). O cano agachado fica ~5 px mais baixo no desenho; é só visual.
+/** Altura (px) do ponto de saída do tiro acima dos pés. Valor herdado do ajuste do motor antigo (30,18) e AINDA NÃO medido
+ * no boneco agachado com a física nova: precisa medir no sprite local (ponta da arma no quadro parado). Ver docs/decisoes.md. */
 export const MUZZLE_HEIGHT = 30.18;
 
 export type Facing = 1 | -1;
@@ -69,27 +60,21 @@ export function launch(shot: Shot, cfg: PhysicsConfig = DEFAULT_PHYSICS): Projec
   const speed = shot.power * cfg.speedPerPower;
   const a = (shot.angleDeg * Math.PI) / 180;
   return {
-    x: cfg.float32 ? Math.fround(shot.x) : shot.x,
-    y: cfg.float32 ? Math.fround(shot.y) : shot.y,
-    vx: cfg.integerLaunch ? Math.trunc(Math.cos(a) * speed * shot.facing) : Math.cos(a) * speed * shot.facing,
-    vy: cfg.integerLaunch ? Math.trunc(-Math.sin(a) * speed) : -Math.sin(a) * speed,
+    // como no servidor C#: posição em float32 e velocidades iniciais inteiras
+    x: Math.fround(shot.x),
+    y: Math.fround(shot.y),
+    vx: Math.trunc(Math.cos(a) * speed * shot.facing),
+    vy: Math.trunc(-Math.sin(a) * speed),
   };
 }
 
-/** Avança um passo (Euler semi-implícito: velocidade primeiro, depois posição). */
+/** Avança um passo com o EulerVector do Reborn (float32). */
 export function step(p: Projectile, wind: number, cfg: PhysicsConfig = DEFAULT_PHYSICS): void {
-  if (cfg.float32) {
-    const f = Math.fround, mass = f(cfg.mass ?? 10);
-    const air = f(cfg.drag * mass);
-    const horizontal = f(f(wind) * f(cfg.windAccel * mass));
-    [p.x, p.vx] = eulerStep(p.x, p.vx, mass, air, horizontal, cfg.dt);
-    [p.y, p.vy] = eulerStep(p.y, p.vy, mass, air, f(cfg.gravity * mass), cfg.dt);
-    return;
-  }
-  p.vx += (wind * cfg.windAccel - cfg.drag * p.vx) * cfg.dt;
-  p.vy += (cfg.gravity - cfg.drag * p.vy) * cfg.dt;
-  p.x += p.vx * cfg.dt;
-  p.y += p.vy * cfg.dt;
+  const f = Math.fround, mass = f(cfg.mass);
+  const air = f(cfg.drag * mass);
+  const horizontal = f(f(wind) * f(cfg.windAccel * mass));
+  [p.x, p.vx] = eulerStep(p.x, p.vx, mass, air, horizontal, cfg.dt);
+  [p.y, p.vy] = eulerStep(p.y, p.vy, mass, air, f(cfg.gravity * mass), cfg.dt);
 }
 
 /** Algo que diz se um ponto está sólido (terreno ou limite do mapa). */

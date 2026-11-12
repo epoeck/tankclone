@@ -4,7 +4,8 @@ import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/sr
 import { drawCharPortrait as drawPortrait } from "./chars";
 import { loadClientMaps } from "./maps";
 import { Hud } from "./hud";
-import { Controls, MatchView, VIEW_H, VIEW_W } from "./view";
+import { Controls } from "./controls";
+import { MatchView, VIEW_H, VIEW_W } from "./view";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const screens = ["s-login", "s-lobby", "s-wardrobe", "s-room", "match"];

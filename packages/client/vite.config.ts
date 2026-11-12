@@ -1,6 +1,17 @@
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
+const page = (file: string) => resolve(__dirname, file);
 export default defineConfig({
   server: { port: 5173 },
-  build: { rollupOptions: { input: { main: resolve(__dirname, "index.html"), game: resolve(__dirname, "game.html"), play: resolve(__dirname, "play.html"), design: resolve(__dirname, "design.html"), damage: resolve(__dirname, "damage.html"), avatar: resolve(__dirname, "avatar.html"), effects: resolve(__dirname, "effects.html") } } },
+  build: {
+    rollupOptions: {
+      input: {
+        // jogo
+        game: page("game.html"), play: page("play.html"),
+        // páginas de desenvolvimento (não fazem parte do jogo): dev/*.html
+        design: page("dev/design.html"), damage: page("dev/damage.html"), avatar: page("dev/avatar.html"),
+        effects: page("dev/effects.html"), fisica: page("dev/fisica.html"),
+      },
+    },
+  },
 });

@@ -1,5 +1,39 @@
 /** Sons de interface sintetizados e sons de projéteis da referência. Tecla M liga/desliga. */
-export type SfxName = "shoot" | "boom" | "hit" | "item" | "turn" | "death" | "win" | "lose";
+export type SfxName = "shoot" | "boom" | "hit" | "item" | "turn" | "death" | "win" | "lose"
+  | "tick" | "alert" | "whistle" | "turnChange" | "pass" | "angle" | "charge" | "release" | "steps" | "gameEnd";
+
+/** Sons do Reborn (só locais, gitignored): public/sfx-local/<id>.ogg. Ids do original; sem o arquivo, usa o som sintetizado. */
+export const LOCAL_SFX: Partial<Record<SfxName, string>> = {
+  tick: "014", alert: "067", whistle: "016", turnChange: "038", pass: "008", angle: "006", charge: "020", release: "019",
+  steps: "044", gameEnd: "040", win: "063", lose: "064",
+};
+const files = new Map<string, { audio: HTMLAudioElement; ok: boolean }>();
+const playing = new Map<string, HTMLAudioElement>();
+function localFile(id: string): { audio: HTMLAudioElement; ok: boolean } | null {
+  if (typeof Audio === "undefined") return null;
+  let f = files.get(id);
+  if (!f) {
+    const audio = new Audio(`/sfx-local/${id}.ogg`); audio.preload = "auto";
+    f = { audio, ok: false }; files.set(id, f);
+    const entry = f; audio.addEventListener("canplaythrough", () => { entry.ok = true; }, { once: true });
+    audio.addEventListener("error", () => { entry.ok = false; }, { once: true });
+  }
+  return f;
+}
+/** Toca o arquivo local, se existir. `stops` interrompe outro som antes (ex.: 019 para o 020). */
+function playLocal(name: SfxName, stops?: SfxName): boolean {
+  const id = LOCAL_SFX[name]; if (!id || muted) return false;
+  if (stops) { const prev = playing.get(stops); if (prev) { prev.pause(); playing.delete(stops); } }
+  const f = localFile(id); if (!f?.ok) return false;
+  const prev = playing.get(name); if (prev && (name === "alert" || name === "tick")) prev.pause();
+  const a = f.audio.cloneNode() as HTMLAudioElement; playing.set(name, a);
+  a.addEventListener("ended", () => { if (playing.get(name) === a) playing.delete(name); }, { once: true });
+  void a.play().catch(() => { /* bloqueado antes da primeira interação */ });
+  return true;
+}
+export function stopSfx(name: SfxName): void { const p = playing.get(name); if (p) { p.pause(); playing.delete(name); } }
+/** Pré-carrega os arquivos locais (chamar ao abrir a partida). */
+export function preloadLocalSfx(): void { for (const id of Object.values(LOCAL_SFX)) localFile(id); }
 
 let ctx: AudioContext | null = null;
 let muted = false;
@@ -35,8 +69,19 @@ function noise(c: AudioContext, dur: number, vol: number, f0: number, f1: number
 }
 
 export function sfx(name: SfxName): void {
+  if (playLocal(name, name === "release" ? "charge" : undefined)) return;
   const c = ac(); if (!c) return;
   switch (name) {
+    case "tick": tone(c, "square", 1200, 1200, 0.03, 0.05); break;
+    case "alert": tone(c, "square", 1600, 1500, 0.07, 0.09); break;
+    case "whistle": tone(c, "sine", 1800, 2300, 0.12, 0.14); tone(c, "sine", 1800, 2300, 0.2, 0.14, 0.15); break;
+    case "turnChange": tone(c, "sine", 440, 440, 0.1, 0.08); break;
+    case "pass": tone(c, "square", 300, 200, 0.05, 0.1); break;
+    case "angle": tone(c, "square", 900, 900, 0.015, 0.04); break;
+    case "charge": tone(c, "triangle", 400, 500, 0.04, 0.05); break;
+    case "release": break;
+    case "steps": tone(c, "triangle", 150, 100, 0.04, 0.06); break;
+    case "gameEnd": tone(c, "sine", 392, 392, 0.3, 0.1); break;
     case "shoot": noise(c, 0.18, 0.25, 3000, 300); tone(c, "sawtooth", 220, 60, 0.2, 0.12); break;
     case "boom": noise(c, 0.6, 0.45, 1800, 80); tone(c, "sine", 110, 30, 0.5, 0.3); break;
     case "hit": tone(c, "square", 520, 180, 0.12, 0.12); break;

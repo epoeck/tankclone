@@ -194,7 +194,7 @@ Máquina de estados determinística, com entrada = intenções por turno e saíd
 6. Vento semeado por turno, HP, fim de partida (time eliminado), limite de turnos opcional.
 7. Cliente: força de **segurar e soltar**, régua de distância, câmera que acompanha o tiro + minimapa, barra de itens nas teclas originais.
 
-### Fase C — Stats e dano (`core/stats.ts`) (**implementada**; painel em `damage.html`)
+### Fase C — Stats e dano (`core/stats.ts`) (**implementada**; painel em `dev/damage.html`)
 1. Atributos: ATK, DEF, AGI, Sorte, HP (Vida), Armadura, Dano; mais tarde Ataque mágico e Resistência mágica (existem no original de 2022).
    Conta de referência para escala de números em `docs/pesquisa-mecanicas.md` §6. Equipamentos com stats fixos (sem forja).
 2. Fórmula de dano de `docs/pesquisa-mecanicas.md` §3 (ATK/10 somado ao dano base; armadura e DEF/25; redução A/(A+100);

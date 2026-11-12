@@ -36,7 +36,7 @@ it("tiro que sai pela lateral termina sem cratera e andar respeita a borda", () 
   expect(m.getChar("b")!.x).toBe(598);
 });
 
-it("morte no primeiro impacto não interrompe os disparos e fim ocorre depois do último voo", () => {
+it("morte no primeiro impacto encerra a partida depois do último voo, sem tiros restantes", () => {
   const m = new Match({ seed: 12, terrain: Terrain.fromHeightFn(600, 500, () => 350), players: [
     { id: "a", team: 1, x: 100, weaponId: "sledge", hp: 10000, agi: 3300 },
     { id: "b", team: 2, x: 300, weaponId: "sledge", hp: 1 },
@@ -44,8 +44,9 @@ it("morte no primeiro impacto não interrompe os disparos e fim ocorre depois do
   const item = m.submit({ type: "item", playerId: "a", key: "1" }); if (!item.ok) throw Error(item.error);
   const result = m.submit({ type: "shoot", playerId: "a", angleDeg: 20, power: 21 }); if (!result.ok) throw Error(result.error);
   const shots = result.events.filter(e => e.type === "shot"), death = result.events.find(e => e.type === "death"), end = result.events.find(e => e.type === "gameOver");
-  expect(shots).toHaveLength(3); expect(shots.map(s => s.at)).toEqual([0, 1, 2]);
+  expect(shots).toHaveLength(1);
   expect(death).toBeDefined(); expect(end).toBeDefined();
   expect(end!.at).toBeGreaterThanOrEqual(Math.max(...shots.map(s => s.at! + s.duration)));
-  expect(end!.at).toBeGreaterThan(death!.at!);
+  expect(end!.at).toBeGreaterThanOrEqual(death!.at!);
+  expect(m.submit({ type: "shoot", playerId: "a", angleDeg: 20, power: 21 }).ok).toBe(false);
 });

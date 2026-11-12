@@ -23,7 +23,7 @@ pelos campos `ShootSound` e `BombSound` do seed `Ball.json.gz`, cujo hash está
 no manifesto. São respectivamente 023/087, 069/088, 116/107, 113/105,
 025/087 e 083/088, na ordem das bolas acima.
 
-`/effects.html` no servidor de desenvolvimento mostra os seis voos e impactos;
+`/dev/effects.html` no servidor de desenvolvimento mostra os seis voos e impactos;
 clique na metade esquerda ou direita de uma linha para ouvir tiro ou impacto.
 O renderer Canvas reproduz formas, matrizes, profundidade e multiplicador de
 alfa. Não é um runtime Flash completo: não implementa filtros nem transformações
