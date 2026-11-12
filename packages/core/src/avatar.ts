@@ -2,6 +2,7 @@
  * Recursos PNG compatíveis do mesmo pacote doador usado pelo Reborn. Ver docs/avatar.md. */
 import catalog from "./reference/avatar.json";
 import { cnPiece } from "./wardrobe-catalog";
+import { WEAPON_ART } from "./forge";
 import { HAIR_COLORS, PIECE_COLORS, SKIN_TONES, sanitizeLook, type Look } from "./appearance";
 
 export type AvatarMode = "game" | "show";
@@ -19,7 +20,10 @@ export function avatarLayers(raw: Look, weaponId: string, mode: AvatarMode): Ava
   const layers: AvatarLayer[] = [];
   if (e.wings) layers.push({ slot: "wing", group: "wing", file: catalog.wings["1"] });
   const weapons: Record<string, { game: string; show: string }> = catalog.weapons;
-  const weapon = Object.hasOwn(weapons, weaponId) ? weapons[weaponId]! : weapons.sledge!;
+  // "sledge:1" = arma no estágio 1 (+10/+11) → pasta brick2; ":2" (+12) → brick3 (import-cn-weapons.py traz as artes)
+  const [wid = "sledge", st = "0"] = weaponId.split(":"), stage = Number(st) || 0;
+  const base = Object.hasOwn(weapons, wid) ? weapons[wid]! : weapons.sledge!, art = WEAPON_ART[wid];
+  const weapon = stage > 0 && art ? { game: base.game.replace(`arm/${art}/`, `arm/${art}${stage + 1}/`), show: base.show.replace(`arm/${art}/`, `arm/${art}${stage + 1}/`) } : base;
   // No retrato a arma é a última camada. Na batalha vai atrás do rosto e do corpo.
   if (mode === "game") layers.push({ slot: "weapon", group: "weapon", file: weapon[mode] });
   const part = (slot: "face" | "cloth" | "hair" | "head" | "glass", index: number) => {
@@ -32,7 +36,8 @@ export function avatarLayers(raw: Look, weaponId: string, mode: AvatarMode): Ava
     const color = colorMap?.[`${a.sex}:${key}`] ?? colorMap?.[key] ?? -1;
     const tint = color === undefined ? undefined : PIECE_COLORS[color];
     layers.push({ slot, group, file: files[0]!, ...(slot === "head" && tint ? { tint } : {}) });
-    if (slot === "hair") layers.push({ slot, group, file: files[1]!, tint: HAIR_COLORS[a.hairColor] });
+    // cabelo: 1º arquivo é a arte colorida; o 2º é a máscara cinza tingida com a cor escolhida (sem ela = cor original)
+    if (slot === "hair" && a.hairColor >= 0) layers.push({ slot, group, file: files[1]!, tint: HAIR_COLORS[a.hairColor] });
     if (slot === "face" || slot === "cloth") {
       layers.push({ slot, group, file: files[1]!, tint: SKIN_TONES[a.skin] });
       if (tint) layers.push({ slot, group, file: files[2]!, tint });

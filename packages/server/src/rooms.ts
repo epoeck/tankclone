@@ -1,6 +1,6 @@
 /** Salas e partidas. Lógica pura de servidor: recebe intenções, roda o Match do core e devolve eventos. Sem rede aqui. */
 import { randomInt } from "node:crypto";
-import { playbackDuration, DEFAULT_LOOK, type Look, BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
+import { lookStats, type WeaponState, playbackDuration, DEFAULT_LOOK, type Look, BUILDS, DEFAULT_BUILD, ITEMS, MAPS, Match, WEAPONS, own, type Intent, type MatchEvent } from "@tankclone/core";
 import type { ClientIntent, MatchSetup, RoomInfo } from "./protocol";
 
 export const MAX_ROOM_PLAYERS = 8;
@@ -72,7 +72,7 @@ export class Room {
     return null;
   }
 
-  start(nick: string, now: number): { error: string } | { setup: MatchSetup; events: MatchEvent[] } {
+  start(nick: string, now: number, forge?: (nick: string, weaponId: string) => WeaponState): { error: string } | { setup: MatchSetup; events: MatchEvent[] } {
     if (nick !== this.host) return { error: "só o dono da sala inicia" };
     if (this.status !== "lobby") return { error: "partida já iniciada" };
     const teams = new Set([...this.members.values()].map(m => m.team));
@@ -83,7 +83,8 @@ export class Room {
       const i = idx.get(m.team) ?? 0; idx.set(m.team, i + 1);
       const list = map.spawns?.[m.team === 1 ? "1" : "2"];
       const x = list?.[i] ?? (m.team === 1 ? 150 + i * 140 : map.width - 150 - i * 140);
-      return { id: m.nick, team: m.team, x, spawnY: map.spawnsY?.[m.team === 1 ? "1" : "2"]?.[i], weaponId: m.weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1 };
+      return { id: m.nick, team: m.team, x, spawnY: map.spawnsY?.[m.team === 1 ? "1" : "2"]?.[i], weaponId: m.weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1,
+        ...(forge && !m.bot ? (({ level, compose }) => ({ weaponLevel: level, compose }))(forge(m.nick, m.weaponId)) : {}) };
     });
     this.setup = { seed: randomInt(1, 2 ** 31), mapId: this.mapId, players };
     this.match = buildMatch(this.setup);
@@ -141,7 +142,8 @@ export class Room {
 export function buildMatch(setup: MatchSetup): Match {
   return new Match({
     seed: setup.seed, terrain: own(MAPS, setup.mapId)!.build(), config: { windMultiplier: own(MAPS, setup.mapId)!.windMultiplier ?? 1 },
-    players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: p.spawnY, weaponId: p.weaponId, facing: p.facing, stats: own(BUILDS, p.build) })),
+    players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: p.spawnY, weaponId: p.weaponId, facing: p.facing, weaponLevel: p.weaponLevel ?? 0,
+      stats: equippedStats(p.build, p.look, p.compose) })),
   });
 }
 
@@ -212,4 +214,10 @@ export class Lobby {
       if (![...r.members.values()].some(m => m.connected)) { this.rooms.delete(r.id); this.forget(r); }
     }
   }
+}
+
+/** Build da sala + atributos das peças de visual vestidas (atk/def/agi/sorte). */
+export function equippedStats(build: string, look: Look, compose?: WeaponState["compose"]) {
+  const b = own(BUILDS, build) ?? own(BUILDS, DEFAULT_BUILD)!, s = lookStats(look), c = compose ?? { atk: 0, def: 0, agi: 0, luck: 0 };
+  return { ...b, atk: b.atk + s.atk + c.atk, def: b.def + s.def + c.def, agi: b.agi + s.agi + c.agi, luck: b.luck + s.luck + c.luck };
 }

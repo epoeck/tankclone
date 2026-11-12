@@ -4,6 +4,7 @@
  * saída = lista de eventos para o cliente animar. Sem DOM, rede, relógio ou Math.random.
  */
 import { craterShape } from "./craters";
+import { STRENGTHEN_MAX, WEAPON_BALLS, strengthenedDamage, weaponStage } from "./forge";
 import { clampAbsoluteAngle } from "./angle";
 import { DEFAULT_MATCH, FLY_ANGLE, FLY_BALL_ID, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, PLAYER_HITBOX, muzzlePoint, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
@@ -26,6 +27,8 @@ export interface PlayerSetup {
   /** Força de combate (define o tempo de turno de 5 s). Se omitida, calculada dos stats. */
   fc?: number;
   facing?: Facing;
+  /** Nível de fortalecimento da arma (+0..+12): dano-base × 1,1^nível e bolas/arte do estágio (forge.ts). */
+  weaponLevel?: number;
 }
 
 export interface Character {
@@ -47,6 +50,7 @@ export interface Character {
   delay: number;
   alive: boolean;
   flyCooldown: number;
+  weaponLevel: number;
 }
 
 export type Intent =
@@ -120,6 +124,8 @@ interface TurnState {
   special: boolean;
   /** Início (na linha do tempo das animações) do primeiro tiro do turno; os seguintes saem a cada SHOT_INTERVAL_SECONDS. */
   burstStart: number;
+  /** Último item que muda a bola (como Player.Prop do original): +tiros → MultiBall, +dano → AddWound. */
+  prop: "multi" | "wound" | null;
 }
 
 /** Reborn (GameLocalPlayer: Timer de Player.SHOOT_TIMER = 1000 ms): com tiros extras, um único soltar dispara todos,
@@ -167,6 +173,7 @@ export class Match {
       this.chars.push({
         id: p.id, team: p.team, x: p.x, y, facing: p.facing ?? 1, hp: stats.hp, maxHp: stats.hp,
         agi, stats, fc: p.fc ?? combatPower(stats), weaponId: p.weaponId, energy: maxEnergy, maxEnergy, fury: 0, delay: turnDelay(stats), alive: true, flyCooldown: 0,
+        weaponLevel: Math.max(0, Math.min(STRENGTHEN_MAX, Math.floor(p.weaponLevel ?? 0))),
       });
     }
     if (this.chars.length < 2) throw new Error("a partida precisa de ao menos 2 jogadores");
@@ -317,6 +324,7 @@ export class Match {
     this.ts.extraShots += def.extraShots ?? 0;
     this.ts.triple ||= !!def.triple;
     this.ts.fly ||= !!def.fly;
+    if (def.extraShots) this.ts.prop = "multi"; else if (def.damageBonus) this.ts.prop = "wound";
     if (def.fly) c.flyCooldown = 2;
     return { ok: true, events: [{ type: "item", playerId: c.id, key, energyLeft: c.energy }] };
   }
@@ -329,7 +337,7 @@ export class Match {
 
   private doShoot(angleDeg: number, power: number, specialReq: boolean): Outcome {
     let special = specialReq;
-    const c = this.current, cfg = this.cfg, T = this.terrain, weapon = own(WEAPONS, c.weaponId)!;
+    const c = this.current, cfg = this.cfg, T = this.terrain, weapon = this.weaponOf(c);
     if (!Number.isFinite(angleDeg) || !Number.isFinite(power)) return { ok: false, error: "valores inválidos" };
     if (this.ts.shotsFired > 0) special = this.ts.special; // o especial é decidido no primeiro tiro
     if (this.ts.shotsFired === 0 && special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
@@ -369,7 +377,7 @@ export class Match {
       // As bolas do leque saem juntas. Os impactos são aplicados em ordem de chegada.
       for (const { r, mult } of results) events.push({
         type: "shot", playerId: c.id, index: index++, points: r.points, hit: r.hit, hitKind: r.hitKind,
-        targetId: r.targetId, damageMult: mult, ballId: ts.fly ? FLY_BALL_ID : special ? weapon.special.ballId : weapon.ballId, aimDeg: ang, power: pow, aimFacing: c.facing, stepSeconds: this.physics.dt, duration: r.duration, at: start,
+        targetId: r.targetId, damageMult: mult, ballId: this.visualBall(c, special, count), aimDeg: ang, power: pow, aimFacing: c.facing, stepSeconds: this.physics.dt, duration: r.duration, at: start,
       });
       for (const { r, mult } of [...results].sort((a, b) => a.r.duration - b.r.duration)) {
         const effects: MatchEvent[] = [];
@@ -399,6 +407,23 @@ export class Match {
     if (g < 0) return;
     c.x = x; c.y = g;
     events.push({ type: "fly", playerId: c.id, x, y: g });
+  }
+
+  /** Arma do personagem com o dano-base do fortalecimento. As crateras seguem a bola-base da arma. */
+  private weaponOf(c: Character): WeaponDef {
+    const w = own(WEAPONS, c.weaponId)!;
+    return c.weaponLevel ? { ...w, baseDamage: strengthenedDamage(w.baseDamage, c.weaponLevel) } : w;
+  }
+
+  /** Bola mostrada no tiro (Player.Shoot do original): voo; especial; com 1 bola, +tiros → MultiBall e +dano → AddWound. */
+  private visualBall(c: Character, special: boolean, count: number): number {
+    if (this.ts.fly) return FLY_BALL_ID;
+    const b = WEAPON_BALLS[c.weaponId]?.[weaponStage(c.weaponLevel)], w = own(WEAPONS, c.weaponId)!;
+    if (!b) return special ? w.special.ballId : w.ballId;
+    if (special) return b.special;
+    if (count === 1 && this.ts.prop === "multi") return b.multi;
+    if (count === 1 && this.ts.prop === "wound") return b.addWound;
+    return b.common;
   }
 
   private impact(shooter: Character, weapon: WeaponDef, hit: { x: number; y: number }, mult: number, special: boolean, events: MatchEvent[]): void {
@@ -473,5 +498,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false, burstStart: 0 };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false, burstStart: 0, prop: null };
 }

@@ -131,7 +131,7 @@ export class Hud {
     let c = this.portraits.get(id);
     if (!c) { c = document.createElement("canvas"); c.width = 42; c.height = 42; this.portraits.set(id, c); }
     const ch = this.view.chars.get(id)!;
-    drawCharPortrait(c, ch.look, ch.weaponId);
+    drawCharPortrait(c, ch.look, ch.weaponArt);
     return c;
   }
 
@@ -161,7 +161,7 @@ export class Hud {
     // console: mostra o jogador que você controla (ou o da vez, no jogo local)
     const who = (me ? v.chars.get(me) : undefined) ?? cur;
     if (who) {
-      drawCharPortrait(this.meCanvas, who.look, who.weaponId);
+      drawCharPortrait(this.meCanvas, who.look, who.weaponArt);
       this.name.textContent = who.id; el(this.root, '[data-k="weapon"]').textContent = own(WEAPONS, who.weaponId)?.name ?? "";
       this.hpBar.style.setProperty("--value", `${(who.hp / who.maxHp) * 100}%`); this.hpText.textContent = `${fmt(who.hp)} / ${fmt(who.maxHp)}`;
       const en = who === cur ? who.energy : who.maxEnergy;

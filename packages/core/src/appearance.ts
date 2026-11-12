@@ -1,4 +1,4 @@
-import { isAvailablePiece, cnPieces, legacyCount, type WardrobeSlot } from "./wardrobe-catalog";
+import { isAvailablePiece, cnPieces, legacyCount, pieceInfo, NO_STATS, type PieceStats, type WardrobeSlot } from "./wardrobe-catalog";
 /**
  * Aparência do personagem clássico, composta por itens e folhas GAME/SHOW.
  * - `Appearance`: sexo, pele, rosto, cabelo + cor do cabelo — escolha livre do jogador.
@@ -10,6 +10,8 @@ import { isAvailablePiece, cnPieces, legacyCount, type WardrobeSlot } from "./wa
 export const SKIN_TONES = ["#FFE0C7", "#F2C79F", "#D9A066", "#B97A4B", "#8A5530", "#5E3A22"] as const;
 export const PIECE_COLORS = ["#6B3A1F", "#1F1F2B", "#F5C542", "#E0372A", "#3B6FD1", "#4FC263", "#F28FC2", "#E8ECF2"] as const;
 export const HAIR_COLORS = ["#6B3A1F", "#1F1F2B", "#F5C542", "#E0372A", "#3B6FD1", "#4FC263", "#F28FC2", "#E8ECF2"] as const;
+/** Cor do cabelo "original": a camada colorida da arte sem a máscara de tintura (o 2º arquivo do cabelo não é desenhado). */
+export const HAIR_ORIGINAL = -1;
 /** Opções do catálogo clássico (src/reference/avatar.json). hat/glasses/wings: 0 = sem item. */
 export const COUNTS = { skin: SKIN_TONES.length, face: 3, hair: 3, hairColor: HAIR_COLORS.length, outfit: 3, hat: 3, glasses: 2, wings: 2 } as const;
 
@@ -53,8 +55,18 @@ export function sanitizeLook(raw: unknown): Look {
   };
   return {
     appearance: { sex, skin: int(a.skin, COUNTS.skin, d.appearance.skin), face: piece(a.face, "face"),
-      hair: piece(a.hair, "hair"), hairColor: int(a.hairColor, COUNTS.hairColor, d.appearance.hairColor) },
+      hair: piece(a.hair, "hair"), hairColor: a.hairColor === HAIR_ORIGINAL ? HAIR_ORIGINAL : int(a.hairColor, COUNTS.hairColor, d.appearance.hairColor) },
     tints: { face: colors(t.face, "face"), outfit: colors(t.outfit, "cloth"), hat: colors(t.hat, "head", 1) },
     equipped: { outfit: piece(e.outfit, "cloth"), hat: piece(e.hat, "head", 1), glasses: piece(e.glasses, "glass", 1), wings: int(e.wings, COUNTS.wings, 0) },
   };
+}
+
+/** Soma dos atributos das peças vestidas (rosto, cabelo, roupa, chapéu, óculos), como os equipamentos de visual do original. */
+export function lookStats(raw: unknown): PieceStats {
+  const l = sanitizeLook(raw), sex = l.appearance.sex, e = l.equipped, out = { ...NO_STATS };
+  const add = (slot: WardrobeSlot, index: number) => { const s = pieceInfo(sex, slot, index).stats; out.atk += s.atk; out.def += s.def; out.agi += s.agi; out.luck += s.luck; };
+  add("face", l.appearance.face); add("hair", l.appearance.hair); add("cloth", e.outfit);
+  if (e.hat) add("head", e.hat - 1);
+  if (e.glasses) add("glass", e.glasses - 1);
+  return out;
 }

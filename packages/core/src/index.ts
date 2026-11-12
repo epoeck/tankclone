@@ -14,3 +14,4 @@ export * from "./appearance";
 export * from "./avatar";
 
 export * from "./wardrobe-catalog";
+export * from "./forge";

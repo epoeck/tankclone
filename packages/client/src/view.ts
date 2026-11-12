@@ -12,14 +12,16 @@ import { applyCharacterMove } from "./character-state";
 import { drawImpact, drawProjectile, drawTrail, impactDuration, TRAIL_MAX_LIFE } from "./projectile-effects";
 import { preloadLocalSfx, projectileSfx, sfx, stopSfx } from "./sound";
 import {
-  BUILDS, DEFAULT_LOOK, HANDCLIP_SECONDS, MatchPlayback, allowedAbsoluteRange, FLY_ANGLE, FLY_BALL_ID, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
+  BUILDS, DEFAULT_LOOK, HANDCLIP_SECONDS, ballInfo, weaponStage, MatchPlayback, allowedAbsoluteRange, FLY_ANGLE, FLY_BALL_ID, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
   type Facing, type ItemKey, type Look, type MatchEvent,
 } from "@tankclone/core";
 
-export interface PlayerInfo { id: string; team: number; weaponId: string; build: string; x: number; spawnY?: number; facing: Facing; look?: Look }
+export interface PlayerInfo { id: string; team: number; weaponId: string; build: string; x: number; spawnY?: number; facing: Facing; look?: Look; weaponLevel?: number }
 
 export interface CharView {
   id: string; team: number; weaponId: string; x: number; y: number; hp: number; maxHp: number;
+  /** Arte da arma no boneco: "sledge", ou "sledge:1"/"sledge:2" para os modelos do +10/+12. */
+  weaponArt: string;
   fury: number; alive: boolean; facing: Facing; energy: number; maxEnergy: number; look: Look; walk: number; delay: number; action?: "shoot" | "hit" | "handclip"; actionStart?: number; deathAge?: number;
   /** Itens usados neste instante: animação de pegar item e o ícone sobre a cabeça. */
   itemFx?: Array<{ key: string; start: number }>;
@@ -44,7 +46,7 @@ export class MatchView {
   private pendingShots = new Map<string, LastShot[]>();
   private tails: Array<{ weapon: string; special: boolean; trail: Array<{ x: number; y: number }>; elapsed: number; age: number }> = [];
   private damagePopups: Array<{ playerId: string; amount: number; crit: boolean; x: number; y: number; age: number; variant: number }> = [];
-  private impacts: Array<{ x: number; y: number; weapon: string; special: boolean; age: number }> = [];
+  private impacts: Array<{ x: number; y: number; weapon: string; special: boolean; ballId?: number; age: number }> = [];
   private layer: TerrainLayer;
   private playback = new MatchPlayback();
   private cam = 0;
@@ -67,7 +69,7 @@ export class MatchView {
       const st = own(BUILDS, p.build) ?? BUILDS.media!;
       const y = this.terrain.surfaceY(p.x, p.spawnY ?? 0);
       const maxEnergy = 240 + Math.floor(st.agi / 30);
-      this.chars.set(p.id, { id: p.id, team: p.team, weaponId: p.weaponId, x: p.x, y, hp: st.hp, maxHp: st.hp, fury: 0, alive: true, facing: p.facing, energy: maxEnergy, maxEnergy, look: p.look ?? DEFAULT_LOOK, walk: 0, delay: 0 });
+      this.chars.set(p.id, { id: p.id, team: p.team, weaponId: p.weaponId, weaponArt: weaponStage(p.weaponLevel ?? 0) ? `${p.weaponId}:${weaponStage(p.weaponLevel ?? 0)}` : p.weaponId, x: p.x, y, hp: st.hp, maxHp: st.hp, fury: 0, alive: true, facing: p.facing, energy: maxEnergy, maxEnergy, look: p.look ?? DEFAULT_LOOK, walk: 0, delay: 0 });
       this.order.push(p.id);
     }
   }
@@ -170,8 +172,11 @@ export class MatchView {
     }
   }
 
-  private projectileVisual(ballId: number | undefined, fallback?: string): { weapon: string; special: boolean } | undefined {
+  private projectileVisual(ballId: number | undefined, fallback?: string): { weapon: string; special: boolean; ballId?: number } | undefined {
     if (ballId === FLY_BALL_ID) return { weapon: "fly", special: false };
+    // bolas dos estágios +10/+12 e dos itens (+tiros/+dano): mesma arma, arte própria quando existir
+    const info = ballId === undefined ? undefined : ballInfo(ballId);
+    if (info) return { weapon: info.weaponId, special: info.kind === "special", ballId };
     for (const weapon of Object.values(WEAPONS)) {
       if (weapon.ballId === ballId) return { weapon: weapon.id, special: false };
       if (weapon.special.ballId === ballId) return { weapon: weapon.id, special: true };
@@ -244,7 +249,7 @@ export class MatchView {
     }
     for (const c of this.chars.values()) {
       if (!c.alive) {
-        drawDeath(ctx, c.look, c.weaponId, c.x, c.y, c.facing, c.deathAge ?? 0, this.terrain.slopeDeg(c.x, c.y, c.facing));
+        drawDeath(ctx, c.look, c.weaponArt, c.x, c.y, c.facing, c.deathAge ?? 0, this.terrain.slopeDeg(c.x, c.y, c.facing));
         continue;
       }
       this.drawTank(ctx, c, c.id === this.hud.player && !this.busy);
@@ -255,11 +260,11 @@ export class MatchView {
       if (c.id === me) { ctx.fillStyle = "#ffe98a"; ctx.beginPath(); ctx.moveTo(c.x, by - 16); ctx.lineTo(c.x - 5, by - 24); ctx.lineTo(c.x + 5, by - 24); ctx.fill(); }
     }
     for (const tail of this.tails) drawTrail(ctx, tail.weapon, tail.special, tail.trail, tail.elapsed, tail.age);
-    for (const impact of this.impacts) drawImpact(ctx, impact.weapon, impact.special, impact.x, impact.y, impact.age);
+    for (const impact of this.impacts) drawImpact(ctx, impact.weapon, impact.special, impact.x, impact.y, impact.age, impact.ballId);
     for (const p of projectiles) {
       const visual = this.projectileVisual(p.ballId, this.chars.get(p.playerId)?.weaponId);
       if (visual) drawTrail(ctx, visual.weapon, visual.special, p.trail, p.elapsed);
-      if (!visual || !drawProjectile(ctx, visual.weapon, visual.special, p.x, p.y, p.angle, p.elapsed)) {
+      if (!visual || !drawProjectile(ctx, visual.weapon, visual.special, p.x, p.y, p.angle, p.elapsed, visual.ballId)) {
         ctx.fillStyle = "#101010"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, 7); ctx.fill(); ctx.stroke();
       }
     }
@@ -291,6 +296,6 @@ export class MatchView {
   private drawTank(ctx: CanvasRenderingContext2D, c: CharView, aiming: boolean): void {
     const elapsed = performance.now() / 1000 - (c.actionStart ?? -Infinity);
     const window = c.action === "handclip" ? HANDCLIP_SECONDS : 0.24;
-    drawCharacter(ctx, c.look, { action: elapsed < window ? c.action : undefined, actionElapsed: elapsed, facing: c.facing, slopeDeg: this.terrain.slopeDeg(c.x, c.y, c.facing), angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponId, aiming, crouch: true }, c.x, c.y);
+    drawCharacter(ctx, c.look, { action: elapsed < window ? c.action : undefined, actionElapsed: elapsed, facing: c.facing, slopeDeg: this.terrain.slopeDeg(c.x, c.y, c.facing), angleDeg: this.ui.angle, walk: c.walk, weaponId: c.weaponArt, aiming, crouch: true }, c.x, c.y);
   }
 }

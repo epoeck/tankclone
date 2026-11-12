@@ -17,9 +17,13 @@ target = root / 'packages/client/public/projectiles'
 target.mkdir(parents=True, exist_ok=True)
 manifest = {'source': 'thurdev/ddtank-reborn dab2b445f153a6852b48182d4afe5c43ebbe3e16, conversão local swf-export', 'files': {}}
 for kind in ('bullet', 'blastout'):
-    for ball in (3, 101, 111, 161, 171, 381, 391):
+    # base, especial, +dano (AddWound) e +1/+2 (MultiBall) de cada estágio da arma (+0, +10, +12) — ballconfig do Reborn
+    for ball in (3, 101, 111, 1011, 1012, 102, 112, 1021, 1022, 103, 113, 1031, 1032,
+                 161, 171, 1611, 1612, 162, 172, 1621, 1622, 163, 173, 1631, 1632,
+                 381, 391, 3811, 3812, 382, 392, 3821, 3822, 383, 393, 3831, 3832):
         name = f'{kind}{ball}'
         src = source / kind / name
+        if not (src / 'library.json').exists(): continue  # nem toda bola tem as duas bibliotecas
         lib = json.loads((src / 'library.json').read_text())
         files = {'library.json'} | {c['img'] for c in lib['chars'].values() if c['k'] == 'shape' and 'img' in c}
         for file in sorted(files):

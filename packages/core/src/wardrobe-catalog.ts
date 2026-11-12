@@ -15,3 +15,11 @@ export function isAvailablePiece(sex: AvatarSex, slot: WardrobeSlot, index: numb
   return Number.isInteger(index) && index >= 0 && (index < legacy[slot] || !!cnPiece(sex, slot, index)?.complete);
 }
 export function legacyCount(slot: WardrobeSlot): number { return legacy[slot]; }
+
+/** Atributos de uma peça (TemplateAlllist do CN 14.7: quase todas dão +5 em cada). Peças clássicas antigas não têm. */
+export type PieceStats = { atk: number; def: number; agi: number; luck: number };
+export const NO_STATS: PieceStats = { atk: 0, def: 0, agi: 0, luck: 0 };
+export function pieceInfo(sex: AvatarSex, slot: WardrobeSlot, index: number): { name?: string; templateId?: number; stats: PieceStats } {
+  const p = cnPiece(sex, slot, index) as (CatalogPiece & { name?: string; templateId?: number; stats?: PieceStats }) | undefined;
+  return { name: p?.name, templateId: p?.templateId, stats: p?.stats ?? NO_STATS };
+}

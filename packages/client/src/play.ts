@@ -8,9 +8,10 @@ import { EndScreen } from "./end-screen";
 import { Controls } from "./controls";
 import { MatchView, VIEW_H, VIEW_W } from "./view";
 import { Wardrobe } from "./wardrobe";
+import { Forge } from "./forge";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const screens = ["s-login", "s-lobby", "s-wardrobe", "s-room", "match"];
+const screens = ["s-login", "s-lobby", "s-wardrobe", "s-forge", "s-room", "match"];
 const show = (id: string) => screens.forEach(s => $(s).classList.toggle("on", s === id));
 const toast = (msg: string) => { const t = $("toast"); t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 3500); };
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, text = "", cls = "") => { const e = document.createElement(tag); if (text) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -59,7 +60,8 @@ function onMsg(m: ServerMsg) {
     case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); wardrobe.confirm(m.look); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
     case "error": toast(m.msg); wardrobe.fail(m.msg); break;
     case "rooms": renderRooms(m.rooms); break;
-    case "room": room = m.room; if (room) { if (!view) { renderRoom(); if (!$("s-wardrobe").classList.contains("on")) show("s-room"); } } else { if (!$("s-wardrobe").classList.contains("on")) show("s-lobby"); send({ t: "rooms" }); } break;
+    case "room": { room = m.room; const away = $("s-wardrobe").classList.contains("on") || $("s-forge").classList.contains("on");
+      if (room) { if (!view) { renderRoom(); if (!away) show("s-room"); } } else { if (!away) show("s-lobby"); send({ t: "rooms" }); } break; }
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
     case "events": view?.push(m.events); break;
@@ -71,6 +73,7 @@ function onMsg(m: ServerMsg) {
       endPending = true; endCards = !!m.cards && !!mine; endWinner = m.winnerTeam;
       break;
     }
+    case "forge": { if (me) { me.gold = m.gold; renderMe(); } forge.update(m); if (m.result) toast(m.result); break; }
     case "card": {
       if (me) { me.xp = m.xp; me.level = m.level; me.gold = m.gold; renderMe(); }
       const what = m.reward.kind === "gold" ? `+${m.reward.amount} gold` : `+${m.reward.amount} XP`;
@@ -117,6 +120,14 @@ function openWardrobe() {
     room?.players.find(p => p.nick === me!.nick)?.weaponId);
 }
 $("btn-wardrobe").onclick = openWardrobe;
+const forge = new Forge($("s-forge"), m => send(m as unknown as ClientMsg), () => { show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); });
+function openForge() {
+  if (!me) return;
+  const mine = room?.players.find(p => p.nick === me!.nick);
+  show("s-forge"); forge.open(me.look, mine?.weaponId);
+}
+$("btn-forge").onclick = openForge;
+$("btn-room-forge").onclick = openForge;
 $("btn-room-wardrobe").onclick = openWardrobe;
 function renderMe() {
   if (!me) return;

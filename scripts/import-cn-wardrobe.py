@@ -89,3 +89,6 @@ CAT.write_text(json.dumps(catalog,ensure_ascii=False,separators=(',',':'))+'\n')
 print(f'{len(records)} arquivos crus, {sum(r["decoded"] for r in records)} PNGs válidos')
 for sex in ('m','f'):
  print(sex, {k:(len(v),sum(x['complete'] for x in v)) for k,v in catalog['sexes'][sex].items()})
+# nome, TemplateID e atributos de cada peça (TemplateAlllist.xml)
+import subprocess
+subprocess.run([sys.executable, str(Path(__file__).with_name('cn-wardrobe-stats.py')), str(SOURCE)], check=True)

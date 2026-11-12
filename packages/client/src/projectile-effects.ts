@@ -43,20 +43,24 @@ function drawChar(ctx: CanvasRenderingContext2D, asset: Loaded, id: number, fram
   }
   return drawn;
 }
-function render(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, kind: 'flight' | 'impact', x: number, y: number, angle: number, age: number): boolean {
-  const ball = (ids[weapon] ?? ids.sledge)![special ? 1 : 0];
+function render(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, kind: 'flight' | 'impact', x: number, y: number, angle: number, age: number, variant?: number): boolean {
+  const base = (ids[weapon] ?? ids.sledge)![special ? 1 : 0];
   // O exportador nomeia a biblioteca do projétil "blastout" e a explosão "bullet".
-  const asset = library(`${kind === 'flight' ? 'blastout' : 'bullet'}${ball}`); if (!asset) return false;
+  // Bola do estágio/item (ex.: 382, 3811) quando existir; senão a bola-base da arma.
+  const prefix = kind === 'flight' ? 'blastout' : 'bullet';
+  let ball = base, asset = variant && variant !== base ? library(`${prefix}${variant}`) : null;
+  if (asset) ball = variant!; else asset = library(`${prefix}${base}`);
+  if (!asset) return false;
   const id = asset.lib.classes[`${kind === 'flight' ? 'bullet' : 'blastOutMovie'}${ball}`]?.id; if (!id) return false;
   if (kind === 'impact' && age * asset.lib.frameRate >= (asset.lib.chars[id]?.tl?.n ?? 0)) return false;
   ctx.save(); ctx.translate(x, y); if (kind === 'flight') ctx.rotate(angle);
   const drawn = drawChar(ctx, asset, id, Math.floor(Math.max(0, age) * asset.lib.frameRate), kind === 'flight'); ctx.restore(); return drawn;
 }
-export function drawProjectile(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, x: number, y: number, angle: number, ageSeconds: number): boolean {
-  return render(ctx, weapon, special, 'flight', x, y, angle, ageSeconds);
+export function drawProjectile(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, x: number, y: number, angle: number, ageSeconds: number, ballId?: number): boolean {
+  return render(ctx, weapon, special, 'flight', x, y, angle, ageSeconds, ballId);
 }
-export function drawImpact(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, x: number, y: number, ageSeconds: number): boolean {
-  return render(ctx, weapon, special, 'impact', x, y, 0, ageSeconds);
+export function drawImpact(ctx: CanvasRenderingContext2D, weapon: string, special: boolean, x: number, y: number, ageSeconds: number, ballId?: number): boolean {
+  return render(ctx, weapon, special, 'impact', x, y, 0, ageSeconds, ballId);
 }
 
 // Iniciar o download antes do primeiro tiro.

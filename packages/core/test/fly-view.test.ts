@@ -26,11 +26,11 @@ it.each([false, true])("item F reproduz avião e sons no MatchView (log legado: 
   expect(calls.sound).toHaveBeenCalledWith("fly", false, false);
   const original = wire.find(event => event.type === "shot");
   expect(original && original.type === "shot" ? original.ballId : null).toBe(legacy ? 381 : 3);
-  expect(calls.projectile).toHaveBeenCalledWith(expect.anything(), "fly", false, expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number));
+  expect(calls.projectile).toHaveBeenCalledWith(expect.anything(), "fly", false, expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number), undefined);
   const flight = wire.find(event => event.type === "shot"); if (!flight || flight.type !== "shot") throw new Error("sem voo");
   view.update(flight.duration - 0.01); view.draw(context as unknown as CanvasRenderingContext2D, null);
   expect(calls.sound).toHaveBeenCalledWith("fly", false, true);
-  expect(calls.impact).toHaveBeenCalledWith(expect.anything(), "fly", false, expect.any(Number), expect.any(Number), expect.any(Number));
+  expect(calls.impact).toHaveBeenCalledWith(expect.anything(), "fly", false, expect.any(Number), expect.any(Number), expect.any(Number), undefined);
   vi.unstubAllGlobals();
 });
 

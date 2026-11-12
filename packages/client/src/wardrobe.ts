@@ -1,8 +1,8 @@
-import { COUNTS, HAIR_COLORS, PIECE_COLORS, SKIN_TONES, sanitizeLook, cnPieces, legacyCount, type WardrobeSlot, type AvatarSex, type Look } from "@tankclone/core";
+import { lookStats, type PieceStats, COUNTS, HAIR_COLORS, HAIR_ORIGINAL, PIECE_COLORS, SKIN_TONES, sanitizeLook, cnPieces, legacyCount, type WardrobeSlot, type AvatarSex, type Look } from "@tankclone/core";
 import { drawCharPortrait, drawWardrobePiece } from "./chars";
 
 type Category = "outfit" | "hair" | "face" | "hat" | "glasses" | "wings";
-type Piece = { id: string; category: Category; index: number; name: string; complete: boolean; icon?: string | null };
+type Piece = { id: string; category: Category; index: number; name: string; complete: boolean; icon?: string | null; stats?: PieceStats };
 const CATEGORIES: { id: Category; label: string; singular: string; optional?: boolean }[] = [
   { id: "outfit", label: "Roupas", singular: "Roupa" },
   { id: "hair", label: "Cabelos", singular: "Cabelo" },
@@ -24,7 +24,8 @@ function pieces(sex: AvatarSex): Piece[] {
     const slot = slotFor[c.id]; if (!slot) return [];
     const offset = c.optional ? 1 : 0;
     return cnPieces(sex, slot).map((item, i) => ({ id: `${c.id}-${i + legacyCount(slot) + offset}`, category: c.id,
-      index: i + legacyCount(slot) + offset, name: `${c.singular} ${item.pic}`, complete: item.complete, icon: item.icon }));
+      index: i + legacyCount(slot) + offset, name: (item as { name?: string }).name || `${c.singular} ${item.pic}`, complete: item.complete, icon: item.icon,
+      stats: (item as { stats?: PieceStats }).stats }));
   })];
 }
 const PAGE_SIZE = 12;
@@ -207,6 +208,11 @@ export class Wardrobe {
       ["skin", SKIN_TONES, "skin", "Tom de pele"], ["hair-color", HAIR_COLORS, "hairColor", "Cor do cabelo"],
     ] as const) {
       const palette = this.get(host); palette.replaceChildren();
+      if (key === "hairColor") { // cor original da arte do cabelo (sem tintura)
+        const b = button("Original", "wardrobe__toggle"); b.title = "Cor original do cabelo";
+        b.setAttribute("aria-pressed", String(this.draft.appearance.hairColor === HAIR_ORIGINAL)); b.disabled = !!this.pending;
+        b.onclick = () => this.mutate(l => { l.appearance.hairColor = HAIR_ORIGINAL; }); palette.append(b);
+      }
       colors.forEach((color, index) => {
         const b = button("", "wardrobe__swatch"); b.style.setProperty("--swatch", color);
         b.setAttribute("aria-label", `${label} ${index + 1}`); b.title = `${label} ${index + 1}`;
@@ -275,7 +281,9 @@ export class Wardrobe {
     if (!hasItems) return;
     const p = this.selected, c = CATEGORIES.find(c => c.id === p.category)!;
     const text = document.createElement("div"), name = document.createElement("b"), desc = document.createElement("span");
-    name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · Visual sem bônus de atributos` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
+    const st = p.stats, bonus = st && (st.atk || st.def || st.agi || st.luck) ? `Ataque +${st.atk} · Defesa +${st.def} · Agilidade +${st.agi} · Sorte +${st.luck}` : "sem bônus de atributos";
+    const total = lookStats(this.draft);
+    name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus} · Total vestido: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
     text.append(name, desc); host.append(text);
     const worn = value(this.draft, p.category) === p.index;
     const tryOn = button(worn ? "Em uso" : "Experimentar", "btn btn--sm"); tryOn.disabled = worn || !p.complete || !!this.pending;

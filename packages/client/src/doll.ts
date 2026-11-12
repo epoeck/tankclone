@@ -19,7 +19,7 @@ export function applyCharacterTransform(ctx: CanvasRenderingContext2D, x: number
 
 export function drawDoll(ctx: CanvasRenderingContext2D, look: Look, pose: DollPose, x: number, y: number, scale = 1): void {
   const { appearance: a, equipped: e } = look;
-  const skin = SKIN_TONES[a.skin]!, hairC = HAIR_COLORS[a.hairColor]!, cloth = OUTFITS[e.outfit]!;
+  const skin = SKIN_TONES[a.skin]!, hairC = HAIR_COLORS[a.hairColor] ?? HAIR_COLORS[0], cloth = OUTFITS[e.outfit]!;
   ctx.save(); applyCharacterTransform(ctx, x, y, pose.facing, scale, pose.slopeDeg ?? 0);
   // O placeholder acompanha o agachamento em repouso, levantando durante o tiro.
   if (!pose.walk && pose.action !== "shoot") ctx.scale(1, 0.8);

@@ -2,6 +2,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { randomInt } from "node:crypto";
+import { STRENGTHEN_EXP, STRENGTHEN_MAX, WEAPONS, composeWith, own, shopItem, strengthenWith } from "@tankclone/core";
 import { Db, levelForXp, unlocksAt } from "./db";
 import { CARD_PICK_MS, CardTable, type CardReward } from "./cards";
 import { ChatLimiter, cleanChat } from "./chat";
@@ -65,6 +66,8 @@ export function startServer(opts: ServerOptions = {}) {
     const xp = acc?.xp ?? db.getXp(nick);
     sendNick(nick, { t: "card", index: c.index, reward: c.reward, deck: c.deck, auto, level: levelForXp(xp), xp, gold });
   };
+  const sendForge = (nick: string, result?: string) => sendNick(nick, { t: "forge", gold: db.getGold(nick), inventory: db.inventory(nick),
+    weapons: Object.fromEntries(Object.keys(WEAPONS).map(w => [w, db.weapon(nick, w)])), ...(result ? { result } : {}) });
   const pushRoom = (room: Room) => outbox.broadcast(room, { t: "room", room: room.info() });
 
   function afterEvents(room: Room, now: number) {
@@ -156,10 +159,38 @@ export function startServer(opts: ServerOptions = {}) {
       case "setLoadout": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.setLoadout(nick, m.weaponId, m.build); return e ? err(e) : pushRoom(r); }
       case "start": {
         const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
-        const res = r.start(nick, Date.now());
+        const res = r.start(nick, Date.now(), (n, w) => db.weapon(n, w));
         if ("error" in res) return err(res.error);
         outbox.broadcast(r, { t: "start", setup: res.setup, events: res.events });
         return;
+      }
+      case "forge": return sendForge(nick);
+      case "buy": {
+        const it = shopItem(String(m.item)), count = Number(m.count);
+        if (!it) return err("item desconhecido");
+        if (!Number.isInteger(count) || count < 1 || count > 9999) return err("quantidade inválida");
+        const e = db.buy(nick, it.id, count, it.price); return e ? err(e) : sendForge(nick, `Comprou ${count}× ${it.name}`);
+      }
+      case "strengthen": {
+        const it = shopItem(String(m.item)), weaponId = String(m.weaponId), count = Number(m.count);
+        if (!own(WEAPONS, weaponId)) return err("arma desconhecida");
+        if (!it || it.kind !== "strengthen" || !it.exp) return err("use uma pedra de fortalecer");
+        if (!Number.isInteger(count) || count < 1 || count > 9999) return err("quantidade inválida");
+        const before = db.weapon(nick, weaponId);
+        if (before.level >= STRENGTHEN_MAX) return err(`a arma já está no +${STRENGTHEN_MAX}`);
+        if ((db.inventory(nick)[it.id] ?? 0) < count) return err("pedras insuficientes");
+        const { weapon, used } = strengthenWith(before, it.exp, count);
+        const e = db.spendAndSetWeapon(nick, it.id, used, weaponId, weapon); if (e) return err(e);
+        return sendForge(nick, weapon.level > before.level ? `Arma fortalecida: +${weapon.level}` : `+${weapon.exp} EXP (faltam ${STRENGTHEN_EXP[weapon.level + 1]! - weapon.exp})`);
+      }
+      case "compose": {
+        const it = shopItem(String(m.item)), weaponId = String(m.weaponId);
+        if (!own(WEAPONS, weaponId)) return err("arma desconhecida");
+        if (!it || it.kind !== "compose" || !it.attr || !it.value) return err("use uma pedra de composição");
+        if ((db.inventory(nick)[it.id] ?? 0) < 1) return err("pedra insuficiente");
+        const weapon = composeWith(db.weapon(nick, weaponId), it.attr, it.value);
+        const e = db.spendAndSetWeapon(nick, it.id, 1, weaponId, weapon); if (e) return err(e);
+        return sendForge(nick, `Composição: ${it.attr.toUpperCase()} ${it.value}`);
       }
       case "pickCard": { const r = cards.pick(nick, m.index); if (typeof r === "string") return err(r); grantCard(nick, r, false); return; }
       case "intent": {

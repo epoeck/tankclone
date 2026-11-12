@@ -72,3 +72,15 @@ describe("avatar clássico", () => {
     expect(avatarTint("#F2C79F")).toEqual({ fill: [252,239,159], highlight: [50,0,0] });
   });
 });
+
+it("cor original do cabelo: só a arte colorida, sem a máscara tingida; vale também para contas salvas", () => {
+  const base = sanitizeLook({ appearance: { hair: 0, hairColor: 3 } });
+  const original = sanitizeLook({ ...base, appearance: { ...base.appearance, hairColor: -1 } });
+  expect(original.appearance.hairColor).toBe(-1);
+  const hair = (l: typeof base) => avatarLayers(l, "sledge", "show").filter(p => p.slot === "hair");
+  expect(hair(base)).toHaveLength(2);
+  expect(hair(original)).toHaveLength(1);
+  expect(hair(original)[0]!.tint).toBeUndefined();
+  expect(sanitizeLook(JSON.parse(JSON.stringify(original)))).toEqual(original);
+  expect(sanitizeLook({ appearance: { hairColor: -2 } }).appearance.hairColor).not.toBe(-2);
+});

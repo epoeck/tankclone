@@ -21,8 +21,10 @@ Substitui o seletor numérico do vestiário, reutilizando o visual salvo na cont
 - Salvar dentro da sala mantém a mochila aberta e atualiza o visual do membro na sala.
 - Falha de conexão, erro ou timeout não exibem confirmação falsa de salvamento.
 
-As peças desta build são opções visuais livres e não concedem atributos. Isso não
-implementa inventário de instâncias, compras, forja, Figuras ou equipamentos com stats.
+As peças do catálogo CN 14.7 trazem nome e atributos do `TemplateAlllist.xml` (quase todas +5 em ATQ/DEF/AGI/SOR;
+itens de GM com 6666 são ignorados) via `scripts/cn-wardrobe-stats.py`. A soma das peças vestidas (`lookStats`) entra nos
+stats da partida junto com a build e a composição da arma. O cabelo tem a opção **Original** (só a arte colorida, sem a
+máscara de tintura). Ferreiro e loja: `docs/ferreiro.md`.
 
 ## Arquivos
 
