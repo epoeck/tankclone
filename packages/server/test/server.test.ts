@@ -144,18 +144,18 @@ describe("servidor", () => {
 });
 
 describe("aparência", () => {
-  it("setLook é salvo, sanitizado e vai no setup da partida para todos", async () => {
+  it("setLook salva sexo, pele e cores (as peças vêm da mochila) e vai no setup da partida para todos", async () => {
     const { a, b } = await twoPlayers();
     a.send({ t: "setLook", look: { appearance: { sex: "f", skin: 3, face: 2, hair: 1, hairColor: 6 }, equipped: { outfit: 2, hat: 2, glasses: 1, wings: 1 } } });
     const ok = await a.waitFor("authOk");
-    expect(ok.look.appearance).toEqual({ sex: "f", skin: 3, face: 2, hair: 1, hairColor: 6 });
+    expect(ok.look.appearance).toEqual({ sex: "f", skin: 3, face: 0, hair: 0, hairColor: 6 }); // face/hair/roupa vêm do equipado, não do pedido
     b.send({ t: "setLook", look: "lixo" });
     expect((await b.waitFor("authOk")).look.appearance.skin).toBe(1);
     a.send({ t: "start" });
     const st = await b.waitFor("start");
     const alice = st.setup.players.find(p => p.id === "alice")!;
     expect(alice.look.appearance.sex).toBe("f");
-    expect(alice.look.equipped).toEqual({ outfit: 2, hat: 2, glasses: 1, wings: 1 });
+    expect(alice.look.equipped).toEqual({ outfit: 0, hat: 0, glasses: 0, wings: 0 });
     a.close(); b.close();
   });
 });

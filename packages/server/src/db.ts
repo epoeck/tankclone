@@ -1,6 +1,6 @@
 /** Contas, XP e nível em SQLite (node:sqlite, embutido no Node ≥ 22.5; sem serviço externo). */
 import { DEFAULT_LOOK, sanitizeLook, type Look } from "@tankclone/core";
-import { NEW_WEAPON, type WeaponState } from "@tankclone/core";
+import { NEW_WEAPON, OLD_STONE_IDS, REQUIRED_KINDS, SUPER_STONE, WEAPONS, superStonesFromOld, type GearState, type ItemInstance, type ItemKind, type WeaponState } from "@tankclone/core";
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
@@ -44,6 +44,16 @@ export class Db {
     this.db.exec(`CREATE TABLE IF NOT EXISTS weapons (nick TEXT NOT NULL COLLATE NOCASE, weapon TEXT NOT NULL, level INTEGER NOT NULL DEFAULT 0,
       exp INTEGER NOT NULL DEFAULT 0, atk INTEGER NOT NULL DEFAULT 0, def INTEGER NOT NULL DEFAULT 0, agi INTEGER NOT NULL DEFAULT 0,
       luck INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (nick, weapon))`);
+    // mochila original: uma linha por item possuído (instância), com evolução e composição próprias
+    this.db.exec(`CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY AUTOINCREMENT, nick TEXT NOT NULL COLLATE NOCASE, kind TEXT NOT NULL,
+      ref TEXT NOT NULL, sex TEXT NOT NULL DEFAULT '', level INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL DEFAULT 0, atk INTEGER NOT NULL DEFAULT 0,
+      def INTEGER NOT NULL DEFAULT 0, agi INTEGER NOT NULL DEFAULT 0, luck INTEGER NOT NULL DEFAULT 0, place TEXT)`);
+    this.db.exec("CREATE INDEX IF NOT EXISTS items_nick ON items (nick)");
+    // pedras de fortalecer antigas (str1..str5) → Super Pedra pela EXP
+    for (const r of this.db.prepare(`SELECT nick, item, count FROM inventory WHERE item IN (${OLD_STONE_IDS.map(() => "?").join(",")})`).all(...OLD_STONE_IDS) as Array<{ nick: string; item: string; count: number }>) {
+      this.db.prepare("INSERT INTO inventory (nick, item, count) VALUES (?, ?, ?) ON CONFLICT (nick, item) DO UPDATE SET count = count + excluded.count").run(r.nick, SUPER_STONE, superStonesFromOld(r.item, r.count));
+      this.db.prepare("DELETE FROM inventory WHERE nick = ? AND item = ?").run(r.nick, r.item);
+    }
   }
 
   /** scrypt assíncrono: não bloqueia o laço de eventos (~60 ms de CPU fora da thread principal). */
@@ -107,6 +117,84 @@ export class Db {
         .run(nick, weapon, w.level, w.exp, w.compose.atk, w.compose.def, w.compose.agi, w.compose.luck);
       this.db.exec("COMMIT"); return null;
     } catch (e) { this.db.exec("ROLLBACK"); throw e; }
+  }
+
+  // ---------- mochila de itens (instâncias) ----------
+  items(nick: string): ItemInstance[] {
+    return (this.db.prepare("SELECT id, kind, ref, sex, level, exp, atk, def, agi, luck, place FROM items WHERE nick = ? ORDER BY id").all(nick) as Array<Record<string, unknown>>)
+      .map(r => ({ id: Number(r.id), kind: r.kind as ItemKind, ref: String(r.ref), sex: r.sex as "m" | "f" | "", level: Number(r.level), exp: Number(r.exp),
+        compose: { atk: Number(r.atk), def: Number(r.def), agi: Number(r.agi), luck: Number(r.luck) }, place: (r.place as ItemKind | null) ?? null }));
+  }
+  item(nick: string, id: number): ItemInstance | undefined { return this.items(nick).find(i => i.id === id); }
+  private insertItem(nick: string, kind: ItemKind, ref: string, sex: string, place: ItemKind | null, g: GearState = NEW_WEAPON): number {
+    const r = this.db.prepare("INSERT INTO items (nick, kind, ref, sex, level, exp, atk, def, agi, luck, place) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(nick, kind, ref, sex, g.level, g.exp, g.compose.atk, g.compose.def, g.compose.agi, g.compose.luck, place);
+    return Number(r.lastInsertRowid);
+  }
+  /** Primeira vez da conta: 1 instância de cada peça do Look atual e das 3 armas (levando a evolução da tabela `weapons`), tudo equipado. */
+  ensureStarter(nick: string): void {
+    if ((this.db.prepare("SELECT COUNT(*) AS n FROM items WHERE nick = ?").get(nick) as { n: number }).n > 0) return;
+    const look = this.getLook(nick), sex = look.appearance.sex, e = look.equipped;
+    this.db.exec("BEGIN");
+    try {
+      this.insertItem(nick, "face", String(look.appearance.face), sex, "face");
+      this.insertItem(nick, "hair", String(look.appearance.hair), sex, "hair");
+      this.insertItem(nick, "cloth", String(e.outfit), sex, "cloth");
+      if (e.hat) this.insertItem(nick, "head", String(e.hat), sex, "head");
+      if (e.glasses) this.insertItem(nick, "glass", String(e.glasses), sex, "glass");
+      if (e.wings) this.insertItem(nick, "wing", String(e.wings), "", "wing");
+      for (const w of Object.keys(WEAPONS)) this.insertItem(nick, "weapon", w, "", w === "sledge" ? "weapon" : null, this.weapon(nick, w));
+      this.db.exec("COMMIT");
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  /** Tira o que é de outro sexo e garante rosto, cabelo e roupa equipados (padrão grátis, ref 0, criado se faltar). */
+  normalizeEquipped(nick: string, sex: "m" | "f"): void {
+    this.db.exec("BEGIN");
+    try {
+      for (const i of this.items(nick)) if (i.place && i.sex && i.sex !== sex) this.db.prepare("UPDATE items SET place = NULL WHERE id = ?").run(i.id);
+      for (const kind of REQUIRED_KINDS) {
+        const now = this.items(nick);
+        if (now.some(i => i.kind === kind && i.place)) continue;
+        const sexed = kind !== "weapon" ? sex : "";
+        const spare = now.find(i => i.kind === kind && i.sex === sexed && i.ref === (kind === "weapon" ? "sledge" : "0")) ?? now.find(i => i.kind === kind && (i.sex === sexed));
+        if (spare) this.db.prepare("UPDATE items SET place = ? WHERE id = ?").run(kind, spare.id);
+        else this.insertItem(nick, kind, kind === "weapon" ? "sledge" : "0", sexed, kind);
+      }
+      this.db.exec("COMMIT");
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  /** Compra de peça: debita gold e cria a instância na mochila (garantido). */
+  buyPiece(nick: string, kind: ItemKind, ref: string, sex: string, price: number): string | null {
+    this.db.exec("BEGIN");
+    try {
+      const r = this.db.prepare("UPDATE accounts SET gold = gold - ? WHERE nick = ? AND gold >= ?").run(price, nick, price);
+      if (Number(r.changes) !== 1) { this.db.exec("ROLLBACK"); return "gold insuficiente"; }
+      this.insertItem(nick, kind, ref, sex, null);
+      this.db.exec("COMMIT"); return null;
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  /** Equipa o item; o que estava no lugar volta para a mochila (troca). */
+  equipItem(nick: string, id: number): string | null {
+    const it = this.item(nick, id); if (!it) return "item não encontrado";
+    this.db.exec("BEGIN");
+    try {
+      this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, it.kind);
+      this.db.prepare("UPDATE items SET place = ? WHERE id = ?").run(it.kind, id);
+      this.db.exec("COMMIT"); return null;
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  unequipPlace(nick: string, kind: ItemKind): void { this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, kind); }
+  /** Gasta `used` do material e grava o novo estado do item, juntos. */
+  spendAndSetItem(nick: string, material: string, used: number, id: number, g: GearState): string | null {
+    this.db.exec("BEGIN");
+    try {
+      const r = this.db.prepare("UPDATE inventory SET count = count - ? WHERE nick = ? AND item = ? AND count >= ?").run(used, nick, material, used);
+      if (Number(r.changes) !== 1) { this.db.exec("ROLLBACK"); return "recursos insuficientes"; }
+      const u = this.db.prepare("UPDATE items SET level = ?, exp = ?, atk = ?, def = ?, agi = ?, luck = ? WHERE id = ? AND nick = ?")
+        .run(g.level, g.exp, g.compose.atk, g.compose.def, g.compose.agi, g.compose.luck, id, nick);
+      if (Number(u.changes) !== 1) { this.db.exec("ROLLBACK"); return "item não encontrado"; }
+      this.db.exec("COMMIT"); return null;
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
   }
 
   getXp(nick: string): number { return (this.db.prepare("SELECT xp FROM accounts WHERE nick = ?").get(nick) as { xp: number } | undefined)?.xp ?? 0; }

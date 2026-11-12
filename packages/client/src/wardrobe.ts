@@ -1,35 +1,11 @@
-import { lookStats, type PieceStats, COUNTS, HAIR_COLORS, HAIR_ORIGINAL, PIECE_COLORS, SKIN_TONES, sanitizeLook, cnPieces, legacyCount, type WardrobeSlot, type AvatarSex, type Look } from "@tankclone/core";
+import { lookStats, HAIR_COLORS, HAIR_ORIGINAL, PIECE_COLORS, SKIN_TONES, sanitizeLook, type ItemInstance, type Look } from "@tankclone/core";
 import { drawCharPortrait, drawWardrobePiece } from "./chars";
 
-type Category = "outfit" | "hair" | "face" | "hat" | "glasses" | "wings";
-type Piece = { id: string; category: Category; index: number; name: string; complete: boolean; icon?: string | null; stats?: PieceStats };
-const CATEGORIES: { id: Category; label: string; singular: string; optional?: boolean }[] = [
-  { id: "outfit", label: "Roupas", singular: "Roupa" },
-  { id: "hair", label: "Cabelos", singular: "Cabelo" },
-  { id: "face", label: "Rostos", singular: "Rosto" },
-  { id: "hat", label: "Chapéus", singular: "Chapéu", optional: true },
-  { id: "glasses", label: "Óculos", singular: "Óculos", optional: true },
-  { id: "wings", label: "Asas", singular: "Asas", optional: true },
-];
-// Catálogo da build atual. A importação futura pode substituir esta lista mantendo a UI.
-const LEGACY_PIECES: Piece[] = CATEGORIES.flatMap(c => Array.from(
-  { length: COUNTS[c.id] - (c.optional ? 1 : 0) }, (_, n) => {
-    const index = n + (c.optional ? 1 : 0);
-    return { id: `${c.id}-${index}`, category: c.id, index, name: `${c.singular} ${n + 1}`, complete: true };
-  },
-));
-const slotFor: Partial<Record<Category, WardrobeSlot>> = { outfit: "cloth", hair: "hair", face: "face", hat: "head", glasses: "glass" };
-function pieces(sex: AvatarSex): Piece[] {
-  return [...LEGACY_PIECES, ...CATEGORIES.flatMap(c => {
-    const slot = slotFor[c.id]; if (!slot) return [];
-    const offset = c.optional ? 1 : 0;
-    return cnPieces(sex, slot).map((item, i) => ({ id: `${c.id}-${i + legacyCount(slot) + offset}`, category: c.id,
-      index: i + legacyCount(slot) + offset, name: (item as { name?: string }).name || `${c.singular} ${item.pic}`, complete: item.complete, icon: item.icon,
-      stats: (item as { stats?: PieceStats }).stats }));
-  })];
-}
+import { CATEGORIES, KIND_OF, LEGACY_PIECES, pieces, type Category, type Piece } from "./catalog-ui";
 const PAGE_SIZE = 12;
 const same = (a: Look, b: Look) => JSON.stringify(a) === JSON.stringify(b);
+/** O que a loja salva: sexo, pele, cor do cabelo e tinturas. As peças experimentadas são só prévia (comprar põe na mochila). */
+const coreOf = (l: Look) => JSON.stringify({ sex: l.appearance.sex, skin: l.appearance.skin, hairColor: l.appearance.hairColor, tints: l.tints });
 const value = (look: Look, c: Category) => c === "hair" || c === "face" ? look.appearance[c] : look.equipped[c];
 function equip(look: Look, c: Category, index: number) {
   if (c === "hair" || c === "face") look.appearance[c] = index;
@@ -56,12 +32,13 @@ export class Wardrobe {
   private active = false;
   private statusText = "";
 
-  constructor(private host: HTMLElement, private save: (look: Look) => boolean) {
+  private owned: ItemInstance[] = [];
+  constructor(private host: HTMLElement, private save: (look: Look) => boolean, private buy: (m: Record<string, unknown>) => boolean) {
     host.innerHTML = `
       <div class="panel wardrobe">
         <header class="wardrobe__header">
-          <div><span class="label">Seu personagem</span><h1 class="title title--lg">Mochila</h1></div>
-          <span class="wardrobe__section">Vestuário</span>
+          <div><span class="label">Seu personagem</span><h1 class="title title--lg">Loja</h1></div>
+          <span class="wardrobe__section">Vestuário · 1 gold cada na fase de testes</span>
           <button type="button" class="btn btn--steel btn--sm" data-back>Voltar</button>
         </header>
         <div class="wardrobe__body">
@@ -80,7 +57,7 @@ export class Wardrobe {
             </details>
           </section>
           <section class="wardrobe__inventory" aria-label="Peças disponíveis">
-            <div class="wardrobe__inventory-head"><h2>Seu vestuário</h2><span data-count></span></div>
+            <div class="wardrobe__inventory-head"><h2>Vestuário à venda</h2><span data-count></span></div>
             <div class="wardrobe__filters" role="group" aria-label="Categorias de vestuário" data-categories></div>
             <label class="wardrobe__search"><span class="label">Buscar peça</span>
               <input type="search" placeholder="Nome da peça…" aria-label="Buscar peça pelo nome" maxlength="80" data-search>
@@ -95,11 +72,11 @@ export class Wardrobe {
         <footer class="wardrobe__footer">
           <p data-status role="status" aria-live="polite"></p>
           <div><button type="button" class="btn btn--steel btn--sm" data-reset>Desfazer</button>
-            <button type="button" class="btn btn--ember" data-save>Salvar visual</button></div>
+            <button type="button" class="btn btn--ember" data-save>Salvar cores</button></div>
         </footer>
       </div>
       <dialog class="wardrobe__dialog">
-        <h2>Descartar este visual?</h2><p>As alterações que você experimentou ainda não foram salvas.</p>
+        <h2>Descartar as cores?</h2><p>As cores e a aparência que você mudou ainda não foram salvas.</p>
         <div><button type="button" class="btn btn--steel btn--sm" data-continue>Continuar editando</button>
           <button type="button" class="btn btn--ember btn--sm" data-discard>Descartar e sair</button></div>
       </dialog>`;
@@ -115,7 +92,11 @@ export class Wardrobe {
 
   private get<T extends HTMLElement = HTMLElement>(name: string): T { return this.host.querySelector<T>(`[data-${name}]`)!; }
   private get dialog() { return this.host.querySelector("dialog")!; }
-  private get dirty() { return !same(this.draft, this.saved); }
+  private get dirty() { return coreOf(this.draft) !== coreOf(this.saved); }
+  private get trying() { return !same(this.draft, this.saved); }
+  /** Mochila atualizada pelo servidor: marca na loja o que você já tem. */
+  setItems(items: ItemInstance[]) { this.owned = items; if (this.active) this.renderInventory(); }
+  private count(p: Piece) { return this.owned.filter(i => i.kind === KIND_OF[p.category] && (Number(i.ref) || 0) === p.index && (!i.sex || i.sex === this.draft.appearance.sex)).length; }
 
   open(look: Look, nick: string, back: () => void, weaponId = "sledge") {
     this.clearPending();
@@ -139,12 +120,12 @@ export class Wardrobe {
     const wasDirty = this.dirty;
     const wasPending = !!this.pending;
     // Uma resposta atrasada de outro salvamento não confirma o rascunho atual.
-    const matchesPending = this.pending && same(this.pending, look);
+    const matchesPending = this.pending && coreOf(this.pending) === coreOf(look);
     this.saved = structuredClone(look);
     if (wasPending && !matchesPending) { this.render(); return; }
     if (matchesPending || !wasDirty) this.draft = structuredClone(look);
     this.clearPending();
-    this.statusText = wasPending ? "Visual salvo na sua conta." : "";
+    this.statusText = wasPending ? "Cores salvas na sua conta." : "";
     this.render();
   }
 
@@ -173,11 +154,12 @@ export class Wardrobe {
 
   private render() {
     drawCharPortrait(this.get<HTMLCanvasElement>("portrait"), this.draft, this.weaponId);
-    this.get("preview-label").textContent = this.dirty ? "Experimentando" : "Visual salvo";
+    this.get("preview-label").textContent = this.trying ? "Experimentando" : "Visual vestido";
     this.renderSlots(); this.renderAppearance(); this.renderCategories(); this.renderInventory();
     this.get("status").textContent = this.pending ? "Salvando visual…" : this.statusText ||
-      (this.dirty ? "Você tem alterações para salvar." : "Experimente as peças e monte seu visual.");
-    for (const name of ["save", "reset"]) this.get<HTMLButtonElement>(name).disabled = !!this.pending || !this.dirty;
+      (this.dirty ? "Você tem cores para salvar." : this.trying ? "Experimentando: compre para levar à mochila." : "Experimente as peças; comprar leva à mochila.");
+    this.get<HTMLButtonElement>("save").disabled = !!this.pending || !this.dirty;
+    this.get<HTMLButtonElement>("reset").disabled = !!this.pending || !this.trying;
     this.get<HTMLButtonElement>("back").disabled = !!this.pending;
     this.host.toggleAttribute("data-saving", !!this.pending);
   }
@@ -255,7 +237,7 @@ export class Wardrobe {
         drawWardrobePiece(image, thumbLook, piece.category);
       } else if (piece.icon) image.src = `/assets/avatar/${piece.icon}`;
       const title = document.createElement("span"); title.textContent = piece.name;
-      const badge = document.createElement("small"); badge.textContent = worn ? "Em uso" : piece.complete ? "Disponível" : "Incompleta";
+      const badge = document.createElement("small"); const own = this.count(piece); badge.textContent = worn ? "Experimentando" : own ? `Você tem ${own}` : piece.complete ? "1 gold" : "Incompleta";
       b.append(image, title, badge);
       b.onclick = () => {
         this.selected = piece;
@@ -286,7 +268,11 @@ export class Wardrobe {
     name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus} · Total vestido: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
     text.append(name, desc); host.append(text);
     const worn = value(this.draft, p.category) === p.index;
-    const tryOn = button(worn ? "Em uso" : "Experimentar", "btn btn--sm"); tryOn.disabled = worn || !p.complete || !!this.pending;
+    const bought = this.count(p);
+    const purchase = button(`Comprar (1 gold)${bought ? ` · você tem ${bought}` : ""}`, "btn btn--ember btn--sm"); purchase.disabled = !p.complete || !!this.pending;
+    purchase.onclick = () => { if (!this.buy({ t: "buy", catalogKind: KIND_OF[p.category], ref: String(p.index), sex: this.draft.appearance.sex })) this.statusText = "Sem conexão."; };
+    host.append(purchase);
+    const tryOn = button(worn ? "Experimentando" : "Experimentar", "btn btn--steel btn--sm"); tryOn.disabled = worn || !p.complete || !!this.pending;
     tryOn.onclick = () => this.mutate(l => equip(l, p.category, p.index)); host.append(tryOn);
     if (p.category === "outfit" || p.category === "face" || p.category === "hat") {
       const category = p.category;
@@ -308,7 +294,7 @@ export class Wardrobe {
       palette.append(choices); host.append(palette);
     }
     if (c.optional && worn) {
-      const remove = button("Retirar", "btn btn--steel btn--sm"); remove.disabled = !!this.pending;
+      const remove = button("Tirar da prévia", "btn btn--steel btn--sm"); remove.disabled = !!this.pending;
       remove.onclick = () => this.mutate(l => equip(l, p.category, 0)); host.append(remove);
     }
   }

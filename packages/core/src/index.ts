@@ -16,3 +16,4 @@ export * from "./avatar";
 export * from "./wardrobe-catalog";
 export * from "./forge";
 export * from "./wings";
+export * from "./items";

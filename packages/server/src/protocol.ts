@@ -1,5 +1,5 @@
 /** Protocolo JSON sobre WebSocket. O servidor é autoritativo: o cliente só envia intenções e só anima eventos. */
-import type { Intent, Look, MatchEvent, WeaponState } from "@tankclone/core";
+import type { Intent, ItemInstance, ItemKind, Look, MatchEvent, Stats } from "@tankclone/core";
 import type { CardReward } from "./cards";
 
 export type ClientIntent = Exclude<Intent, never> extends infer I ? (I extends { playerId: string } ? Omit<I, "playerId"> : never) : never;
@@ -19,11 +19,17 @@ export type ClientMsg =
   | { t: "intent"; intent: ClientIntent }
   /** Carta escolhida na tela de fim de partida (0–8). */
   | { t: "pickCard"; index: number }
-  /** Ferreiro/loja (tudo garantido; recursos comprados com gold). */
-  | { t: "forge" }
+  /** Mochila original: itens possuídos (tudo garantido; sem sorteio; peças e materiais a 1 gold na fase de testes). */
+  | { t: "bag" }
+  | { t: "equip"; itemId: number }
+  | { t: "unequip"; place: ItemKind }
+  /** Comprar peça (catalogKind + ref do catálogo) ou material (item + count). */
+  | { t: "buy"; catalogKind: ItemKind; ref: string; sex?: "m" | "f" }
   | { t: "buy"; item: string; count: number }
-  | { t: "strengthen"; weaponId: string; item: string; count: number }
-  | { t: "compose"; weaponId: string; item: string };
+  /** Fortalecer com Super Pedras (chapéu, roupa, arma, secundária). */
+  | { t: "strengthen"; itemId: number; count: number }
+  /** Compor com uma pedra (chapéu, óculos, roupa, arma, bracelete, anel). */
+  | { t: "compose"; itemId: number; stone: string };
 
 export interface RoomInfo {
   id: string;
@@ -39,7 +45,7 @@ export interface MatchSetup {
   mapId: string;
   players: Array<{ id: string; team: number; x: number; spawnY?: number; weaponId: string; build: string; look: Look; facing: 1 | -1;
     /** Ferreiro: nível (+0..+12) e atributos compostos da arma escolhida. */
-    weaponLevel?: number; compose?: WeaponState["compose"] }>;
+    weaponLevel?: number; compose?: { atk: number; def: number; agi: number; luck: number }; armorBonus?: number }>;
 }
 
 export type ServerMsg =
@@ -55,5 +61,5 @@ export type ServerMsg =
   | { t: "chat"; from: string; text: string; scope: "room" | "lobby" }
   | { t: "end"; winnerTeam: number | null; xp: Record<string, { gained: number; level: number }>; cards?: { pickMs: number } }
   /** Resultado da carta: a escolhida (ou a automática, se o tempo acabou) e as 9 reveladas. */
-  | { t: "forge"; gold: number; inventory: Record<string, number>; weapons: Record<string, WeaponState>; result?: string }
+  | { t: "bag"; gold: number; materials: Record<string, number>; items: ItemInstance[]; stats: Stats; result?: string }
   | { t: "card"; index: number; reward: CardReward; deck: CardReward[]; auto: boolean; level: number; xp: number; gold: number };

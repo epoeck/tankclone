@@ -2,7 +2,9 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { randomInt } from "node:crypto";
-import { STRENGTHEN_EXP, STRENGTHEN_MAX, WEAPONS, composeWith, own, shopItem, strengthenWith } from "@tankclone/core";
+import { COMPOSE_KINDS, OWNABLE_KINDS, STRENGTHEN_EXP, STRENGTHEN_MAX, SUPER_STONE, SUPER_STONE_EXP, TEST_PRICE, WEAPONS, WING_COUNT, canCompose, canStrengthen, composeWith, isAvailablePiece, own, shopItem, strengthenWith, type ItemKind, type WardrobeSlot } from "@tankclone/core";
+import { sanitizeLook } from "@tankclone/core";
+import { deriveLook, gearOf, statsPanel } from "./bag";
 import { Db, levelForXp, unlocksAt } from "./db";
 import { CARD_PICK_MS, CardTable, type CardReward } from "./cards";
 import { ChatLimiter, cleanChat } from "./chat";
@@ -66,9 +68,20 @@ export function startServer(opts: ServerOptions = {}) {
     const xp = acc?.xp ?? db.getXp(nick);
     sendNick(nick, { t: "card", index: c.index, reward: c.reward, deck: c.deck, auto, level: levelForXp(xp), xp, gold });
   };
-  const sendForge = (nick: string, result?: string) => sendNick(nick, { t: "forge", gold: db.getGold(nick), inventory: db.inventory(nick),
-    weapons: Object.fromEntries(Object.keys(WEAPONS).map(w => [w, db.weapon(nick, w)])), ...(result ? { result } : {}) });
+  const sendBag = (nick: string, result?: string) => { const items = db.items(nick);
+    sendNick(nick, { t: "bag", gold: db.getGold(nick), materials: db.inventory(nick), items, stats: statsPanel(db.getLook(nick), items), ...(result ? { result } : {}) }); };
   const pushRoom = (room: Room) => outbox.broadcast(room, { t: "room", room: room.info() });
+  const authOk = (nick: string): ServerMsg => ({ t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), gold: db.getGold(nick), unlocks: unlocksAt(db.getLevel(nick)), look: db.getLook(nick) });
+  /** Depois de mudar o equipado: o Look salvo passa a ser o derivado das peças vestidas; sala, perfil e mochila se atualizam. */
+  const refreshLook = (nick: string, result?: string) => {
+    const sex = db.getLook(nick).appearance.sex;
+    db.ensureStarter(nick); db.normalizeEquipped(nick, sex);
+    const items = db.items(nick), look = db.setLook(nick, deriveLook(db.getLook(nick), items));
+    const r = lobby.roomOf(nick);
+    if (r && r.status === "lobby") { const mem = r.members.get(nick)!; mem.look = look; mem.weaponId = gearOf(items).weaponId; pushRoom(r); }
+    sendNick(nick, authOk(nick)); sendBag(nick, result);
+  };
+  const SLOT: Partial<Record<ItemKind, { slot: WardrobeSlot; offset: number }>> = { head: { slot: "head", offset: 1 }, glass: { slot: "glass", offset: 1 }, hair: { slot: "hair", offset: 0 }, cloth: { slot: "cloth", offset: 0 }, face: { slot: "face", offset: 0 } };
 
   function afterEvents(room: Room, now: number) {
     if (room.readyToFinish(now)) {
@@ -121,6 +134,7 @@ export function startServer(opts: ServerOptions = {}) {
       const old = sessions.get(r.nick);
       if (old && old.ws !== s.ws) { send(old.ws, { t: "error", msg: "login em outro lugar" }); old.nick = undefined; old.ws.close(); }
       s.nick = r.nick; sessions.set(r.nick, s);
+      db.ensureStarter(r.nick); db.normalizeEquipped(r.nick, r.look.appearance.sex); // mochila original: migra a conta antiga na primeira vez
       send(s.ws, { t: "authOk", nick: r.nick, level: r.level, xp: r.xp, gold: db.getGold(r.nick), unlocks: unlocksAt(r.level), look: r.look });
       const room = lobby.roomOf(r.nick); // reconexão no meio da partida
       if (room) {
@@ -136,16 +150,16 @@ export function startServer(opts: ServerOptions = {}) {
 
     switch (m.t) {
       case "rooms": return send(s.ws, { t: "rooms", rooms: [...lobby.rooms.values()].filter(r => r.status === "lobby").map(r => r.info()) });
-      case "createRoom": { const r = lobby.create(nick, String(m.mapId), Number(m.maxPlayers), db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
-      case "joinRoom": { const r = lobby.join(nick, String(m.roomId), m.team, db.getLook(nick)); return typeof r === "string" ? err(r) : pushRoom(r); }
+      case "createRoom": { const r = lobby.create(nick, String(m.mapId), Number(m.maxPlayers), db.getLook(nick), gearOf(db.items(nick)).weaponId); return typeof r === "string" ? err(r) : pushRoom(r); }
+      case "joinRoom": { const r = lobby.join(nick, String(m.roomId), m.team, db.getLook(nick), gearOf(db.items(nick)).weaponId); return typeof r === "string" ? err(r) : pushRoom(r); }
       case "leaveRoom": { const r = lobby.leave(nick, true); send(s.ws, { t: "room", room: null }); if (r && lobby.rooms.has(r.id)) pushRoom(r); return; }
       case "addBot": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.addBot(nick, m.team); return e ? err(e) : pushRoom(r); }
       case "removeBot": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.removeBot(nick, String(m.nick)); return e ? err(e) : pushRoom(r); }
       case "setLook": {
-        const look = db.setLook(nick, m.look);
-        const r = lobby.roomOf(nick);
-        if (r && r.status === "lobby") { r.members.get(nick)!.look = look; pushRoom(r); }
-        return send(s.ws, { t: "authOk", nick, level: db.getLevel(nick), xp: db.getXp(nick), gold: db.getGold(nick), unlocks: unlocksAt(db.getLevel(nick)), look });
+        // a loja/mochila só salva sexo, pele, cor do cabelo e tinturas; as peças vêm do que está equipado
+        const base = db.getLook(nick), inc = sanitizeLook(m.look);
+        db.setLook(nick, { ...base, appearance: { ...base.appearance, sex: inc.appearance.sex, skin: inc.appearance.skin, hairColor: inc.appearance.hairColor }, tints: inc.tints });
+        return refreshLook(nick);
       }
       case "chat": {
         const text = cleanChat(m.text);
@@ -156,41 +170,69 @@ export function startServer(opts: ServerOptions = {}) {
         else for (const o of sessions.values()) if (o.nick && !lobby.roomOf(o.nick)) send(o.ws, { t: "chat", from: nick, text, scope: "lobby" });
         return;
       }
-      case "setLoadout": { const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala"); const e = r.setLoadout(nick, m.weaponId, m.build); return e ? err(e) : pushRoom(r); }
+      case "setLoadout": {
+        const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
+        if (m.weaponId !== undefined) { // a arma da sala é a vestida na mochila
+          const w = db.items(nick).find(i => i.kind === "weapon" && i.ref === m.weaponId);
+          if (!w) return err("arma desconhecida");
+          if (!w.place) { db.equipItem(nick, w.id); sendBag(nick); }
+        }
+        const e = r.setLoadout(nick, m.weaponId, m.build); return e ? err(e) : pushRoom(r);
+      }
       case "start": {
         const r = lobby.roomOf(nick); if (!r) return err("você não está em uma sala");
-        const res = r.start(nick, Date.now(), (n, w) => db.weapon(n, w));
+        const res = r.start(nick, Date.now(), n => gearOf(db.items(n)));
         if ("error" in res) return err(res.error);
         outbox.broadcast(r, { t: "start", setup: res.setup, events: res.events });
         return;
       }
-      case "forge": return sendForge(nick);
+      case "bag": return sendBag(nick);
+      case "equip": {
+        const it = db.item(nick, Number(m.itemId)); if (!it) return err("item não encontrado");
+        if (!(OWNABLE_KINDS as readonly string[]).includes(it.kind)) return err("este lugar ainda não tem arte nesta versão");
+        if (it.sex && it.sex !== db.getLook(nick).appearance.sex) return err("peça do outro avatar: troque o sexo na loja");
+        const e = db.equipItem(nick, it.id); return e ? err(e) : refreshLook(nick);
+      }
+      case "unequip": {
+        const kind = String(m.place) as ItemKind;
+        if (kind !== "head" && kind !== "glass" && kind !== "wing") return err("troque por outra peça: este lugar não fica vazio");
+        db.unequipPlace(nick, kind); return refreshLook(nick);
+      }
       case "buy": {
+        if ("catalogKind" in m) { // peça de vestuário/asa: cria a instância na mochila
+          const kind = String(m.catalogKind) as ItemKind, ref = Number(m.ref), sex = m.sex === "f" ? "f" : m.sex === "m" ? "m" : db.getLook(nick).appearance.sex;
+          if (!Number.isInteger(ref) || ref < 1) return err("peça inválida");
+          const slot = SLOT[kind];
+          if (slot) { if (!isAvailablePiece(sex, slot.slot, ref - slot.offset)) return err("peça indisponível"); }
+          else if (kind === "wing") { if (ref >= WING_COUNT) return err("peça indisponível"); }
+          else return err("este item não é vendido");
+          const e = db.buyPiece(nick, kind, String(ref), kind === "wing" ? "" : sex, TEST_PRICE); return e ? err(e) : sendBag(nick, "Comprado: na sua mochila");
+        }
         const it = shopItem(String(m.item)), count = Number(m.count);
         if (!it) return err("item desconhecido");
         if (!Number.isInteger(count) || count < 1 || count > 9999) return err("quantidade inválida");
-        const e = db.buy(nick, it.id, count, it.price); return e ? err(e) : sendForge(nick, `Comprou ${count}× ${it.name}`);
+        const e = db.buy(nick, it.id, count, it.price); return e ? err(e) : sendBag(nick, `Comprou ${count}× ${it.name}`);
       }
       case "strengthen": {
-        const it = shopItem(String(m.item)), weaponId = String(m.weaponId), count = Number(m.count);
-        if (!own(WEAPONS, weaponId)) return err("arma desconhecida");
-        if (!it || it.kind !== "strengthen" || !it.exp) return err("use uma pedra de fortalecer");
+        const it = db.item(nick, Number(m.itemId)), count = Number(m.count);
+        if (!it) return err("item não encontrado");
+        if (!canStrengthen(it.kind)) return err("este item não pode ser fortalecido");
         if (!Number.isInteger(count) || count < 1 || count > 9999) return err("quantidade inválida");
-        const before = db.weapon(nick, weaponId);
-        if (before.level >= STRENGTHEN_MAX) return err(`a arma já está no +${STRENGTHEN_MAX}`);
-        if ((db.inventory(nick)[it.id] ?? 0) < count) return err("pedras insuficientes");
-        const { weapon, used } = strengthenWith(before, it.exp, count);
-        const e = db.spendAndSetWeapon(nick, it.id, used, weaponId, weapon); if (e) return err(e);
-        return sendForge(nick, weapon.level > before.level ? `Arma fortalecida: +${weapon.level}` : `+${weapon.exp} EXP (faltam ${STRENGTHEN_EXP[weapon.level + 1]! - weapon.exp})`);
+        if (it.level >= STRENGTHEN_MAX) return err(`o item já está no +${STRENGTHEN_MAX}`);
+        if ((db.inventory(nick)[SUPER_STONE] ?? 0) < count) return err("Super Pedras insuficientes");
+        const { weapon: next, used } = strengthenWith(it, SUPER_STONE_EXP, count);
+        const e = db.spendAndSetItem(nick, SUPER_STONE, used, it.id, next); if (e) return err(e);
+        return refreshLook(nick, next.level > it.level ? `Fortalecido: +${next.level}` : `+${next.exp} EXP (faltam ${STRENGTHEN_EXP[next.level + 1]! - next.exp})`);
       }
       case "compose": {
-        const it = shopItem(String(m.item)), weaponId = String(m.weaponId);
-        if (!own(WEAPONS, weaponId)) return err("arma desconhecida");
-        if (!it || it.kind !== "compose" || !it.attr || !it.value) return err("use uma pedra de composição");
-        if ((db.inventory(nick)[it.id] ?? 0) < 1) return err("pedra insuficiente");
-        const weapon = composeWith(db.weapon(nick, weaponId), it.attr, it.value);
-        const e = db.spendAndSetWeapon(nick, it.id, 1, weaponId, weapon); if (e) return err(e);
-        return sendForge(nick, `Composição: ${it.attr.toUpperCase()} ${it.value}`);
+        const it = db.item(nick, Number(m.itemId)), stone = shopItem(String(m.stone));
+        if (!it) return err("item não encontrado");
+        if (!canCompose(it.kind)) return err("este item não pode receber composição");
+        if (!stone || stone.kind !== "compose" || !stone.attr || !stone.value) return err("use uma pedra de composição");
+        if ((db.inventory(nick)[stone.id] ?? 0) < 1) return err("pedra insuficiente");
+        const next = composeWith(it, stone.attr, stone.value);
+        const e = db.spendAndSetItem(nick, stone.id, 1, it.id, next); if (e) return err(e);
+        return sendBag(nick, `Composição: ${stone.attr.toUpperCase()} ${stone.value}`);
       }
       case "pickCard": { const r = cards.pick(nick, m.index); if (typeof r === "string") return err(r); grantCard(nick, r, false); return; }
       case "intent": {

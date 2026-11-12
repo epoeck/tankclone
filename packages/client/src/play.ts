@@ -9,9 +9,10 @@ import { Controls } from "./controls";
 import { MatchView, VIEW_H, VIEW_W } from "./view";
 import { Wardrobe } from "./wardrobe";
 import { Forge } from "./forge";
+import { Bag } from "./bag";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const screens = ["s-login", "s-lobby", "s-wardrobe", "s-forge", "s-room", "match"];
+const screens = ["s-login", "s-lobby", "s-bag", "s-wardrobe", "s-forge", "s-room", "match"];
 const show = (id: string) => screens.forEach(s => $(s).classList.toggle("on", s === id));
 const toast = (msg: string) => { const t = $("toast"); t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 3500); };
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, text = "", cls = "") => { const e = document.createElement(tag); if (text) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -39,7 +40,7 @@ let hud: Hud | null = null;
 let endInfo: Record<string, { gained: number; level: number }> | null = null;
 let endPending = false;
 let endCards = false, endWinner: number | null = null, endScreen: EndScreen | null = null;
-const wardrobe = new Wardrobe($("s-wardrobe"), look => send({ t: "setLook", look }));
+const wardrobe = new Wardrobe($("s-wardrobe"), look => send({ t: "setLook", look }), m => send(m as unknown as ClientMsg));
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   wardrobe.disconnect();
@@ -57,10 +58,10 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
 function onMsg(m: ServerMsg) {
   handlers.forEach(h => h(m));
   switch (m.t) {
-    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); wardrobe.confirm(m.look); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
+    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); wardrobe.confirm(m.look); bag.setLook(m.look); forge.setLook(m.look); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
     case "error": toast(m.msg); wardrobe.fail(m.msg); break;
     case "rooms": renderRooms(m.rooms); break;
-    case "room": { room = m.room; const away = $("s-wardrobe").classList.contains("on") || $("s-forge").classList.contains("on");
+    case "room": { room = m.room; const away = $("s-wardrobe").classList.contains("on") || $("s-forge").classList.contains("on") || $("s-bag").classList.contains("on");
       if (room) { if (!view) { renderRoom(); if (!away) show("s-room"); } } else { if (!away) show("s-lobby"); send({ t: "rooms" }); } break; }
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
@@ -73,7 +74,7 @@ function onMsg(m: ServerMsg) {
       endPending = true; endCards = !!m.cards && !!mine; endWinner = m.winnerTeam;
       break;
     }
-    case "forge": { if (me) { me.gold = m.gold; renderMe(); } forge.update(m); if (m.result) toast(m.result); break; }
+    case "bag": { if (me) { me.gold = m.gold; renderMe(); } forge.update(m); bag.update(m); wardrobe.setItems(m.items); if (m.result) toast(m.result); break; }
     case "card": {
       if (me) { me.xp = m.xp; me.level = m.level; me.gold = m.gold; renderMe(); }
       const what = m.reward.kind === "gold" ? `+${m.reward.amount} gold` : `+${m.reward.amount} XP`;
@@ -113,22 +114,25 @@ fillMaps();
 void loadClientMaps().then(fillMaps);
 $("btn-refresh").onclick = () => send({ t: "rooms" });
 $("btn-create").onclick = () => send({ t: "createRoom", mapId: $<HTMLSelectElement>("new-map").value, maxPlayers: +$<HTMLSelectElement>("new-max").value });
-function openWardrobe() {
+const home = () => { show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); };
+function openWardrobe(back: () => void = home) {
   if (!me) return;
-  show("s-wardrobe");
-  wardrobe.open(me.look, me.nick, () => { show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); },
-    room?.players.find(p => p.nick === me!.nick)?.weaponId);
+  show("s-wardrobe"); send({ t: "bag" });
+  wardrobe.open(me.look, me.nick, back, room?.players.find(p => p.nick === me!.nick)?.weaponId);
 }
-$("btn-wardrobe").onclick = openWardrobe;
-const forge = new Forge($("s-forge"), m => send(m as unknown as ClientMsg), () => { show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); });
-function openForge() {
+const forge = new Forge($("s-forge"), m => send(m as unknown as ClientMsg), () => openBag());
+function openForge(itemId?: number) {
   if (!me) return;
-  const mine = room?.players.find(p => p.nick === me!.nick);
-  show("s-forge"); forge.open(me.look, mine?.weaponId);
+  show("s-forge"); forge.open(me.look, itemId);
 }
-$("btn-forge").onclick = openForge;
-$("btn-room-forge").onclick = openForge;
-$("btn-room-wardrobe").onclick = openWardrobe;
+const bag: Bag = new Bag($("s-bag"), m => send(m as unknown as ClientMsg), home, () => openWardrobe(() => openBag()), id => openForge(id));
+function openBag() { if (!me) return; show("s-bag"); bag.open(me.look); }
+$("btn-bag").onclick = openBag;
+$("btn-forge").onclick = () => openForge();
+$("btn-room-forge").onclick = () => openForge();
+$("btn-room-bag").onclick = openBag;
+$("btn-wardrobe").onclick = () => openWardrobe();
+$("btn-room-wardrobe").onclick = () => openWardrobe();
 function renderMe() {
   if (!me) return;
   $("me-nick").textContent = me.nick; $("me-level").textContent = `Nv ${me.level} · ${me.xp} XP · ${(me.gold ?? 0).toLocaleString("pt-BR")} gold`;

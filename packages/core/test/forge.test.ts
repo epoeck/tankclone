@@ -3,7 +3,7 @@ import { Match, NEW_WEAPON, STRENGTHEN_EXP, STRENGTHEN_MAX, Terrain, composeWith
 
 describe("ferreiro garantido (CN 14.7: EXP por nível, máximo +12)", () => {
   it("sobe exatamente ao completar a EXP; sobra fica no nível novo; nada de sorteio", () => {
-    const s1 = shopItem("str1")!; // 10 EXP
+    const s1 = shopItem("super")!; // 10 EXP
     expect(stonesToNext(NEW_WEAPON, s1.exp!)).toBe(1);
     const a = strengthenWith(NEW_WEAPON, s1.exp!, 1);
     expect(a).toMatchObject({ used: 1, weapon: { level: 1, exp: 0 } });

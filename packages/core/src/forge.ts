@@ -24,11 +24,19 @@ export interface ShopItem {
 }
 /** Preço de teste (decisão do dono): tudo a 1 gold. */
 export const TEST_PRICE = 1;
-const STRENGTH_STONES: Array<[number, number, string]> = [[1, 10, "strength1"], [2, 10, "strength2"], [3, 15, "strength3"], [4, 55, "strength4"], [5, 215, "strength9"]];
 const COMPOSE_KIND: Record<ComposeAttr, [string, string]> = { atk: ["Pedra Fênix (ATQ)", "zhuque"], def: ["Pedra Tartaruga (DEF)", "xuanwu"], agi: ["Pedra Dragão (AGI)", "qinglong"], luck: ["Pedra Tigre (SOR)", "baihu"] };
 const COMPOSE_VALUES = [10, 20, 30, 40, 51];
+export const SUPER_STONE = "super";
+export const SUPER_STONE_EXP = 10;
+/** Pedras de fortalecer antigas (str1..str5) viram Super Pedras pela EXP: Nv1/2 = 1, Nv3 = 2, Nv4 = 6, Nv5 = 22 (arredondado para cima). */
+const OLD_STONE_EXP: Record<string, number> = { str1: 10, str2: 10, str3: 15, str4: 55, str5: 215 };
+export function superStonesFromOld(item: string, count: number): number {
+  const exp = OLD_STONE_EXP[item]; return exp ? count * Math.ceil(exp / SUPER_STONE_EXP) : 0;
+}
+export const OLD_STONE_IDS = Object.keys(OLD_STONE_EXP);
 export const SHOP_ITEMS: ShopItem[] = [
-  ...STRENGTH_STONES.map(([level, exp, pic]) => ({ id: `str${level}`, name: `Pedra de fortalecer Nv${level}`, kind: "strengthen" as const, level, exp, price: TEST_PRICE, icon: pic })),
+  // DDTank 337: uma pedra só (CN 11025 强化石, Pic strength11, Property2 = 10 EXP).
+  { id: SUPER_STONE, name: "Super Pedra", kind: "strengthen", level: 1, exp: SUPER_STONE_EXP, price: TEST_PRICE, icon: "strength11" },
   ...(Object.keys(COMPOSE_KIND) as ComposeAttr[]).flatMap(attr => COMPOSE_VALUES.map((value, i) => ({
     id: `${attr}${i + 1}`, name: `${COMPOSE_KIND[attr][0]} Nv${i + 1}`, kind: "compose" as const, level: i + 1, attr, value, price: TEST_PRICE, icon: `${COMPOSE_KIND[attr][1]}${i + 1}`,
   }))),
@@ -38,6 +46,8 @@ export const shopItem = (id: string): ShopItem | undefined => SHOP_ITEMS.find(i 
 export interface WeaponState { level: number; exp: number; compose: Record<ComposeAttr, number> }
 export const NEW_WEAPON: WeaponState = { level: 0, exp: 0, compose: { atk: 0, def: 0, agi: 0, luck: 0 } };
 
+/** Estado de evolução de qualquer equipamento (arma, chapéu, roupa…): mesmo formato do da arma. */
+export type GearState = WeaponState;
 /** Quantas pedras (de `exp` cada) faltam para o próximo nível. 0 no máximo. */
 export function stonesToNext(w: WeaponState, exp: number): number {
   if (w.level >= STRENGTHEN_MAX) return 0;
