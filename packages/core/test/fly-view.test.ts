@@ -61,14 +61,15 @@ it("replay do leque sobreposto termina com o estado autoritativo dos personagens
   vi.unstubAllGlobals();
 });
 
-it("mira do avião mantém faixa absoluta 0–90 durante movimento em rampa", () => {
+it("mira do avião usa 0–90 relativo ao corpo e gira com a rampa", () => {
   const context = { createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w*h*4) }), putImageData: () => {} };
   vi.stubGlobal("document", { createElement: () => ({ getContext: () => context }) }); vi.stubGlobal("Image", class { onload = null; src = ""; });
   const players = [{ id: "a", team: 1, x: 200, weaponId: "prism", build: "media", facing: 1 as const }];
   const view = new MatchView("colinas", players); vi.spyOn(view.terrain, "slopeDeg").mockReturnValue(20);
   view.push([{ type: "turnStart", playerId: "a", wind: 0, turn: 1, timeLimit: 10, energy: 240, delays: {} }, { type: "item", playerId: "a", key: "F", energyLeft: 100 }]); view.update(0);
-  expect(view.aimRange).toEqual({ min: 0, max: 90 }); view.ui.angle = 0;
+  expect(view.aimRange).toEqual({ min: 20, max: 110 }); view.ui.angle = 0;
   view.push([{ type: "move", playerId: "a", path: [{ x: 220, y: 400 }], facing: 1, energyLeft: 90 }]); view.update(0);
-  expect(view.ui.angle).toBe(0); view.ui.angle = 100; view.update(0); expect(view.ui.angle).toBe(90);
+  expect(view.ui.angle).toBe(20); view.ui.angle = 100; view.update(0); expect(view.ui.angle).toBe(100);
+  view.ui.angle = 130; view.update(0); expect(view.ui.angle).toBe(110);
   vi.unstubAllGlobals();
 });

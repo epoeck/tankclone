@@ -8,7 +8,7 @@ import { applyCharacterMove } from "./character-state";
 import { drawImpact, drawProjectile, drawTrail, impactDuration, TRAIL_MAX_LIFE } from "./projectile-effects";
 import { projectileSfx, sfx, toggleMute } from "./sound";
 import {
-  BUILDS, DEFAULT_LOOK, MatchPlayback, craterShape, craterOrigin, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
+  BUILDS, DEFAULT_LOOK, MatchPlayback, allowedAbsoluteRange, craterShape, craterOrigin, FLY_ANGLE, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
   type Facing, type ItemKey, type Look, type MatchEvent,
 } from "@tankclone/core";
 
@@ -219,10 +219,10 @@ export class MatchView {
   }
 
   get aimRange(): { min: number; max: number } {
-    if (this.ui.fly) return { min: 0, max: 90 };
-    const c = this.current; if (!c) return { min: 0, max: 90 };
-    const slope = this.terrain.slopeDeg(c.x, c.y, c.facing), range = own(WEAPONS, c.weaponId)!.angle;
-    return { min: range.min + slope, max: range.max + slope };
+    // voo também é relativo ao corpo (mesma regra do core: clampAbsoluteAngle com FLY_ANGLE)
+    const c = this.current; if (!c) return { ...FLY_ANGLE };
+    const range = this.ui.fly ? FLY_ANGLE : own(WEAPONS, c.weaponId)!.angle;
+    return allowedAbsoluteRange(range, this.terrain.slopeDeg(c.x, c.y, c.facing));
   }
 
   /** Avança animações e o relógio exibido (o relógio de verdade é do core/servidor). */
@@ -247,7 +247,7 @@ export class MatchView {
     if (!this.busy && !this.hud.over) this.hud.timeLeft = Math.max(0, this.hud.timeLeft - idleTime);
     // a faixa de ângulo da arma gira com a rampa; o ângulo é sempre o absoluto
     const c = this.current;
-    if (c) { const range = this.aimRange; this.ui.angle = Math.min(range.max, Math.max(range.min, this.ui.angle)); }
+    if (c && !this.busy) this.ui.angle = clampAbsoluteAngle(this.ui.angle, this.ui.fly ? FLY_ANGLE : own(WEAPONS, c.weaponId)!.angle, this.terrain.slopeDeg(c.x, c.y, c.facing));
   }
 
   /** Quem está na vez fica livre para agir quando nada está animando. */

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { avatarFrameRect, avatarFrames, avatarLayers, avatarTint, COUNTS, DEFAULT_LOOK, sanitizeLook } from "../src/index";
 import catalog from "../src/reference/avatar.json";
@@ -28,7 +28,8 @@ describe("avatar clássico", () => {
         }
     }
   });
-  it("arquivos locais mantêm os hashes e tamanhos dos PNGs originais", () => {
+  // os PNGs do original ficam só no disco (fora do git): sem eles, pula
+  it.skipIf(!existsSync(new URL("../../client/public/assets/avatar/", import.meta.url)))("arquivos locais mantêm os hashes e tamanhos dos PNGs originais", () => {
     for (const [file, metadata] of Object.entries(catalog.files)) {
       const bytes = readFileSync(new URL(`../../client/public/assets/avatar/${file}`, import.meta.url));
       expect(createHash("sha256").update(bytes).digest("hex")).toBe(metadata.sha256);

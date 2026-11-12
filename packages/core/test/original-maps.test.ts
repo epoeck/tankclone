@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { decodeStates, mapFromStates, type MapManifest } from '../src/maps';
@@ -11,7 +11,8 @@ const hashes: Record<string,string> = {
   'original-1004':'c41835ae9cdcf83ef1bb49b5f322d66b012498adad113cf00d58094fdfcf17a1',
   'original-1005':'fae21e0a0187ebcbc2d7d9aca56c6edad9964ec8c5b79daf67c81882b356cf87',
 };
-describe('mapas clássicos importados', () => {
+// assets do original ficam só no disco (fora do git): sem eles, pula
+describe.skipIf(!existsSync(resolve(root, 'original-1001')))('mapas clássicos importados', () => {
   for (const [id, hash] of Object.entries(hashes)) it(`${id}: máscara e nascimentos preservados`, () => {
     const m = JSON.parse(readFileSync(resolve(root,id,'manifest.json'),'utf8')) as MapManifest;
     const states = decodeStates(readFileSync(resolve(root,id,'mask.bin')),m.width*m.height);

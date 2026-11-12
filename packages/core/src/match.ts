@@ -5,7 +5,7 @@
  */
 import { craterShape } from "./craters";
 import { clampAbsoluteAngle } from "./angle";
-import { DEFAULT_MATCH, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
+import { DEFAULT_MATCH, FLY_ANGLE, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
 import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
 import { combatPower, statDamage, damageBreakdown, withStats, rollCritical, turnDelay, furyFromDamage, type Stats } from "./stats";
@@ -297,7 +297,7 @@ export class Match {
     if (special && c.fury < cfg.maxFury) return { ok: false, error: "fúria insuficiente" };
     const events: MatchEvent[] = [];
     const slope = T.slopeDeg(c.x, c.y, c.facing);
-    const ang = this.ts.fly ? Math.min(90, Math.max(0, angleDeg)) : clampAbsoluteAngle(angleDeg, weapon.angle, slope);
+    const ang = clampAbsoluteAngle(angleDeg, this.ts.fly ? FLY_ANGLE : weapon.angle, slope);
     const pow = Math.min(100, Math.max(0, power));
     const wind = this.wind * weapon.windFactor;
     const ts = this.ts;
@@ -364,7 +364,8 @@ export class Match {
     const dmgRadius = special ? weapon.special.damageRadius : weapon.damageRadius;
     for (const t of this.chars) {
       if (!t.alive) continue;
-      if (!cfg.friendlyFire && t.team === shooter.team) continue;
+      const self = t.id === shooter.id; // o próprio atirador sofre dano dos seus tiros (mas nunca morre por eles)
+      if (!self && !cfg.friendlyFire && t.team === shooter.team) continue;
       // distância do impacto à caixa do alvo
       const dx = Math.max(t.x - PLAYER_HITBOX.w / 2 - hit.x, 0, hit.x - (t.x + PLAYER_HITBOX.w / 2));
       const dy = Math.max(t.y - PLAYER_HITBOX.h - hit.y, 0, hit.y - t.y);
@@ -373,11 +374,12 @@ export class Match {
       const falloff = 1 - cfg.falloffEdge * (d / dmgRadius);
       const crit = rollCritical(shooter.stats.luck, this.combatRng.next());
       const input = { weapon, attacker: shooter.stats, target: t.stats, bonus: this.ts.bonus, shotMult: mult, falloff, crit };
-      const amount = this.damageFn(input);
-      t.hp = Math.max(0, t.hp - amount);
+      let amount = this.damageFn(input);
+      if (self) amount = Math.max(0, Math.min(amount, t.hp - 1)); // a vida desce até 1, no máximo
+      t.hp = Math.max(self ? 1 : 0, t.hp - amount);
       events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit });
       const baseDamage = this.damageFn === defaultDamage ? damageBreakdown(input).base : this.damageFn({ ...input, crit: false });
-      if (t.hp > 0) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
+      if (t.hp > 0 && !self) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
       events.push({ type: "fury", playerId: t.id, fury: t.fury });
       if (t.hp <= 0) { t.alive = false; events.push({ type: "death", playerId: t.id, reason: "hp" }); }
     }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { drawCharacterTimeline, type TimelineAsset } from '../../client/src/character-timeline';
 
 const root = new URL('../../client/public/character-effects/', import.meta.url);
-describe('recursos e timeline de personagem', () => {
+// assets do original ficam só no disco (fora do git): sem eles, pula
+describe.skipIf(!existsSync(new URL('manifest.json', root)))('recursos e timeline de personagem', () => {
   it('valida os hashes das asas e dos fantasmas importados', () => {
     const manifest = JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8')) as { files: Record<string, string> };
     for (const [file, hash] of Object.entries(manifest.files)) expect(createHash('sha256').update(readFileSync(new URL(file, root))).digest('hex')).toBe(hash);
