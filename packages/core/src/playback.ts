@@ -39,10 +39,15 @@ export class MatchPlayback {
     });
   }
 
+  /** Eventos com instante entram na ordem do instante (um tiro extra que sai 1 s depois do anterior pode chegar
+   * depois do impacto do anterior, mas é mostrado antes); nunca no passado do relógio. Sem instante: no fim da fila. */
   push(events: readonly MatchEvent[]): void {
     for (const event of events) {
-      this.tail = Math.max(this.tail, event.at ?? this.tail);
-      this.queue.push({ event, at: this.tail });
+      const at = event.at === undefined ? this.tail : Math.max(event.at, this.clock);
+      this.tail = Math.max(this.tail, at);
+      let i = this.queue.length;
+      while (i > 0 && this.queue[i - 1]!.at > at) i--;
+      this.queue.splice(i, 0, { event, at });
     }
   }
 

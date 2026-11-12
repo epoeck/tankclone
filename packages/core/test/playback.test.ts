@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Match, MatchPlayback, Terrain, craterShape, playbackDuration, type MatchEvent } from "../src/index";
+import { Match, MatchPlayback, SHOT_INTERVAL_SECONDS, Terrain, craterShape, playbackDuration, type MatchEvent } from "../src/index";
 
 const flight = (index: number, at: number, duration: number): MatchEvent => ({
   type: "shot", playerId: "a", index, at, duration, stepSeconds: 1,
@@ -79,16 +79,20 @@ describe("partida com máscaras e leques", () => {
     for (let i = 0; i < 3; i++) { const r = m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 30 }); if (!r.ok) throw new Error(r.error); events.push(...r.events); }
     const shots = events.filter(e => e.type === "shot");
     expect(shots).toHaveLength(9);
-    // cada leque começa quando o anterior termina (um tiro por intenção, ângulo livre entre eles)
+    // Reborn: os leques saem 1 s um do outro (um tiro por intenção, ângulo livre entre eles), mesmo com o anterior no ar
     let end = 0;
     for (let i = 0; i < 9; i += 3) {
-      const group = shots.slice(i, i + 3);
-      expect(group.map(s => s.at)).toEqual([end, end, end]);
-      end = Math.max(...group.map(s => end + s.duration));
+      const group = shots.slice(i, i + 3), start = (i / 3) * SHOT_INTERVAL_SECONDS;
+      expect(group.map(s => s.at)).toEqual([start, start, start]);
+      end = Math.max(end, ...group.map(s => start + s.duration));
     }
     expect(playbackDuration(events)).toBeCloseTo(end, 9);
-    expect(events.map(e => e.at)).toEqual(events.map(e => e.at).sort((a, b) => a! - b!));
     expect(events.at(-1)).toMatchObject({ type: "turnStart", at: end });
+    // no cliente, a fila reordena pelo instante: tudo é aplicado em ordem crescente
+    const p = new MatchPlayback(), applied: number[] = [];
+    p.push(JSON.parse(JSON.stringify(events)) as MatchEvent[]);
+    p.update(1e6, e => applied.push(e.at!));
+    expect(applied).toEqual([...applied].sort((a, b) => a - b));
   });
   it("reaplicar os eventos no cliente reconstrói exatamente a máscara autoritativa", () => {
     const m = create(), terrain = m.terrain.clone();

@@ -25,6 +25,8 @@ function playLocal(name: SfxName, stops?: SfxName): boolean {
   const id = LOCAL_SFX[name]; if (!id || muted) return false;
   if (stops) { const prev = playing.get(stops); if (prev) { prev.pause(); playing.delete(stops); } }
   const f = localFile(id); if (!f?.ok) return false;
+  // Reborn toca o 020 sem reiniciar enquanto ele ainda está tocando (um som contínuo, não um a cada passo da barra)
+  if (name === "charge" && playing.has(name)) return true;
   const prev = playing.get(name); if (prev && (name === "alert" || name === "tick")) prev.pause();
   const a = f.audio.cloneNode() as HTMLAudioElement; playing.set(name, a);
   a.addEventListener("ended", () => { if (playing.get(name) === a) playing.delete(name); }, { once: true });

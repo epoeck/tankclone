@@ -118,7 +118,13 @@ interface TurnState {
   shotsFired: number;
   shotsLeft: number;
   special: boolean;
+  /** Início (na linha do tempo das animações) do primeiro tiro do turno; os seguintes saem a cada SHOT_INTERVAL_SECONDS. */
+  burstStart: number;
 }
+
+/** Reborn (GameLocalPlayer: Timer de Player.SHOOT_TIMER = 1000 ms): com tiros extras, um único soltar dispara todos,
+ * um por segundo, com a mesma força e o ângulo do momento (as setas funcionam no intervalo). */
+export const SHOT_INTERVAL_SECONDS = 1;
 
 /** Como no Reborn, não há prazo de jogo depois que o relógio para (o limite é a própria barra de força: se voltar a 0, passa a vez).
  * Este é só um timeout de segurança no servidor contra quem desconecta ou trava no meio do tiro. */
@@ -212,6 +218,9 @@ export class Match {
     this.current.energy = this.current.maxEnergy;
     return { type: "turnStart", playerId: this.current.id, wind: this.wind, timeLimit: this.turnTimeLimit(), energy: this.current.energy, turn: this.turn, flyCooldown: this.current.flyCooldown > 0, delays: Object.fromEntries(this.chars.map(c => [c.id, c.delay])) };
   }
+
+  /** Já atirou neste turno e ainda há tiros da rajada por sair (o cliente os envia sozinho, 1 por segundo). */
+  get burstPending(): boolean { return this.ts.shotsFired > 0 && this.ts.shotsLeft > 0; }
 
   /** Passa o tempo; ao estourar o limite do turno, passa a vez automaticamente. */
   tick(dt: number): MatchEvent[] {
@@ -349,7 +358,9 @@ export class Match {
 
     let index = 0;
     {
-      const start = this.animationTime;
+      // o 1º tiro sai depois do que estiver animando; os extras saem 1 s após o anterior, mesmo com o anterior ainda no ar
+      if (ts.shotsFired === 1) ts.burstStart = this.animationTime;
+      const start = ts.burstStart + (ts.shotsFired - 1) * SHOT_INTERVAL_SECONDS;
       const results = volley.map(p => ({ mult: p.mult, r: simulateShot(
         { ...muzzlePoint(c.x, c.y, c.facing, slope), angleDeg: p.ang, power: p.power, facing: c.facing, wind },
         (x, y) => T.isSolid(x, y), this.physics, { hitboxes: this.hitboxes(), shooterId: c.id, hitboxRadius: 3, outOfBounds: (x, y) => x < 0 || x >= T.width || y >= T.height }),
@@ -461,5 +472,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false, burstStart: 0 };
 }

@@ -98,7 +98,8 @@ export class Room {
     if (!this.match || this.status !== "playing") return { error: "sem partida em andamento" };
     const bad = validateIntent(intent);
     if (bad) return { error: bad };
-    if (now < this.pausedUntil) return { error: "aguarde a animação" };
+    // os tiros extras de uma rajada saem 1 s um do outro, com o anterior ainda no ar (Reborn)
+    if (now < this.pausedUntil && !(intent.type === "shoot" && this.match.burstPending)) return { error: "aguarde a animação" };
     const out = this.match.submit({ ...intent, playerId: nick } as Intent);
     if (!out.ok) return { error: out.error };
     this.record(out.events, now);
@@ -122,7 +123,7 @@ export class Room {
     this.log.push(...events);
     // Usa o tempo de voo transmitido ao cliente, inclusive quando o passo da física muda.
     const pause = playbackDuration(events);
-    if (pause) this.pausedUntil = now + pause * 1000;
+    if (pause) this.pausedUntil = Math.max(this.pausedUntil, now + pause * 1000);
   }
 
   get over(): boolean { return !!this.match?.over; }

@@ -42,3 +42,24 @@ it("mantém a partida encerrada disponível até terminar a animação", () => {
   expect(room.readyToFinish(room.pausedUntil)).toBe(true);
   expect(room.status).toBe("playing"); expect(room.log).toContainEqual(result.events[0]);
 });
+
+it("rajada (+2): os tiros extras entram 1 s depois, com o anterior ainda no ar, e cada um usa o seu ângulo", () => {
+  const room = new Room("rajada", "colinas", 2, "a");
+  room.add("a", 1); room.add("b", 2);
+  room.start("a", 1000);
+  const id = room.match!.currentId;
+  room.intent(id, { type: "item", key: "1" }, 1000);
+  const first = room.intent(id, { type: "shoot", angleDeg: 45, power: 40 }, 1000);
+  if ("error" in first) throw new Error(first.error);
+  // fora da rajada continua valendo a pausa da animação
+  expect(room.intent(id, { type: "pass" }, 2000)).toEqual({ error: "aguarde a animação" });
+  const ats: number[] = [first.events.find(e => e.type === "shot")!.at!];
+  for (const [t, ang] of [[2000, 50], [3000, 55]] as const) {
+    const r = room.intent(id, { type: "shoot", angleDeg: ang, power: 40 }, t);
+    if ("error" in r) throw new Error(r.error);
+    ats.push(r.events.find(e => e.type === "shot")!.at!);
+  }
+  expect(ats.map(a => a - ats[0]!)).toEqual([0, 1, 2]);
+  // acabou a rajada: o turno passou; um tiro a mais é recusado
+  expect("error" in room.intent(id, { type: "shoot", angleDeg: 45, power: 40 }, 4000)).toBe(true);
+});
