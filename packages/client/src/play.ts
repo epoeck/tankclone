@@ -1,5 +1,5 @@
 /** Cliente de rede: login → saguão → sala → partida. O servidor decide tudo; aqui só enviamos intenções e animamos eventos. */
-import { BUILDS, COUNTS, HAIR_COLORS, MAPS, SKIN_TONES, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
+import { BUILDS, MAPS, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
 import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/src/protocol";
 import { drawCharPortrait as drawPortrait } from "./chars";
 import { loadClientMaps } from "./maps";
@@ -7,6 +7,7 @@ import { Hud } from "./hud";
 import { EndScreen } from "./end-screen";
 import { Controls } from "./controls";
 import { MatchView, VIEW_H, VIEW_W } from "./view";
+import { Wardrobe } from "./wardrobe";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const screens = ["s-login", "s-lobby", "s-wardrobe", "s-room", "match"];
@@ -19,11 +20,11 @@ const param = new URLSearchParams(location.search).get("server");
 const url = param ?? (location.protocol === "https:" ? `wss://${location.host}` : `ws://${location.hostname}:8080`);
 let ws: WebSocket;
 const handlers: Array<(m: ServerMsg) => void> = [];
-const send = (m: ClientMsg) => { if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m)); };
+const send = (m: ClientMsg): boolean => { if (ws?.readyState !== WebSocket.OPEN) return false; ws.send(JSON.stringify(m)); return true; };
 function connect() {
   ws = new WebSocket(url);
   ws.onopen = () => { $("conn").textContent = "servidor online"; };
-  ws.onclose = () => { $("conn").textContent = "desconectado; tentando de novo…"; setTimeout(connect, 2000); if (me) { me = null; show("s-login"); toast("conexão perdida"); } };
+  ws.onclose = () => { $("conn").textContent = "desconectado; tentando de novo…"; setTimeout(connect, 2000); if (me) { wardrobe.disconnect(); me = null; show("s-login"); toast("conexão perdida"); } };
   ws.onmessage = e => { let m: ServerMsg; try { m = JSON.parse(e.data as string); } catch { return; } onMsg(m); };
 }
 connect();
@@ -37,8 +38,10 @@ let hud: Hud | null = null;
 let endInfo: Record<string, { gained: number; level: number }> | null = null;
 let endPending = false;
 let endCards = false, endWinner: number | null = null, endScreen: EndScreen | null = null;
+const wardrobe = new Wardrobe($("s-wardrobe"), look => send({ t: "setLook", look }));
 
 function startMatch(setup: MatchSetup, events: MatchEvent[]) {
+  wardrobe.disconnect();
   endPending = false;
   view = new MatchView(setup.mapId, setup.players);
   view.me = me?.nick ?? null;
@@ -53,10 +56,10 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
 function onMsg(m: ServerMsg) {
   handlers.forEach(h => h(m));
   switch (m.t) {
-    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
-    case "error": toast(m.msg); break;
+    case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); wardrobe.confirm(m.look); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
+    case "error": toast(m.msg); wardrobe.fail(m.msg); break;
     case "rooms": renderRooms(m.rooms); break;
-    case "room": room = m.room; if (room) { if (!view) { renderRoom(); show("s-room"); } } else { show("s-lobby"); send({ t: "rooms" }); } break;
+    case "room": room = m.room; if (room) { if (!view) { renderRoom(); if (!$("s-wardrobe").classList.contains("on")) show("s-room"); } } else { if (!$("s-wardrobe").classList.contains("on")) show("s-lobby"); send({ t: "rooms" }); } break;
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
     case "events": view?.push(m.events); break;
@@ -107,8 +110,14 @@ fillMaps();
 void loadClientMaps().then(fillMaps);
 $("btn-refresh").onclick = () => send({ t: "rooms" });
 $("btn-create").onclick = () => send({ t: "createRoom", mapId: $<HTMLSelectElement>("new-map").value, maxPlayers: +$<HTMLSelectElement>("new-max").value });
-$("btn-wardrobe").onclick = () => { renderWardrobe(); show("s-wardrobe"); };
-$("btn-wardrobe-back").onclick = () => show(room ? "s-room" : "s-lobby");
+function openWardrobe() {
+  if (!me) return;
+  show("s-wardrobe");
+  wardrobe.open(me.look, me.nick, () => { show(room ? "s-room" : "s-lobby"); if (room) renderRoom(); },
+    room?.players.find(p => p.nick === me!.nick)?.weaponId);
+}
+$("btn-wardrobe").onclick = openWardrobe;
+$("btn-room-wardrobe").onclick = openWardrobe;
 function renderMe() {
   if (!me) return;
   $("me-nick").textContent = me.nick; $("me-level").textContent = `Nv ${me.level} · ${me.xp} XP · ${(me.gold ?? 0).toLocaleString("pt-BR")} gold`;
@@ -124,40 +133,6 @@ function renderRooms(rooms: RoomInfo[]) {
     const b = el("button", "Entrar", "btn btn--sm"); b.onclick = () => send({ t: "joinRoom", roomId: r.id });
     const td = el("td"); td.append(b); tr.append(td); tb.append(tr);
   }
-}
-
-// ---------- vestiário ----------
-function renderWardrobe() {
-  if (!me) return;
-  const host = $("wardrobe-opts"); host.replaceChildren();
-  const apply = (mut: (l: Look) => void) => { const l = structuredClone(me!.look); mut(l); me!.look = l; send({ t: "setLook", look: l }); renderWardrobe(); renderMe(); };
-  const numbers = (label: string, n: number, cur: number, set: (l: Look, i: number) => void, optional = false) => {
-    const row = el("div", "", "opts"); row.append(el("span", label, "label"));
-    for (let i = 0; i < n; i++) { const b = el("button", optional ? (i === 0 ? "—" : String(i)) : String(i + 1), "btn btn--sm btn--steel"); b.setAttribute("aria-pressed", String(i === cur)); b.onclick = () => apply(l => set(l, i)); row.append(b); }
-    host.append(row);
-  };
-  const colors = (label: string, list: readonly string[], cur: number, set: (l: Look, i: number) => void) => {
-    const row = el("div", "", "opts"); row.append(el("span", label, "label"));
-    list.forEach((c, i) => { const b = el("button", "", "sw"); b.style.background = c; b.setAttribute("aria-label", `${label} ${i + 1}`); b.setAttribute("aria-pressed", String(i === cur)); b.onclick = () => apply(l => set(l, i)); row.append(b); });
-    host.append(row);
-  };
-  const a = me.look.appearance, e = me.look.equipped;
-  const sexRow = el("div", "", "opts"); sexRow.append(el("span", "Avatar", "label"));
-  for (const [sex, label] of [["m", "Masculino"], ["f", "Feminino"]] as const) {
-    const button = el("button", label, "btn btn--sm btn--steel");
-    button.setAttribute("aria-pressed", String(a.sex === sex));
-    button.onclick = () => apply(l => (l.appearance.sex = sex)); sexRow.append(button);
-  }
-  host.append(sexRow);
-  colors("Pele", SKIN_TONES, a.skin, (l, i) => (l.appearance.skin = i));
-  numbers("Rosto", COUNTS.face, a.face, (l, i) => (l.appearance.face = i));
-  numbers("Cabelo", COUNTS.hair, a.hair, (l, i) => (l.appearance.hair = i));
-  colors("Cor do cabelo", HAIR_COLORS, a.hairColor, (l, i) => (l.appearance.hairColor = i));
-  numbers("Roupa", COUNTS.outfit, e.outfit, (l, i) => (l.equipped.outfit = i));
-  numbers("Chapéu", COUNTS.hat, e.hat, (l, i) => (l.equipped.hat = i), true);
-  numbers("Óculos", COUNTS.glasses, e.glasses, (l, i) => (l.equipped.glasses = i), true);
-  numbers("Asas", COUNTS.wings, e.wings, (l, i) => (l.equipped.wings = i), true);
-  drawPortrait($("portrait") as HTMLCanvasElement, me.look);
 }
 
 // ---------- sala ----------

@@ -1,7 +1,8 @@
+import { miniTransform, miniToMap, mapToMini } from "./minimap-geometry";
 /** HUD da partida em HTML/CSS por cima do canvas (classes do design). Só lê o estado do MatchView; nunca decide regra. */
 import { ITEMS, WEAPONS, own, type ItemKey } from "@tankclone/core";
 import { drawCharPortrait } from "./chars";
-import { dialAngle } from "./character-state";
+import { dialAngle, lastShotMarker } from "./character-state";
 import { VIEW_W, VIEW_H, type MatchView } from "./view";
 import { PROP_ICON, UI_FPS, drawClass, uiReady } from "./reborn-ui";
 import { sfx } from "./sound";
@@ -39,11 +40,11 @@ export class Hud {
       <div class="minimap well"><canvas width="300" height="130"></canvas></div>
       <div class="roundinfo panel"><div><span style="color:var(--sky-300)">Azul</span><b class="num" data-k="blue"></b></div><div><span style="color:#ffb1a6">Vermelho</span><b class="num" data-k="red"></b></div></div>
       <div class="itemcol"></div>
-      <div class="dial" style="--angle:45deg"><span class="dial__range"></span><span class="dial__needle"></span><span class="dial__hub"></span><span class="dial__value num">45</span></div>
+      <div class="dial" style="--angle:45deg"><span class="dial__range"></span><span class="dial__last" hidden></span><span class="dial__needle"></span><span class="dial__hub"></span><span class="dial__value num">45</span></div>
       <div class="skills"></div>
       <div class="powerbar"><span class="powerbar__label">Força</span>
         <div class="powerbar__ruler num">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(n => `<span>${n}</span>`).join("")}</div>
-        <div class="power" style="--power:0%; --last:0%"><span class="power__last"></span><span class="power__hint">Segure Espaço: a força vai até 100 e volta</span></div></div>
+        <div class="power" style="--power:0%; --last:0%"><span class="power__history" hidden></span><span class="power__hint">Segure Espaço: a força vai até 100 e volta</span></div></div>
       <div class="vitals2">
         <div class="vitals2__row"><span>Energia</span><div class="bar bar--energy" style="--value:100%"><span class="bar__text num"></span></div></div>
         <div class="vitals2__row"><span>Vida</span><div class="bar bar--hp bar--lg" style="--value:100%"><span class="bar__text num"></span></div></div>
@@ -54,8 +55,8 @@ export class Hud {
     this.mini = el(root, ".minimap canvas");
     const moveCamera = (event: PointerEvent) => {
       const rect = this.mini.getBoundingClientRect();
-      const x = Math.max(0, Math.min(this.view.width, (event.clientX - rect.left) / rect.width * this.view.width));
-      const y = Math.max(0, Math.min(this.view.height, (event.clientY - rect.top) / rect.height * this.view.height));
+      const t = miniTransform(this.view.width, this.view.height, this.mini.width, this.mini.height);
+      const { x, y } = miniToMap(t, (event.clientX - rect.left) / rect.width * this.mini.width, (event.clientY - rect.top) / rect.height * this.mini.height);
       this.measureX = x; this.view.moveCameraTo(x, y);
     };
     this.mini.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); this.mini.setPointerCapture(event.pointerId); moveCamera(event); });
@@ -171,7 +172,13 @@ export class Hud {
       if (full) this.gauge.setAttribute("data-full", ""); else this.gauge.removeAttribute("data-full");
       this.gauge.style.setProperty("--pressure", String(who.fury / 200)); this.gaugeLabel.textContent = `Pressão ${Math.round(who.fury / 2)}%${v.ui.special ? " · ESTOURO" : ""}`;
     }
-    this.power.style.setProperty("--power", `${v.ui.power}%`); this.power.style.setProperty("--last", `${v.ui.last}%`);
+    this.power.style.setProperty("--power", `${v.ui.power}%`);
+    const last = lastShotMarker(v.lastShot);
+    this.power.style.setProperty("--last", `${last?.power ?? 0}%`);
+    el<HTMLElement>(this.power, ".power__history").hidden = last === null;
+    const previousNeedle = el<HTMLElement>(this.angle, ".dial__last");
+    previousNeedle.hidden = last === null;
+    if (last) this.angle.style.setProperty("--last-angle", `${last.angle}deg`);
     if (cur) {
       const range = v.aimRange;
       // Conic gradients começam em cima e crescem no sentido horário.
@@ -201,13 +208,18 @@ export class Hud {
   private drawMinimap(): void {
     const v = this.view, c = this.mini.getContext("2d")!, w = this.mini.width, h = this.mini.height;
     c.clearRect(0, 0, w, h); c.fillStyle = "#0c1130"; c.fillRect(0, 0, w, h);
-    c.drawImage(v.terrainCanvas, 0, 0, v.width, v.height, 0, 0, w, h);
-    for (const ch of v.chars.values()) if (ch.alive) { c.fillStyle = ch.team === 1 ? "#4a90ff" : "#ff5a47"; c.beginPath(); c.arc((ch.x / v.width) * w, (ch.y / v.height) * h - 2, 3, 0, 7); c.fill(); }
-    if (v.current && this.measureX !== null) {
-      const x0 = v.current.x / v.width * w, x1 = this.measureX / v.width * w;
-      c.strokeStyle = "#ffe279"; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, h - 17); c.lineTo(x1, h - 17); c.stroke();
-      c.fillStyle = "#fff"; c.font = "bold 12px sans-serif"; c.fillText(`${(Math.abs(this.measureX - v.current.x) / 100).toFixed(1)} un`, Math.max(2, Math.min(w - 52, x1 - 20)), h - 22);
+    const t = miniTransform(v.width, v.height, w, h);
+    c.drawImage(v.terrainCanvas, 0, 0, v.width, v.height, t.x, t.y, t.width, t.height);
+    for (const ch of v.chars.values()) if (ch.alive) {
+      const point = mapToMini(t, ch.x, ch.y); c.fillStyle = ch.team === 1 ? "#4a90ff" : "#ff5a47";
+      c.beginPath(); c.arc(point.x, point.y - 2, 3, 0, 7); c.fill();
     }
-    c.strokeStyle = "#fff6e0"; c.lineWidth = 2; c.strokeRect((v.camX / v.width) * w, (v.camY / v.height) * h, Math.min(1, VIEW_W / v.width) * w, Math.min(1, VIEW_H / v.height) * h);
+    if (v.current && this.measureX !== null) {
+      const x0 = mapToMini(t, v.current.x, 0).x, x1 = mapToMini(t, this.measureX, 0).x, y = Math.min(h - 8, t.y + t.height - 10);
+      c.strokeStyle = "#ffe279"; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke();
+      c.fillStyle = "#fff"; c.font = "bold 12px sans-serif"; c.fillText(`${(Math.abs(this.measureX - v.current.x) / 100).toFixed(1)} un`, Math.max(2, Math.min(w - 52, x1 - 20)), Math.max(12, y - 5));
+    }
+    const camera = mapToMini(t, v.camX, v.camY);
+    c.strokeStyle = "#fff6e0"; c.lineWidth = 2; c.strokeRect(camera.x, camera.y, Math.min(VIEW_W, v.width) * t.scale, Math.min(VIEW_H, v.height) * t.scale);
   }
 }

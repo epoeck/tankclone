@@ -1,7 +1,8 @@
 /** Composição do avatar clássico: GameCharacterLoader / ShowCharacterLoader do cliente 4.1.
  * Recursos PNG compatíveis do mesmo pacote doador usado pelo Reborn. Ver docs/avatar.md. */
 import catalog from "./reference/avatar.json";
-import { HAIR_COLORS, SKIN_TONES, sanitizeLook, type Look } from "./appearance";
+import { cnPiece } from "./wardrobe-catalog";
+import { HAIR_COLORS, PIECE_COLORS, SKIN_TONES, sanitizeLook, type Look } from "./appearance";
 
 export type AvatarMode = "game" | "show";
 export interface AvatarLayer {
@@ -22,13 +23,20 @@ export function avatarLayers(raw: Look, weaponId: string, mode: AvatarMode): Ava
   // No retrato a arma é a última camada. Na batalha vai atrás do rosto e do corpo.
   if (mode === "game") layers.push({ slot: "weapon", group: "weapon", file: weapon[mode] });
   const part = (slot: "face" | "cloth" | "hair" | "head" | "glass", index: number) => {
-    const item = sex[slot][index]!;
+    const item = sex[slot][index] ?? cnPiece(a.sex, slot, index)!;
     const variants = item.variants as Record<string, { game: string[]; show: string[] }>;
     const files = variants[slot === "hair" ? e.hat ? "A" : "B" : "default"]![mode];
     const group = slot === "face" ? "face" : "upper";
-    layers.push({ slot, group, file: files[0]! });
+    const colorMap = slot === "face" ? look.tints?.face : slot === "cloth" ? look.tints?.outfit : slot === "head" ? look.tints?.hat : undefined;
+    const key = slot === "head" ? index + 1 : index;
+    const color = colorMap?.[`${a.sex}:${key}`] ?? colorMap?.[key] ?? -1;
+    const tint = color === undefined ? undefined : PIECE_COLORS[color];
+    layers.push({ slot, group, file: files[0]!, ...(slot === "head" && tint ? { tint } : {}) });
     if (slot === "hair") layers.push({ slot, group, file: files[1]!, tint: HAIR_COLORS[a.hairColor] });
-    if (slot === "face" || slot === "cloth") layers.push({ slot, group, file: files[2]!, tint: SKIN_TONES[a.skin] });
+    if (slot === "face" || slot === "cloth") {
+      layers.push({ slot, group, file: files[1]!, tint: SKIN_TONES[a.skin] });
+      if (tint) layers.push({ slot, group, file: files[2]!, tint });
+    }
   };
   part("face", a.face);
   part("hair", a.hair);

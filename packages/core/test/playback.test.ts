@@ -27,6 +27,13 @@ describe("linha de animação", () => {
     expect(playback.busy).toBe(false);
     expect(seen.at(-1)).toMatchObject({ type: "damage", hp: 40 });
   });
+  it("informa o tempo restante do quadro para envelhecer efeitos no instante correto", () => {
+    const p = new MatchPlayback(), ages: number[] = [];
+    p.push([{ type: "damage", playerId: "a", amount: 10, hp: 90, crit: false, at: 0.25 },
+      { type: "damage", playerId: "a", amount: 20, hp: 70, crit: true, at: 0.75 }]);
+    p.update(1, (_event, remaining) => ages.push(remaining));
+    expect(ages).toEqual([0.75, 0.25]);
+  });
   it("notifica impacto imediato de duração zero", () => {
     const p = new MatchPlayback(), ended: number[] = [];
     p.push([flight(0, 0, 0)]);

@@ -14,3 +14,8 @@ export function applyCharacterMove(c: MovingCharacter, e: Extract<MatchEvent, { 
 export function dialAngle(angleDeg: number, facing: Facing): number {
   return facing === -1 ? -180 - angleDeg : angleDeg;
 }
+
+/** Posição do marcador de tiro anterior em coordenadas da interface. */
+export function lastShotMarker(shot: { angle: number; power: number; facing: Facing } | null): { angle: number; power: number } | null {
+  return shot ? { angle: dialAngle(shot.angle, shot.facing), power: Math.max(0, Math.min(100, shot.power)) } : null;
+}

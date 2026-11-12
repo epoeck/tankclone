@@ -31,7 +31,7 @@ export class Controls {
     if (e.code.startsWith("Arrow")) e.preventDefault();
     // Reborn (ArrowView.__inputKeyDown): cada toque em ↑/↓ já muda 1°; segurando, repete a cada 100 ms
     const ad = e.code === "ArrowUp" ? 1 : e.code === "ArrowDown" ? -1 : 0;
-    if (ad && !e.repeat && !this.charging) { this.view.ui.angle += ad; sfx("angle"); this.angleAcc = 0; this.angleKey = ad; }
+    if (ad && !e.repeat) { this.view.ui.angle += ad; sfx("angle"); this.angleAcc = 0; this.angleKey = ad; }
     const k = e.key.toUpperCase();
     if (k === "M") { this.view.ui.msg = toggleMute() ? "som desligado" : "som ligado"; return; }
     if (!this.canControl() || this.view.hud.over || this.burst || this.view.ui.fired) return;
@@ -48,12 +48,19 @@ export class Controls {
       if (!this.canControl()) { stopSfx("charge"); this.view.ui.power = 0; return; }
       // soltar sempre atira com a força atual (não existe soltar sem atirar); o 019 corta o 020
       const ui = this.view.ui, power = ui.power, special = ui.special;
-      ui.last = power; sfx("release");
-      this.send({ type: "shoot", angleDeg: ui.angle, power, special });
+      sfx("release");
+      this.sendShot(power, special);
       const left = this.extraShots(special);
       this.burst = left > 0 ? { power, special, left, nextAt: performance.now() + SHOT_INTERVAL_SECONDS * 1000 } : null;
       ui.power = 0;
     }
+  }
+  private sendShot(power: number, special: boolean): void {
+    const { min, max } = this.view.aimRange;
+    const angleDeg = Math.min(max, Math.max(min, this.view.ui.angle));
+    this.view.ui.angle = angleDeg;
+    this.view.expectShot(angleDeg, power);
+    this.send({ type: "shoot", angleDeg, power, special });
   }
   /** POW (estouro): só com a fúria cheia; o especial é decidido no primeiro tiro. */
   togglePow(): void {
@@ -70,7 +77,7 @@ export class Controls {
     const ui = this.view.ui;
     // o ângulo é do jogador: as setas ↑↓ funcionam a qualquer momento (inclusive fora da vez e entre tiros), 1°/toque, repete a cada 100 ms
     const ad = (this.keys.has("ArrowUp") ? 1 : 0) - (this.keys.has("ArrowDown") ? 1 : 0);
-    if (ad && !this.charging) { this.angleAcc += dt; if (this.angleAcc >= 0.1 || this.angleKey !== ad) { this.angleAcc = 0; ui.angle += ad; sfx("angle"); } } else this.angleAcc = 0;
+    if (ad) { this.angleAcc += dt; if (this.angleAcc >= 0.1 || this.angleKey !== ad) { this.angleAcc = 0; ui.angle += ad; sfx("angle"); } } else this.angleAcc = 0;
     this.angleKey = ad;
     // perdeu a vez (tempo, desconexão, fim): abandona carga e rajada. Animações em curso NÃO cancelam a carga.
     if (!this.canControl() || this.view.hud.over) {
@@ -80,7 +87,7 @@ export class Controls {
     if (this.burst) {
       // relógio de parede (como o Timer de 1000 ms do Reborn), não o dt limitado do quadro
       if (performance.now() >= this.burst.nextAt) {
-        this.send({ type: "shoot", angleDeg: ui.angle, power: this.burst.power, special: this.burst.special });
+        this.sendShot(this.burst.power, this.burst.special);
         this.burst.left--; this.burst.nextAt += SHOT_INTERVAL_SECONDS * 1000;
         if (this.burst.left <= 0) this.burst = null;
       }

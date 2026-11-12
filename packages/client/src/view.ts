@@ -7,6 +7,7 @@ import { applyCharacterTransform } from "./doll";
 import { UI_FPS, autoPropAlpha, classFrames, drawClass, propIcon } from "./reborn-ui";
 import { TerrainLayer } from "./terrain-layer";
 import { drawDeath } from "./death";
+import { drawDamagePopup, damagePopupDuration } from "./damage-popup";
 import { applyCharacterMove } from "./character-state";
 import { drawImpact, drawProjectile, drawTrail, impactDuration, TRAIL_MAX_LIFE } from "./projectile-effects";
 import { preloadLocalSfx, projectileSfx, sfx, stopSfx } from "./sound";
@@ -24,6 +25,8 @@ export interface CharView {
   itemFx?: Array<{ key: string; start: number }>;
 }
 
+export interface LastShot { angle: number; power: number; facing: Facing }
+
 export const VIEW_W = 1280, VIEW_H = 720;
 const TEAM = { 1: { color: "#6aa7ff" }, 2: { color: "#ff8a6a" } } as const;
 export class MatchView {
@@ -37,7 +40,10 @@ export class MatchView {
   me: string | null = null;
   private bg: HTMLImageElement | null = null;
   private lastShotSound: string | null = null;
+  private shotHistory = new Map<string, LastShot>();
+  private pendingShots = new Map<string, LastShot[]>();
   private tails: Array<{ weapon: string; special: boolean; trail: Array<{ x: number; y: number }>; elapsed: number; age: number }> = [];
+  private damagePopups: Array<{ playerId: string; amount: number; crit: boolean; x: number; y: number; age: number; variant: number }> = [];
   private impacts: Array<{ x: number; y: number; weapon: string; special: boolean; age: number }> = [];
   private layer: TerrainLayer;
   private playback = new MatchPlayback();
@@ -88,11 +94,19 @@ export class MatchView {
   get busy(): boolean { return this.playback.busy; }
   push(events: MatchEvent[]): void { this.playback.push(events.map(event => ({ ...event }))); }
   get current(): CharView | undefined { return this.chars.get(this.hud.player); }
+  get lastShot(): LastShot | null { return this.shotHistory.get(this.me ?? this.hud.player) ?? null; }
+  /** Fallback para servidores antigos: só vira histórico se o evento de tiro chegar. */
+  expectShot(angle: number, power: number): void {
+    const c = this.current; if (!c) return;
+    const pending = this.pendingShots.get(c.id) ?? [];
+    pending.push({ angle, power, facing: c.facing }); this.pendingShots.set(c.id, pending);
+  }
 
-  private apply(e: MatchEvent): void {
+  private apply(e: MatchEvent, remaining: number): void {
     const v = "playerId" in e ? this.chars.get(e.playerId) : undefined;
     switch (e.type) {
       case "turnStart": {
+        this.pendingShots.delete(e.playerId);
         this.manualCamera = false;
         this.ui.flyCooldown = e.flyCooldown ?? false; this.hud.wind = e.wind; this.hud.turn = e.turn; this.hud.player = e.playerId; this.hud.timeLimit = e.timeLimit; this.hud.timeLeft = e.timeLimit; for (const [id, delay] of Object.entries(e.delays)) { const c = this.chars.get(id); if (c) c.delay = delay; }
         if (v) { v.energy = e.energy; v.maxEnergy = Math.max(v.maxEnergy, e.energy); this.ui.angle = Math.max(this.ui.angle, 0); }
@@ -115,7 +129,17 @@ export class MatchView {
         break;
       }
       case "crater": this.layer.carve(e); break;
-      case "damage": if (v) { v.hp = Math.max(0, v.hp - e.amount); v.action = "hit"; v.actionStart = performance.now() / 1000; } sfx("hit"); break;
+      case "damage": {
+        if (v) {
+          v.hp = Math.max(0, v.hp - e.amount); v.action = "hit"; v.actionStart = performance.now() / 1000;
+          if (e.amount > 0 && remaining < damagePopupDuration(e.crit)) {
+            const occupied = new Set(this.damagePopups.filter(p => p.playerId === v.id && p.age - remaining < damagePopupDuration(p.crit)).map(p => p.variant));
+            let variant = 0; while (occupied.has(variant)) variant++;
+            this.damagePopups.push({ playerId: v.id, amount: e.amount, crit: e.crit, x: v.x, y: v.y, age: remaining, variant });
+          }
+        }
+        sfx("hit"); break;
+      }
       case "fury": if (v) v.fury = e.fury; break;
       case "death": if (v) { v.alive = false; v.deathAge = 0; } sfx("death"); break;
       case "gameOver": { this.hud.over = true; this.hud.winner = e.winnerTeam; const mine = this.me ? this.chars.get(this.me)?.team : undefined; sfx("gameEnd"); if (mine !== undefined) sfx(e.winnerTeam === mine ? "win" : "lose"); break; }
@@ -124,6 +148,12 @@ export class MatchView {
         // Logs de servidores anteriores enviavam o ID da arma mesmo com o item F ativo.
         // O evento de item já é autoritativo e precede o disparo na mesma linha do tempo.
         if (this.ui.fly) e.ballId = FLY_BALL_ID;
+        if (v && e.index === 0) {
+          const pending = this.pendingShots.get(v.id)?.shift();
+          const last = e.aimDeg !== undefined && e.power !== undefined
+            ? { angle: e.aimDeg, power: e.power, facing: e.aimFacing ?? v.facing } : pending;
+          if (last) this.shotHistory.set(v.id, last);
+        }
         this.ui.fired = true;
         if (v) { v.action = "shoot"; v.actionStart = performance.now() / 1000; }
         const visual = this.projectileVisual(e.ballId, v?.weaponId);
@@ -158,12 +188,14 @@ export class MatchView {
 
   /** Avança animações e o relógio exibido (o relógio de verdade é do core/servidor). */
   update(dt: number): void {
+    for (const popup of this.damagePopups) popup.age += Math.max(0, dt);
+    this.damagePopups = this.damagePopups.filter(popup => popup.age < damagePopupDuration(popup.crit));
     for (const tail of this.tails) tail.age += dt;
     this.tails = this.tails.filter(tail => tail.age < TRAIL_MAX_LIFE);
     for (const impact of this.impacts) impact.age += dt;
     this.impacts = this.impacts.filter(impact => impact.age < (impactDuration(impact.weapon, impact.special) ?? 3));
     for (const c of this.chars.values()) { c.walk = Math.max(0, c.walk - dt); if (c.deathAge !== undefined) c.deathAge += dt; }
-    const idleTime = this.playback.update(dt, e => this.apply(e), (shot, remaining) => {
+    const idleTime = this.playback.update(dt, (e, remaining) => this.apply(e, remaining), (shot, remaining) => {
       const visual = this.projectileVisual(shot.ballId, this.chars.get(shot.playerId)?.weaponId);
       if (visual && shot.points.length && remaining < TRAIL_MAX_LIFE) {
         const length = Math.min(14, Math.floor(shot.duration / 0.04) + 1);
@@ -231,6 +263,7 @@ export class MatchView {
         ctx.fillStyle = "#101010"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, 7); ctx.fill(); ctx.stroke();
       }
     }
+    for (const popup of this.damagePopups) drawDamagePopup(ctx, popup.amount, popup.crit, popup.x, popup.y, popup.age, popup.variant);
     ctx.restore();
 
   }

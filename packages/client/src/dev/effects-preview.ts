@@ -1,7 +1,10 @@
 import { drawImpact, drawProjectile, drawTrail } from '../projectile-effects';
+import { drawDamagePopup } from '../damage-popup';
 import { projectileSfx } from '../sound';
 const canvas = document.querySelector<HTMLCanvasElement>('#effects')!;
 const ctx = canvas.getContext('2d')!;
+const damage = document.querySelector<HTMLCanvasElement>('#damage')!;
+const dc = damage.getContext('2d')!;
 const weapons = ['prism', 'sledge', 'furnace', 'fly'];
 canvas.addEventListener('click', event => {
   const rect = canvas.getBoundingClientRect(), row = Math.floor((event.clientY - rect.top) / rect.height * canvas.height / 130);
@@ -17,6 +20,11 @@ function frame(now: number) {
     drawImpact(ctx, weapon, special, 760, y, age);
     ctx.strokeStyle = '#708091'; ctx.beginPath(); ctx.moveTo(0, row * 130 + 129); ctx.lineTo(1100, row * 130 + 129); ctx.stroke();
   }
+  dc.clearRect(0, 0, damage.width, damage.height);
+  dc.fillStyle = '#fff'; dc.font = '20px sans-serif'; dc.fillText('Normal: 1234', 25, 30); dc.fillText('Crítico: 5678', 560, 30);
+  const damageAge = now / 1000 % 2;
+  drawDamagePopup(dc, 1234, false, 260, 160, damageAge);
+  drawDamagePopup(dc, 5678, true, 800, 160, damageAge);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

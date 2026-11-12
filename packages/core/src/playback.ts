@@ -52,7 +52,7 @@ export class MatchPlayback {
   }
 
   /** Devolve a fração do frame que sobrou depois das animações, para o contador do turno. */
-  update(dt: number, apply: (event: MatchEvent) => void, onFlightEnd?: (shot: Extract<MatchEvent, { type: "shot" }>, remaining: number) => void): number {
+  update(dt: number, apply: (event: MatchEvent, remaining: number) => void, onFlightEnd?: (shot: Extract<MatchEvent, { type: "shot" }>, remaining: number) => void): number {
     let remaining = Math.max(0, dt);
     while (true) {
       for (const f of this.flights) if (f.end <= this.clock) onFlightEnd?.(f.shot, remaining);
@@ -60,7 +60,7 @@ export class MatchPlayback {
       while (this.queue.length && this.queue[0]!.at <= this.clock) {
         const { event, at } = this.queue.shift()!;
         if (event.type === "shot" && event.duration > 0) this.flights.push({ shot: event, start: at, end: at + event.duration });
-        apply(event);
+        apply(event, remaining);
         if (event.type === "shot" && event.duration <= 0) onFlightEnd?.(event, remaining);
       }
       if (!this.busy || remaining === 0) return this.busy ? 0 : remaining;

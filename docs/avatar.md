@@ -33,7 +33,8 @@ O sistema combina itens por categoria, sexo, cor e variante do cabelo sob o chap
 
 - `image/equip/{m|f}/{face,hair,cloth,head,glass}/{Pic}/{camada}/{GAME|SHOW}.png`;
 - cabelo tem as variantes `A` (sob o chapéu) e `B`;
-- roupa/rosto têm máscara de pele, e cabelo tem máscara de cor;
+- em roupa e rosto, a camada `/2` é a máscara de pele; `/3` colore a roupa ou a íris;
+- cabelo tem máscara de cor; chapéus atuais usam a própria silhueta para tintura;
 - arma tem seu próprio `image/arm/{Pic}/1/0/{game|show}.png`;
 - a folha de batalha tem **39 quadros de 114 × 95**, em 13 colunas e 3 linhas;
 - retratos usam a arte SHOW de 250 × 312; o rosto tem quatro expressões lado a lado.
@@ -53,7 +54,7 @@ O catálogo inicial contém:
 
 - masculino e feminino, com a escolha salva no mesmo JSON `Look` da conta;
 - 3 rostos, 3 cabelos, 3 roupas, 2 chapéus, 1 óculos e as 3 armas;
-- paletas de pele/cabelo existentes, aplicadas às máscaras próprias;
+- paletas de pele e cabelo, além de tinturas independentes por peça para roupa, íris e chapéu, com opção Original;
 - animações básicas de parado, andando, mirando, disparando e recebendo dano;
 - 1 asa clássica com animação GAME/SHOW da biblioteca SWF convertida.
 
@@ -87,3 +88,5 @@ O retrato e a batalha foram inspecionados no navegador com os dois sexos e equip
 ## Asa, alma e lápide
 
 A asa `wing002` usa a biblioteca convertida `wings` do clone local Reborn, incluindo os quadros GAME e SHOW. No GAME os clipes esquerdo e direito ficam, respectivamente, atrás e à frente do corpo; os quadros selecionam repouso ou disparo, enquanto o clipe interno anima durante movimento e ação. O registro usa `weaponX` e `weaponY` de `GameCharacter` e `GamePlayer.addWing`. A lápide usa `asset.game.tombAsset` de `game.swf`; a alma recompõe o quadro 36 e o rosto reduzido em escala de cinza, com os corpos animados `ghostManMovieAsset` e `ghostGirlMovieAsset` do `gameii.swf`, seguindo `GameCharacter.drawSoul`, `doAction` e `GamePlayer.die`. O movimento suave da alma é uma aproximação. Os hashes dos arquivos importados constam em `packages/client/public/character-effects/manifest.json`; a importação é reproduzida por `python scripts/import-character-effects.py /caminho/ddtank-reborn`. Conversão SWF local do clone `dab2b445f153a6852b48182d4afe5c43ebbe3e16`.
+
+O rosto SOUL usa a origem original `GameCharacter._body=(-62,-83)` e deslocamento de composição `(7,5)` após escala 0,75; o corpo animado usa `ghostMovie=(-26,-50)` no mesmo sistema de coordenadas. O registro de pés `(-62,-91)` usado para o avatar vivo não deve ser aplicado à alma.

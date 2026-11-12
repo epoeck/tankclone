@@ -14,3 +14,8 @@ packages/client/public/projectiles/
 packages/client/public/maps/original-*/
 packages/client/public/sfx-local/
 packages/client/public/ui-local/
+
+# Cópia local dos recursos CN; manifesto e importador são reproduzíveis.
+assets-local/cn-wardrobe/
+packages/client/public/vestuario-local/
+packages/client/public/damage-popup/

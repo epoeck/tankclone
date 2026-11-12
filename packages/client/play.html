@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/src/ui/tokens.css">
 <link rel="stylesheet" href="/src/ui/components.css">
 <link rel="stylesheet" href="/src/ui/stage.css">
+<link rel="stylesheet" href="/src/ui/wardrobe.css">
 <style>
   body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% 0%, rgba(111,182,255,.25), transparent 60%), linear-gradient(180deg, var(--navy-700), var(--navy-900)); }
   .screen { display: none; max-width: 1000px; margin: 0 auto; padding: 16px; gap: 14px; }
@@ -20,9 +21,6 @@
   .opts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .opts button { min-width: 34px; }
   .opts button[aria-pressed="true"] { outline: 3px solid var(--brass-300); }
-  .sw { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ink); padding: 0; cursor: pointer; }
-  .sw[aria-pressed="true"] { outline: 3px solid var(--brass-300); }
-  #portrait { background: var(--navy-800); border: 3px solid var(--ink); border-radius: 10px; }
 </style>
 </head>
 <body class="dd">
@@ -45,7 +43,7 @@
     <canvas id="portrait-mini" width="64" height="80"></canvas>
     <div class="grow"><span class="title title--sm title--cream" id="me-nick"></span> <span class="chip chip--lvl" id="me-level"></span>
       <div class="muted" style="font-size:12px" id="me-unlocks"></div></div>
-    <button class="btn btn--sm" id="btn-wardrobe">Vestiário</button>
+    <button class="btn btn--sm" id="btn-wardrobe">Mochila</button>
   </header>
   <section class="panel">
     <div class="panel__head"><h3 class="title title--lg">Salas</h3></div>
@@ -61,16 +59,10 @@
   <div class="paper" style="display:grid; grid-template-rows:1fr auto; height:180px;"><div class="chat" id="chat-lobby" aria-live="polite" style="overflow:auto"></div><div class="chat__input field" style="padding:0 8px 8px;"><input id="chat-lobby-in" maxlength="200" placeholder="Conversa do saguão — Enter envia" autocomplete="off"></div></div>
 </section>
 
-<section id="s-wardrobe" class="screen">
-  <div class="panel" style="display:grid; gap:12px;">
-    <div class="row"><h3 class="title title--lg grow">Vestiário</h3><button class="btn btn--steel btn--sm" id="btn-wardrobe-back">Voltar</button></div>
-    <div class="row" style="align-items:flex-start;"><canvas id="portrait" width="180" height="260"></canvas><div id="wardrobe-opts" style="display:grid; gap:10px;" class="grow"></div></div>
-    <small class="muted">Pele, rosto e cabelo são a base do boneco. Roupa e chapéu são equipamentos (nesta build, todos liberados).</small>
-  </div>
-</section>
+<section id="s-wardrobe" class="screen" aria-label="Mochila de vestuário"></section>
 
 <section id="s-room" class="screen">
-  <header class="row"><h3 class="title title--lg grow" id="room-title"></h3><button class="btn btn--steel btn--sm" id="btn-leave">Sair da sala</button></header>
+  <header class="row"><h3 class="title title--lg grow" id="room-title"></h3><button class="btn btn--sm" id="btn-room-wardrobe">Mochila</button><button class="btn btn--steel btn--sm" id="btn-leave">Sair da sala</button></header>
   <div class="panel" style="display:grid; gap:10px;"><div id="members" style="display:grid; gap:8px;"></div></div>
   <div class="panel row">
     <span class="label">Arma</span><div class="opts" id="weapons"></div>

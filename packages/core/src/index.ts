@@ -12,3 +12,5 @@ export * from "./maps";
 export * from "./builds";
 export * from "./appearance";
 export * from "./avatar";
+
+export * from "./wardrobe-catalog";

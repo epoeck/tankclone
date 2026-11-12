@@ -35,6 +35,12 @@ for group, (lib_dir, classes) in GROUPS.items():
               'classes': {c: lib['classes'][c] for c in classes}}
     put(f'{group}/library.json', json.dumps(subset, ensure_ascii=False, separators=(',', ':')).encode())
 
+# Marcadores nativos de ArrowView e EnergyView.
+game = src / 'game'; lib = json.loads((game / 'library.json').read_text())
+for name, cls in [('arrow-clone', 'asset.game.arrowCloneAsset'), ('power-gray', 'asset.game.rulingGrayStripAsset')]:
+    char = lib['chars'][str(lib['classes'][cls]['id'])]
+    put(f'markers/{name}.png', (game / char['img']).read_bytes())
+
 corei = src / 'corei'; lib = json.loads((corei / 'library.json').read_text())
 for key, pic in PROPS.items():
     put(f'props/{key.lower()}.png', (corei / lib['chars'][str(lib['classes'][f'game.crazyTank.view.Prop{pic}Asset']['id'])]['img']).read_bytes())

@@ -138,13 +138,59 @@ export function drawCharPortrait(target: HTMLCanvasElement, look: Look, weaponId
   ctx.restore();
 }
 
+const pieceRequests = new WeakMap<HTMLCanvasElement, object>();
+const pieceThumbnails = new Map<string, HTMLCanvasElement>();
+/** Miniatura isolada da peça SHOW, com suas máscaras; não carrega um catálogo novo. */
+export function drawWardrobePiece(target: HTMLCanvasElement, look: Look, category: "outfit" | "hair" | "face" | "hat" | "glasses" | "wings"): void {
+  const slot = { outfit: "cloth", hair: "hair", face: "face", hat: "head", glasses: "glass", wings: "wing" }[category];
+  const parts = avatarLayers(look, "sledge", "show").filter(p => p.slot === slot);
+  const request = {}; pieceRequests.set(target, request);
+  const key = JSON.stringify(parts);
+  const paint = () => {
+    if (pieceRequests.get(target) !== request) return;
+    const ctx = target.getContext("2d")!; ctx.clearRect(0, 0, target.width, target.height);
+    let thumbnail = pieceThumbnails.get(key);
+    if (!thumbnail) {
+      const entries = parts.map(p => asset(p.file));
+      if (!entries.length || entries.some(e => !e.loaded)) {
+        ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#b4bec9";
+        ctx.fillText("Sem prévia", target.width / 2, target.height / 2); return;
+      }
+      const first = entries[0]!.img;
+      const w = category === "wings" ? first.naturalWidth : SHOW_FRAME.width;
+      const h = category === "wings" ? first.naturalHeight : SHOW_FRAME.height;
+      const composed = canvas(w, h), cc = composed.getContext("2d")!;
+      parts.forEach((p, i) => cc.drawImage(colorMask(p, entries[i]!.img), 0, 0));
+      // Recorta a transparência para dar a mesma legibilidade a rosto, roupa e acessórios.
+      const pixels = cc.getImageData(0, 0, w, h).data;
+      let left = w, top = h, right = -1, bottom = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (pixels[(y * w + x) * 4 + 3]! < 8) continue;
+        left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+      }
+      if (right < left) return;
+      thumbnail = canvas(right - left + 1, bottom - top + 1);
+      thumbnail.getContext("2d")!.drawImage(composed, left, top, thumbnail.width, thumbnail.height, 0, 0, thumbnail.width, thumbnail.height);
+      boundedSet(pieceThumbnails, key, thumbnail, 96);
+    }
+    const scale = Math.min((target.width - 24) / thumbnail.width, (target.height - 16) / thumbnail.height, 1);
+    const w = thumbnail.width * scale, h = thumbnail.height * scale;
+    ctx.drawImage(thumbnail, (target.width - w) / 2, (target.height - h) / 2, w, h);
+  };
+  const entries = parts.map(p => asset(p.file));
+  if (entries.every(e => e.loaded)) paint(); else void Promise.all(entries.map(e => e.ready)).then(paint);
+}
+
+/** Origem de GameCharacter._body no original; distinta do registro dos pés da folha. */
+export const SOUL_BODY_ORIGIN = { x: -62, y: -83 } as const;
+
 /** Composição SOUL original: rosto reduzido sobre as camadas do quadro 36, em cinza. */
 export function drawSoul(ctx: CanvasRenderingContext2D, look: Look, weaponId: string, x: number, y: number, facing: 1 | -1): void {
   const ready = prepare(look, weaponId, "game"); if (!ready) return;
   const soul = avatarFrameRect(36), face = avatarFrameRect(0);
   ctx.save(); ctx.translate(x, y); ctx.scale(facing, 1); ctx.filter = "grayscale(1)";
-  ctx.drawImage(ready.weapon, soul.x, soul.y, soul.w, soul.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, soul.w, soul.h);
-  ctx.drawImage(ready.face, face.x, face.y, face.w, face.h, -GAME_FRAME.feetX + 7, -GAME_FRAME.feetY + 5, face.w * .75, face.h * .75);
-  ctx.drawImage(ready.upper, soul.x, soul.y, soul.w, soul.h, -GAME_FRAME.feetX, -GAME_FRAME.feetY, soul.w, soul.h);
+  ctx.drawImage(ready.weapon, soul.x, soul.y, soul.w, soul.h, SOUL_BODY_ORIGIN.x, SOUL_BODY_ORIGIN.y, soul.w, soul.h);
+  ctx.drawImage(ready.face, face.x, face.y, face.w, face.h, SOUL_BODY_ORIGIN.x + 7, SOUL_BODY_ORIGIN.y + 5, face.w * .75, face.h * .75);
+  ctx.drawImage(ready.upper, soul.x, soul.y, soul.w, soul.h, SOUL_BODY_ORIGIN.x, SOUL_BODY_ORIGIN.y, soul.w, soul.h);
   ctx.restore();
 }

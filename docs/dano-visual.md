@@ -1,0 +1,5 @@
+# Dano na partida
+
+Os números vermelhos e a explosão atrás dos críticos usam os bitmaps `bloodNUm0..9Asset` e `redNumberBackgoundAsset` do `game.swf` convertido do Reborn (clone `dab2b445f153a6852b48182d4afe5c43ebbe3e16`). O original não desenha texto adicional de crítico. A reprodução acompanha `ShootPercentView.as`: passo de 20 pixels entre dígitos, subida e esmaecimento para dano normal, expansão e esmaecimento para crítico, a 24 quadros por segundo. Dano zero e valores superiores a 99.999.999 são omitidos como na referência. A separação determinística entre impactos simultâneos substitui a variação aleatória de posição do original.
+
+Os 11 PNGs e seus hashes SHA-256 estão em `packages/client/public/damage-popup/manifest.json`; reproduza a importação com `python scripts/import-damage-popup.py /caminho/ddtank-reborn`. O renderer não depende de `ui-local`: se algum PNG não carregar, desenha uma aproximação em Canvas. Cada número é associado à posição e idade do evento de dano na reprodução; a fórmula de dano não é alterada.

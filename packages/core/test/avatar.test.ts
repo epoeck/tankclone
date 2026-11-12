@@ -37,6 +37,21 @@ describe("avatar clássico", () => {
       if (file.endsWith("game.png")) expect([metadata.width, metadata.height]).toEqual([1482, 285]);
     }
   });
+  it("isola pele, olhos, roupa e chapéu e conserva cores por peça", () => {
+    const look = sanitizeLook({ appearance: { skin: 4, face: 1 }, equipped: { outfit: 2, hat: 1 },
+      tints: { face: [-1, 4], outfit: [-1, 1, 2], hat: [-1, 3] } });
+    const parts = avatarLayers(look, "sledge", "show");
+    const layer = (slot: string, n: number) => parts.find(p => p.slot === slot && p.file.includes(`/${n}/show.png`));
+    expect(layer("face", 2)?.tint).toBe("#8A5530");
+    expect(layer("cloth", 2)?.tint).toBe("#8A5530");
+    expect(layer("face", 3)?.tint).toBe("#3B6FD1");
+    expect(layer("cloth", 3)?.tint).toBe("#F5C542");
+    expect(layer("head", 1)?.tint).toBe("#E0372A");
+    const changed = avatarLayers(sanitizeLook({ ...look, equipped: { ...look.equipped, outfit: 1 } }), "sledge", "show");
+    expect(changed.find(p => p.slot === "cloth" && p.file.includes("/3/show.png"))?.tint).toBe("#1F1F2B");
+    expect(sanitizeLook(JSON.parse(JSON.stringify(look)))).toEqual(look);
+    expect(sanitizeLook({ tints: { face: [99, -2, "x"] } }).tints?.face).toEqual({}); // cores por peça: inválidas são descartadas
+  });
   it("recorta os 39 quadros da folha 13×3 de 114×95", () => {
     expect(avatarFrameRect(0)).toEqual({ x: 0, y: 0, w: 114, h: 95 });
     expect(avatarFrameRect(13)).toEqual({ x: 0, y: 95, w: 114, h: 95 });

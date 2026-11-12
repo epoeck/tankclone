@@ -89,3 +89,18 @@ describe("orientação visual", () => {
     }
   });
 });
+
+describe('registro da alma', () => {
+  it('mantém o rosto no registro de GameCharacter e o corpo no mesmo referencial, nos dois lados', async () => {
+    const { SOUL_BODY_ORIGIN } = await import('../../client/src/chars');
+    // Flash: _body=(-62,-83), face reduzida em 0,75 e transladada (7,5);
+    // ghostMovie=(-26,-50), ambos dentro do mesmo GameCharacter espelhado.
+    expect(SOUL_BODY_ORIGIN).toEqual({ x: -62, y: -83 });
+    for (const facing of [1, -1] as const) {
+      const face = { x: facing * (SOUL_BODY_ORIGIN.x + 7), y: SOUL_BODY_ORIGIN.y + 5 };
+      const ghost = { x: facing * -26, y: -50 };
+      expect(face.y - ghost.y).toBe(-28);
+      expect(face.x - ghost.x).toBe(-29 * facing);
+    }
+  });
+});

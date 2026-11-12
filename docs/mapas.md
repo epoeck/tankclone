@@ -77,3 +77,9 @@ separação horizontal até o ponto selecionado, usando 100 px por unidade,
 como a régua existente; o próximo tiro ou turno retoma o acompanhamento.
 O algoritmo de terreno e o modelo de fundo continuam os do projeto, não uma
 reprodução integral do motor e paralaxe do cliente Flash.
+
+O minimapa usa escala uniforme: o cliente original limita a área desenhada a
+240 × 96, primeiro ajustando pela altura e depois pela largura se necessário
+(`SmallMapView.initView`). O painel atual centraliza essa área, sem deformar o
+mapa; desenho, indicador da câmera e conversão do clique usam a mesma escala.
+A régua continua mostrando a distância horizontal até o ponto escolhido.
