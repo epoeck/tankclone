@@ -90,9 +90,28 @@ const portraitPending = new WeakMap<HTMLCanvasElement, string>();
 const portraitLook = new WeakMap<HTMLCanvasElement, { key: string; look: Look; weaponId: string }>();
 
 /** Retrato SHOW original, separado da folha de batalha. Atualiza após o carregamento inicial. */
+const animatedPortraits = new Set<HTMLCanvasElement>();
+let portraitLoop = 0;
+/** Retratos com asa animam: um único laço redesenha os que ainda estão na página. */
+function keepAnimating(target: HTMLCanvasElement, wings: boolean): void {
+  if (!wings) { animatedPortraits.delete(target); return; }
+  animatedPortraits.add(target);
+  if (portraitLoop || typeof requestAnimationFrame === "undefined") return;
+  const frame = () => {
+    for (const c of animatedPortraits) {
+      const last = portraitLook.get(c);
+      if (!c.isConnected || !last) { animatedPortraits.delete(c); continue; }
+      drawCharPortrait(c, last.look, last.weaponId);
+    }
+    portraitLoop = animatedPortraits.size ? requestAnimationFrame(frame) : 0;
+  };
+  portraitLoop = requestAnimationFrame(frame);
+}
+
 export function drawCharPortrait(target: HTMLCanvasElement, look: Look, weaponId = "sledge"): void {
   const key = JSON.stringify([look, weaponId]);
   portraitLook.set(target, { key, look, weaponId });
+  keepAnimating(target, !!look.equipped.wings);
   const ctx = target.getContext("2d")!;
   ctx.clearRect(0, 0, target.width, target.height);
   const ready = prepare(look, weaponId, "show");

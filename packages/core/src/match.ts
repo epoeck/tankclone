@@ -6,7 +6,7 @@
 import { craterShape } from "./craters";
 import { clampAbsoluteAngle } from "./angle";
 import { DEFAULT_MATCH, FLY_ANGLE, FLY_BALL_ID, ITEMS, WEAPONS, own, type ItemKey, type MatchConfig, type WeaponDef } from "./data";
-import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, PLAYER_HITBOX, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
+import { DEFAULT_PHYSICS, PLAYER_HITBOX, muzzlePoint, simulateShot, type Facing, type Hitbox, type PhysicsConfig } from "./physics";
 import { Rng } from "./rng";
 import { combatPower, statDamage, damageBreakdown, withStats, rollCritical, turnDelay, furyFromDamage, type Stats } from "./stats";
 import type { Terrain } from "./terrain";
@@ -114,18 +114,15 @@ interface TurnState {
    * `idleSeconds` limita o tempo parado (evita travar a partida soltando sem atirar). */
   clockStopped: boolean;
   idleSeconds: number;
-  /** Está com a barra de força em uso (prazo CHARGE_MAX_SECONDS); só pode reiniciar uma vez por tiro. */
-  charging: boolean;
-  chargedThisShot: boolean;
   /** Tiros já disparados e restantes neste turno (vários tiros: o ângulo pode mudar entre eles). */
   shotsFired: number;
   shotsLeft: number;
   special: boolean;
 }
 
-/** Com o relógio parado: prazo para soltar o tiro depois de começar a carregar, e para o próximo tiro (ajustar o ângulo). */
-export const CHARGE_MAX_SECONDS = 3.5;
-export const BETWEEN_SHOTS_SECONDS = 5;
+/** Como no Reborn, não há prazo de jogo depois que o relógio para (o limite é a própria barra de força: se voltar a 0, passa a vez).
+ * Este é só um timeout de segurança no servidor contra quem desconecta ou trava no meio do tiro. */
+export const STOPPED_CLOCK_SAFETY_SECONDS = 30;
 
 export class Match {
   readonly terrain: Terrain;
@@ -221,8 +218,7 @@ export class Match {
     if (this.over) return [];
     if (this.ts.clockStopped) {
       this.ts.idleSeconds += dt;
-      const limit = this.ts.charging ? CHARGE_MAX_SECONDS : BETWEEN_SHOTS_SECONDS;
-      return this.ts.idleSeconds >= limit ? this.endTurn(this.ts.shotsFired === 0) : [];
+      return this.ts.idleSeconds >= STOPPED_CLOCK_SAFETY_SECONDS ? this.endTurn(this.ts.shotsFired === 0) : [];
     }
     this.ts.elapsed += dt;
     if (this.ts.elapsed >= this.turnTimeLimit()) return this.endTurn(this.ts.shotsFired === 0);
@@ -236,10 +232,10 @@ export class Match {
     switch (intent.type) {
       case "move": if (this.ts.clockStopped) return { ok: false, error: "já está atirando" }; return this.doMove(intent.dir, intent.px);
       case "charge": {
-        // comprometido: o relógio para e não volta; ligar/desligar não reabre nada nem renova o prazo mais de uma vez por tiro
-        if (!intent.on || this.ts.chargedThisShot) return { ok: true, events: [] };
-        const first = !this.ts.clockStopped;
-        this.ts.clockStopped = true; this.ts.charging = true; this.ts.chargedThisShot = true; this.ts.idleSeconds = 0;
+        // comprometido: o relógio para e não volta; soltar sem atirar não existe (a barra volta a 0 e passa a vez)
+        if (!intent.on || this.ts.clockStopped) return { ok: true, events: [] };
+        const first = true;
+        this.ts.clockStopped = true; this.ts.idleSeconds = 0;
         return { ok: true, events: first ? [{ type: "charge", playerId: this.current.id, on: true }] : [] };
       }
       case "item": if (this.ts.clockStopped) return { ok: false, error: "já está atirando" }; return this.doItem(intent.key);
@@ -342,7 +338,7 @@ export class Match {
       ts.shotsLeft = 1 + (ts.fly ? 0 : ts.extraShots + (special ? weapon.special.shots : 0));
     }
     ts.shotsFired++; ts.shotsLeft--;
-    ts.clockStopped = true; ts.charging = false; ts.chargedThisShot = false; ts.idleSeconds = 0;
+    ts.clockStopped = true; ts.idleSeconds = 0;
     const count = ts.fly ? 1 : special ? weapon.special.balls : ts.triple ? 3 : 1;
     // Living.ShootImp: o primeiro é central; os laterais usam força 0.9 e 1.1.
     // O ângulo absoluto do servidor é espelhado ao mirar para a esquerda.
@@ -355,7 +351,7 @@ export class Match {
     {
       const start = this.animationTime;
       const results = volley.map(p => ({ mult: p.mult, r: simulateShot(
-        { x: c.x, y: c.y - MUZZLE_HEIGHT, angleDeg: p.ang, power: p.power, facing: c.facing, wind },
+        { ...muzzlePoint(c.x, c.y, c.facing, slope), angleDeg: p.ang, power: p.power, facing: c.facing, wind },
         (x, y) => T.isSolid(x, y), this.physics, { hitboxes: this.hitboxes(), shooterId: c.id, hitboxRadius: 3, outOfBounds: (x, y) => x < 0 || x >= T.width || y >= T.height }),
       }));
       // As bolas do leque saem juntas. Os impactos são aplicados em ordem de chegada.
@@ -465,5 +461,5 @@ export class Match {
 }
 
 function freshTurn(): TurnState {
-  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, charging: false, chargedThisShot: false, shotsFired: 0, shotsLeft: 0, special: false };
+  return { spent: 0, itemDelay: 0, bonus: 0, mult: 1, extraShots: 0, triple: false, fly: false, elapsed: 0, clockStopped: false, idleSeconds: 0, shotsFired: 0, shotsLeft: 0, special: false };
 }

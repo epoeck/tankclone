@@ -14,8 +14,9 @@ export function drawWing(ctx: CanvasRenderingContext2D, time: number, mode: 'gam
     ctx.translate(-62, -91);
   } else {
     id = asset.library.classes.wing_show_15002?.id;
-    // ShowCharacter posiciona wing em (−1,2); registro do corpo SHOW é (125,305).
-    ctx.translate(-126, -303);
+    // ShowCharacter posiciona wing em (−1,2) em relação ao registro do corpo; o contexto do retrato já está nos pés (registro 125,305).
+    // Antes subtraía o registro de novo e jogava a asa para fora do canvas (bug do vestiário).
+    ctx.translate(-1, 2);
   }
   const result = id ? drawCharacterTimeline(ctx, asset, id, frame, state) : false;
   ctx.restore(); return result;

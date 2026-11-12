@@ -34,9 +34,16 @@ export const DEFAULT_PHYSICS: PhysicsConfig = {
   mass: 10,
 };
 
-/** Altura (px) do ponto de saída do tiro acima dos pés. Valor herdado do ajuste do motor antigo (30,18) e AINDA NÃO medido
- * no boneco agachado com a física nova: precisa medir no sprite local (ponta da arma no quadro parado). Ver docs/decisoes.md. */
-export const MUZZLE_HEIGHT = 30.18;
+/** Ponto de saída do tiro, como no Reborn: fixo no corpo (30 px à frente, 23 px acima dos pés, em chão plano), independente da mira
+ * e da pose, e girando com a inclinação do chão. */
+export const MUZZLE = { forward: 30, up: 23 } as const;
+
+/** `slopeDeg` positivo = o chão sobe à frente (mesma convenção de `Terrain.slopeDeg`). */
+export function muzzlePoint(x: number, feetY: number, facing: 1 | -1, slopeDeg = 0): { x: number; y: number } {
+  const t = (slopeDeg * Math.PI) / 180, c = Math.cos(t), sn = Math.sin(t);
+  const forward = MUZZLE.forward * c - MUZZLE.up * sn, up = MUZZLE.forward * sn + MUZZLE.up * c;
+  return { x: x + facing * forward, y: feetY - up };
+}
 
 export type Facing = 1 | -1;
 

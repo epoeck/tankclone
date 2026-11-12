@@ -27,8 +27,8 @@ export class Controls {
     this.keys.delete(e.code);
     if (e.code === "Space" && this.charging) {
       this.charging = false;
-      if (this.view.ui.power > 1 && this.canControl()) { this.view.ui.last = this.view.ui.power; } if (this.view.ui.power > 1 && this.canControl()) { sfx("release"); this.send({ type: "shoot", angleDeg: this.view.ui.angle, power: this.view.ui.power, special: this.view.ui.special }); }
-      else if (this.canControl()) this.send({ type: "charge", on: false });
+      // soltar sempre atira com a força atual (não existe soltar sem atirar)
+      if (this.canControl()) { this.view.ui.last = this.view.ui.power; sfx("release"); this.send({ type: "shoot", angleDeg: this.view.ui.angle, power: this.view.ui.power, special: this.view.ui.special }); }
       this.view.ui.power = 0;
     }
   }
@@ -42,7 +42,7 @@ export class Controls {
     if (this.charging) {
       // a barra sobe até 100 e desce; se voltar a 0 sem soltar Espaço, passa a vez
       const before = Math.floor(ui.power / 5);
-      ui.power += this.chargeDir * 80 * dt;
+      ui.power += this.chargeDir * 25 * dt; // Reborn: ~4 s de 0 a 100 e outros ~4 s para voltar
       if (Math.floor(ui.power / 5) !== before) sfx("charge");
       if (ui.power >= 100) { ui.power = 100; this.chargeDir = -1; }
       else if (ui.power <= 0) { ui.power = 0; this.charging = false; this.chargeDir = 1; sfx("pass"); this.send({ type: "pass" }); }

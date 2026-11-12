@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Match, Terrain, WEAPONS, DEFAULT_PHYSICS, MUZZLE_HEIGHT, simulateShot, furyFromDamage, type MatchEvent, type PlayerSetup, type ItemKey } from "../src/index";
+import { Match, Terrain, WEAPONS, DEFAULT_PHYSICS, muzzlePoint, simulateShot, furyFromDamage, type MatchEvent, type PlayerSetup, type ItemKey } from "../src/index";
 
 const flat = () => Terrain.fromHeightFn(1000, 600, () => 450);
 const duo = (over: Partial<PlayerSetup> = {}, over2: Partial<PlayerSetup> = {}): PlayerSetup[] => [
@@ -15,7 +15,7 @@ function aim(m: Match, id: string, targetX: number, angle: number): number {
   const c = m.getChar(id)!;
   let best = 0, bestErr = Infinity;
   for (let p = 5; p <= 100; p += 0.25) {
-    const r = simulateShot({ x: c.x, y: c.y - MUZZLE_HEIGHT, angleDeg: angle, power: p, facing: c.facing, wind: m.wind * WEAPONS[c.weaponId]!.windFactor },
+    const r = simulateShot({ ...muzzlePoint(c.x, c.y, c.facing, m.terrain.slopeDeg(c.x, c.y, c.facing)), angleDeg: angle, power: p, facing: c.facing, wind: m.wind * WEAPONS[c.weaponId]!.windFactor },
       (x, y) => m.terrain.isSolid(x, y), DEFAULT_PHYSICS);
     if (r.hit && Math.abs(r.hit.x - targetX) < bestErr) { bestErr = Math.abs(r.hit.x - targetX); best = p; }
   }
@@ -230,7 +230,7 @@ describe("tiro, dano e fúria", () => {
     expect(d).toMatchObject({ hp: 1, crit: false }); expect(m.getChar("c")!.alive).toBe(true);
   });
   it("o atirador sofre dano do próprio tiro, mas a vida desce no máximo até 1", () => {
-    const hit = (hp: number) => { const m = mk(duo({ hp }), flat(), {}, 1); return { es: ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 65, power: 12 })), m }; };
+    const hit = (hp: number) => { const m = mk(duo({ hp }), flat(), {}, 1); return { es: ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 65, power: 6 })), m }; };
     const a = hit(5000); const dmg = ev(a.es, "damage").find(e => e.playerId === "a");
     expect(dmg).toBeTruthy(); expect(a.m.getChar("a")!.hp).toBe(5000 - dmg!.amount);
     expect(a.m.getChar("a")!.fury).toBeGreaterThan(20); // atacar (+20) e levar dano (fórmula do Reborn)
@@ -299,24 +299,27 @@ describe("carga da força e vários tiros", () => {
     m.tick(0.5); expect(m.timeLeft).toBe(t0);
     expect(ok(m.submit({ type: "charge", playerId: "a", on: true }))).toEqual([]); // não renova o prazo
   });
-  it("carregar e ficar em silêncio: o turno passa sozinho depois do prazo", () => {
+  it("sem prazo de jogo depois que o relógio para: só o timeout de segurança do servidor", () => {
     const m = mk();
     ok(m.submit({ type: "charge", playerId: "a", on: true }));
+    for (let i = 0; i < 25; i++) m.tick(1);
+    expect(m.currentId).toBe("a"); // 25 s parado: ainda é a vez dele
     let es: MatchEvent[] = [];
-    for (let i = 0; i < 40 && !es.length; i++) es = m.tick(0.25);
-    expect(ev(es, "turnStart")).toHaveLength(1);
+    for (let i = 0; i < 10 && !es.length; i++) es = m.tick(1);
+    expect(ev(es, "turnStart")).toHaveLength(1); // segurança (desconexão): passa a vez
     expect(m.currentId).toBe("b");
   });
-  it("+2 tiros com pausa entre eles: o relógio continua parado e cada tiro tem o seu prazo", () => {
+  it("+2 tiros com pausa entre eles: o relógio continua parado e o ângulo muda à vontade", () => {
     const m = mk(duo({ agi: 3300 }));
     ok(m.submit({ type: "item", playerId: "a", key: "1" }));
     ok(m.submit({ type: "charge", playerId: "a", on: true }));
     ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 40, power: 40 }));
     const left = m.timeLeft;
-    m.tick(4); expect(m.timeLeft).toBe(left); expect(m.currentId).toBe("a"); // ajustando o ângulo, dentro dos 5 s
+    m.tick(12); expect(m.timeLeft).toBe(left); expect(m.currentId).toBe("a");
     ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 45, power: 40 }));
-    m.tick(4); expect(m.currentId).toBe("a"); // novo prazo para o terceiro
-    expect(m.tick(2).some(e => e.type === "turnStart")).toBe(true); // estourou o prazo: encerra o turno
+    m.tick(12); expect(m.currentId).toBe("a"); // o segurança reinicia a cada tiro
+    ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 50, power: 40 }));
+    expect(m.currentId).toBe("b");
   });
   it("com +1 tiro: o ângulo muda entre os tiros, itens travam e o turno só acaba no último", () => {
     const m = mk(duo({ agi: 3300 }));

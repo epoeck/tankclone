@@ -1,4 +1,4 @@
-import { DEFAULT_PHYSICS, MUZZLE_HEIGHT, Terrain, simulateShot, type Facing, type PhysicsConfig, type Shot } from "@tankclone/core";
+import { DEFAULT_PHYSICS, muzzlePoint, Terrain, simulateShot, type Facing, type PhysicsConfig, type Shot } from "@tankclone/core";
 
 const W = 2200, H = 600; // mapa largo: 20 unidades de distância = 2000 px (1 un = 100 px)
 const UNIT = 100;
@@ -54,8 +54,8 @@ flip.onclick = () => { state.facing = (state.facing === 1 ? -1 : 1) as Facing; d
 (document.getElementById("reset") as HTMLButtonElement).onclick = () => { Object.assign(cfg, DEFAULT_PHYSICS); syncers.forEach(f => f()); draw(); };
 
 function fire() {
-  const sy = groundY(state.x) - MUZZLE_HEIGHT;
-  const res = simulateShot({ x: state.x, y: sy, angleDeg: state.angleDeg, power: state.power, facing: state.facing, wind: state.wind }, isSolid, cfg);
+  const mz = muzzlePoint(state.x, groundY(state.x), state.facing, terrain.slopeDeg(state.x, groundY(state.x), state.facing));
+  const res = simulateShot({ x: mz.x, y: mz.y, angleDeg: state.angleDeg, power: state.power, facing: state.facing, wind: state.wind }, isSolid, cfg);
   if (res.hit) { terrain.carveCircle(res.hit.x, res.hit.y, boomR); renderTerrain(); }
   draw();
 }
@@ -84,8 +84,9 @@ function draw() {
   // terreno
   ctx.drawImage(terrainCanvas, 0, 0);
 
-  const sy = groundY(state.x) - MUZZLE_HEIGHT;
-  const shot: Shot = { x: state.x, y: sy, angleDeg: state.angleDeg, power: state.power, facing: state.facing, wind: state.wind };
+  const mz = muzzlePoint(state.x, groundY(state.x), state.facing, terrain.slopeDeg(state.x, groundY(state.x), state.facing));
+  const sy = mz.y;
+  const shot: Shot = { x: mz.x, y: mz.y, angleDeg: state.angleDeg, power: state.power, facing: state.facing, wind: state.wind };
   const res = simulateShot(shot, isSolid, cfg);
 
   // trajetória
