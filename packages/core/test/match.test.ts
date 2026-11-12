@@ -223,6 +223,7 @@ describe("tiro, dano e fúria", () => {
     const hit = (hp: number) => { const m = mk(duo({ hp }), flat(), {}, 1); return { es: ok(m.submit({ type: "shoot", playerId: "a", angleDeg: 65, power: 12 })), m }; };
     const a = hit(5000); const dmg = ev(a.es, "damage").find(e => e.playerId === "a");
     expect(dmg).toBeTruthy(); expect(a.m.getChar("a")!.hp).toBe(5000 - dmg!.amount);
+    expect(a.m.getChar("a")!.fury).toBe(20); // só a fúria de atacar; o dano próprio não dá fúria
     const b = hit(1); expect(b.m.getChar("a")!.alive).toBe(true); expect(b.m.getChar("a")!.hp).toBe(1);
     const c = hit(30); expect(c.m.getChar("a")!.alive).toBe(true); expect(c.m.getChar("a")!.hp).toBeGreaterThanOrEqual(1);
   });

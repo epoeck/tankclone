@@ -372,7 +372,7 @@ export class Match {
       t.hp = Math.max(self ? 1 : 0, t.hp - amount);
       events.push({ type: "damage", playerId: t.id, amount, hp: t.hp, crit });
       const baseDamage = this.damageFn === defaultDamage ? damageBreakdown(input).base : this.damageFn({ ...input, crit: false });
-      if (t.hp > 0) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
+      if (t.hp > 0 && !self) t.fury = Math.min(cfg.maxFury, t.fury + furyFromDamage(baseDamage));
       events.push({ type: "fury", playerId: t.id, fury: t.fury });
       if (t.hp <= 0) { t.alive = false; events.push({ type: "death", playerId: t.id, reason: "hp" }); }
     }
