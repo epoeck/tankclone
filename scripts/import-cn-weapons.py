@@ -22,7 +22,7 @@ print(f'{n} PNGs de armas fortalecidas em {out}')
 # ícones das pedras da loja/ferreiro (unfrightprop/<pic>/icon.png) → public/ui-local/forge/<pic>.png
 icons = Path(sys.argv[1]) / 'Resource/image/unfrightprop'
 dest = Path(__file__).resolve().parent.parent / 'packages/client/public/ui-local/forge'; dest.mkdir(parents=True, exist_ok=True); k = 0
-for pic in ['strength1', 'strength2', 'strength3', 'strength4', 'strength9'] + [f'{a}{i}' for a in ('zhuque', 'xuanwu', 'qinglong', 'baihu') for i in range(1, 6)]:
+for pic in ['strength11', 'strength1', 'strength2', 'strength3', 'strength4', 'strength9'] + [f'{a}{i}' for a in ('zhuque', 'xuanwu', 'qinglong', 'baihu') for i in range(1, 6)]:
     f = icons / pic / 'icon.png'
     if not f.exists(): continue
     data = f.read_bytes()
