@@ -72,7 +72,7 @@ export class Room {
     return null;
   }
 
-  start(nick: string, now: number, gear?: (nick: string) => { weaponId: string; weaponLevel: number; compose: { atk: number; def: number; agi: number; luck: number }; armorBonus: number }): { error: string } | { setup: MatchSetup; events: MatchEvent[] } {
+  start(nick: string, now: number, gear?: (nick: string) => { weaponId: string; weaponLevel: number; compose: { atk: number; def: number; agi: number; luck: number }; armorBonus: number; hpBonus: number }): { error: string } | { setup: MatchSetup; events: MatchEvent[] } {
     if (nick !== this.host) return { error: "só o dono da sala inicia" };
     if (this.status !== "lobby") return { error: "partida já iniciada" };
     const teams = new Set([...this.members.values()].map(m => m.team));
@@ -85,8 +85,10 @@ export class Room {
       const x = list?.[i] ?? (m.team === 1 ? 150 + i * 140 : map.width - 150 - i * 140);
       // equipamento da mochila: arma vestida, composição somada e armadura do fortalecimento (bots usam o básico)
       const g = gear && !m.bot ? gear(m.nick) : undefined;
-      return { id: m.nick, team: m.team, x, spawnY: map.spawnsY?.[m.team === 1 ? "1" : "2"]?.[i], weaponId: g && own(WEAPONS, g.weaponId) ? g.weaponId : m.weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1,
-        ...(g ? { weaponLevel: g.weaponLevel, compose: g.compose, armorBonus: g.armorBonus } : {}) };
+      const weaponId = g && own(WEAPONS, g.weaponId) ? g.weaponId : m.weaponId;
+      return { id: m.nick, team: m.team, x, spawnY: map.spawnsY?.[m.team === 1 ? "1" : "2"]?.[i], weaponId, build: m.build, look: m.look, facing: (m.team === 1 ? 1 : -1) as 1 | -1,
+        stats: g ? equippedStats(m.build, m.look, g.compose, g.armorBonus, g.hpBonus) : equippedStats(m.build, m.look),
+        ...(g ? { weaponLevel: g.weaponLevel, compose: g.compose, armorBonus: g.armorBonus, hpBonus: g.hpBonus } : {}) };
     });
     this.setup = { seed: randomInt(1, 2 ** 31), mapId: this.mapId, players };
     this.match = buildMatch(this.setup);
@@ -145,7 +147,7 @@ export function buildMatch(setup: MatchSetup): Match {
   return new Match({
     seed: setup.seed, terrain: own(MAPS, setup.mapId)!.build(), config: { windMultiplier: own(MAPS, setup.mapId)!.windMultiplier ?? 1 },
     players: setup.players.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: p.spawnY, weaponId: p.weaponId, facing: p.facing, weaponLevel: p.weaponLevel ?? 0,
-      stats: equippedStats(p.build, p.look, p.compose, p.armorBonus) })),
+      stats: p.stats ?? equippedStats(p.build, p.look, p.compose, p.armorBonus, p.hpBonus) })),
   });
 }
 
@@ -219,7 +221,7 @@ export class Lobby {
 }
 
 /** Build da sala + atributos das peças de visual vestidas (atk/def/agi/sorte). */
-export function equippedStats(build: string, look: Look, compose?: { atk: number; def: number; agi: number; luck: number }, armorBonus = 0) {
+export function equippedStats(build: string, look: Look, compose?: { atk: number; def: number; agi: number; luck: number }, armorBonus = 0, hpBonus = 0) {
   const b = own(BUILDS, build) ?? own(BUILDS, DEFAULT_BUILD)!, s = lookStats(look), c = compose ?? { atk: 0, def: 0, agi: 0, luck: 0 };
-  return { ...b, armor: b.armor + armorBonus, atk: b.atk + s.atk + c.atk, def: b.def + s.def + c.def, agi: b.agi + s.agi + c.agi, luck: b.luck + s.luck + c.luck };
+  return { ...b, hp: b.hp + hpBonus, armor: b.armor + armorBonus, atk: b.atk + s.atk + c.atk, def: b.def + s.def + c.def, agi: b.agi + s.agi + c.agi, luck: b.luck + s.luck + c.luck };
 }

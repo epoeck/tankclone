@@ -1,12 +1,13 @@
 /** Ferreiro: fortalecer (+0..+12, Super Pedra) e compor qualquer item da mochila, e comprar pedras com gold. Tudo garantido, sem sorteio.
  * Só envia pedidos; o servidor valida e devolve o estado ({t:"bag"}). Ícones das pedras: public/ui-local/forge (locais). */
-import { SHOP_ITEMS, STRENGTHEN_EXP, STRENGTHEN_MAX, SUPER_STONE, SUPER_STONE_EXP, WEAPONS, canCompose, canStrengthen, stonesToNext, strengthenArmor, strengthenedDamage, type ItemInstance, type Look, type ShopItem, type Stats } from "@tankclone/core";
+import { ACCESSORIES, BASE_ARMOR, SLOT_GEAR, WEAPONS, strengthenArmor, strengthenedDamage, type ItemInstance, type Look, type ShopItem, type Stats } from "@tankclone/core";
 import { drawCharPortrait, drawWardrobePiece } from "./chars";
-import { CATEGORY_OF, KIND_LABEL, itemName, lookWith } from "./catalog-ui";
+import { renderForgeScene, type ForgeTab } from "./forge-scene";
+import { screenVisible } from "./ui/workshop";
+import { CATEGORY_OF, lookWith } from "./catalog-ui";
 
 export type BagState = { gold: number; materials: Record<string, number>; items: ItemInstance[]; stats: Stats; result?: string };
 type Send = (m: Record<string, unknown>) => void;
-const ATTR_PT: Record<string, string> = { atk: "Ataque", def: "Defesa", agi: "Agilidade", luck: "Sorte" };
 export const weaponName = (id: string) => WEAPONS[id]?.name ?? id;
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, text = "", cls = ""): HTMLElementTagNameMap[K] {
@@ -20,14 +21,24 @@ export function stoneIcon(item: ShopItem): HTMLElement {
 /** Miniatura de um item da mochila (peça do visual ou arma). */
 export function itemThumb(item: ItemInstance, look: Look, w = 64, h = 64): HTMLCanvasElement {
   const cv = el("canvas"); cv.width = w; cv.height = h; cv.setAttribute("aria-hidden", "true");
-  if (item.kind === "weapon") drawCharPortrait(cv, look, item.level >= 12 ? `${item.ref}:2` : item.level >= 10 ? `${item.ref}:1` : item.ref);
-  else { const c = CATEGORY_OF[item.kind]; if (c) drawWardrobePiece(cv, lookWith(look, item), c); }
+  if (item.kind === "armlet" || item.kind === "ring" || item.kind === "offhand" || item.kind === "pet" || item.kind === "eff" || item.kind === "suits" || item.kind === "necklace") {
+    const a = ACCESSORIES.find(x => x.ref === item.ref), g = SLOT_GEAR.find(x => x.kind === item.kind && x.ref === item.ref);
+    const src = a ? `/ui-local/accessories/${a.icon}.png` : g?.kind === "pet" ? "/ui-local/slots/pet.png" : g?.kind === "offhand" ? "/ui-local/slots/offhand.png" : g?.kind === "eff" ? "/ui-local/slots/effect.png" : g?.kind === "necklace" ? "/ui-local/slots/necklace.png" : "";
+    if (src) { const img = new Image(); img.onload = () => cv.getContext("2d")?.drawImage(img, 2, 2, w - 4, h - 4); img.src = src; }
+    else { const ctx = cv.getContext("2d")!; ctx.fillStyle = "#f1c65a"; ctx.font = `bold ${Math.max(18, Math.round(w * .5))}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(item.kind === "suits" ? "♟" : item.kind === "necklace" ? "◇" : "✦", w / 2, h / 2); }
+  }
+  else if (item.kind === "weapon") drawCharPortrait(cv, look, item.level >= 12 ? `${item.ref}:2` : item.level >= 10 ? `${item.ref}:1` : item.ref);
+  else { const c = CATEGORY_OF[item.kind]; if (c && ["outfit", "hair", "face", "hat", "glasses", "wings"].includes(c)) drawWardrobePiece(cv, lookWith(look, item), c as "outfit" | "hair" | "face" | "hat" | "glasses" | "wings"); }
   return cv;
 }
 /** Efeito do fortalecimento no item, em texto. */
 export function strengthenText(item: ItemInstance): string {
   if (item.kind === "weapon") return `dano-base ${strengthenedDamage(WEAPONS[item.ref]?.baseDamage ?? 0, item.level)} (×1,1 por nível)`;
-  if (item.kind === "head" || item.kind === "cloth" || item.kind === "offhand") return `armadura +${strengthenArmor(item.level)}`;
+  if (item.kind === "head" || item.kind === "cloth") {
+    const bonus = strengthenArmor(item.level);
+    return `armadura ${BASE_ARMOR + bonus} (${BASE_ARMOR} base + ${bonus} de fortalecimento)`;
+  }
+  if (item.kind === "offhand") return `Bênção do Anjo: nível +${item.level}; o bônus de cura do CN não é usado no combate atual.`;
   return "não fortalece";
 }
 
@@ -35,91 +46,51 @@ export class Forge {
   private state: BagState | null = null;
   private look: Look | null = null;
   private selected = 0;
+  private tab: ForgeTab = "strengthen";
+  private fusionRecipe: string | null = null;
+  private fusionAvailableOnly = false;
+  private composeStone: string | null = null;
+  private buyItem = "super";
+  private buyQuantity = "1";
+  private result = "";
+  private pending = false;
+  private opened = false;
   constructor(private host: HTMLElement, private send: Send, private onBack: () => void) {}
 
   open(look: Look, itemId?: number): void {
-    this.look = look; if (itemId) this.selected = itemId;
-    this.send({ t: "bag" }); this.render();
+    this.look = look; this.opened = true; if (itemId) this.selected = itemId;
+    this.render(); this.send({ t: "bag" });
   }
-  setLook(look: Look) { this.look = look; }
-  update(s: BagState): void { this.state = s; this.render(s.result); }
-
-  private render(result?: string): void {
-    const h = this.host; h.replaceChildren();
-    const panel = el("div", "", "panel forge");
-    const head = el("div", "", "row"); head.append(el("h3", "Ferreiro", "title title--lg grow"));
-    head.append(el("span", this.state ? `${this.state.gold.toLocaleString("pt-BR")} gold` : "carregando…", "chip"));
-    const back = el("button", "Voltar", "btn btn--steel btn--sm"); back.onclick = this.onBack; head.append(back);
-    panel.append(head);
-    if (result) panel.append(el("div", result, "forge__result"));
-    if (!this.state) { h.append(panel); return; }
-    const s = this.state, look = this.look!;
-    // só entra aqui o que pode evoluir (CN CanStrengthen / CanCompose)
-    const list = s.items.filter(i => canStrengthen(i.kind) || canCompose(i.kind));
-    const w = list.find(i => i.id === this.selected) ?? list.find(i => i.place === "weapon") ?? list[0];
-    if (w) this.selected = w.id;
-
-    const picker = el("div", "", "forge__weapons");
-    for (const it of list) {
-      const b = el("button", "", "forge__weapon");
-      b.setAttribute("aria-pressed", String(it.id === w?.id));
-      b.append(itemThumb(it, look, 72, 72), el("b", `${itemName(it, weaponName)} +${it.level}`), el("small", `${KIND_LABEL[it.kind]}${it.place ? " · equipado" : ""}`));
-      b.onclick = () => { this.selected = it.id; this.render(); };
-      picker.append(b);
-    }
-    panel.append(picker);
-
-    if (w) {
-      const have = s.materials[SUPER_STONE] ?? 0;
-      if (canStrengthen(w.kind)) {
-        const fort = el("section", "", "paper forge__box");
-        fort.append(el("h4", `Fortalecer ${itemName(w, weaponName)} (+${w.level} de +${STRENGTHEN_MAX})`, "title title--sm"));
-        if (w.level < STRENGTHEN_MAX) {
-          const need = STRENGTHEN_EXP[w.level + 1]!;
-          const bar = el("div", "", "bar bar--energy"); bar.style.setProperty("--value", `${(w.exp / need) * 100}%`);
-          bar.append(el("span", `${w.exp} / ${need} EXP para o +${w.level + 1}`, "bar__text num")); fort.append(bar);
-          fort.append(el("small", `Garantido: cada Super Pedra soma ${SUPER_STONE_EXP} EXP; ao completar a barra o item sobe de nível. Efeito: ${strengthenText(w)}.${w.kind === "weapon" ? " A arma muda de modelo no +10 e no +12." : ""}`, "muted"));
-          const stone = SHOP_ITEMS.find(i => i.id === SUPER_STONE)!, row = el("div", "", "row forge__row"), toNext = stonesToNext(w, SUPER_STONE_EXP);
-          row.append(stoneIcon(stone), el("span", `Super Pedra · ${SUPER_STONE_EXP} EXP · você tem ${have}`, "grow"));
-          const one = el("button", "Usar 1", "btn btn--sm btn--steel"); one.disabled = have < 1;
-          one.onclick = () => this.send({ t: "strengthen", itemId: w.id, count: 1 });
-          const up = el("button", `Subir de nível (${toNext})`, "btn btn--sm"); up.disabled = have < toNext;
-          up.title = have < toNext ? `faltam ${toNext - have} pedras` : "usa exatamente o necessário para o próximo nível";
-          up.onclick = () => this.send({ t: "strengthen", itemId: w.id, count: toNext });
-          row.append(one, up); fort.append(row);
-        } else fort.append(el("p", "Nível máximo (+12).", "muted"));
-        panel.append(fort);
-      }
-      if (canCompose(w.kind)) {
-        const comp = el("section", "", "paper forge__box"), c = w.compose;
-        comp.append(el("h4", `Composição (garantida): ${itemName(w, weaponName)}`, "title title--sm"),
-          el("p", `Atual: ATQ ${c.atk} · DEF ${c.def} · AGI ${c.agi} · SOR ${c.luck} (cada pedra grava o valor dela no atributo)`, "muted"));
-        const grid = el("div", "", "forge__grid");
-        for (const it of SHOP_ITEMS.filter(i => i.kind === "compose")) {
-          const n = s.materials[it.id] ?? 0, b = el("button", "", "forge__stone"); b.disabled = n < 1;
-          b.title = `${it.name}: ${ATTR_PT[it.attr!]} = ${it.value} (você tem ${n})`;
-          b.append(stoneIcon(it), el("small", `${ATTR_PT[it.attr!]} ${it.value} ×${n}`));
-          b.onclick = () => this.send({ t: "compose", itemId: w.id, stone: it.id });
-          grid.append(b);
-        }
-        comp.append(grid); panel.append(comp);
-      }
-    } else panel.append(el("p", "Você ainda não tem chapéu, roupa nem arma para evoluir. Compre na Loja.", "muted"));
-
-    // loja de materiais
-    const shop = el("section", "", "paper forge__box");
-    shop.append(el("h4", "Loja de pedras (fase de testes: 1 gold cada)", "title title--sm"));
-    const grid = el("div", "", "forge__grid");
-    for (const it of SHOP_ITEMS) {
-      const card = el("div", "", "forge__stone"); card.append(stoneIcon(it), el("small", `${it.name} ×${s.materials[it.id] ?? 0}`));
-      const row = el("div", "", "row");
-      for (const n of [1, 10, 100]) {
-        const b = el("button", `+${n}`, "btn btn--sm btn--steel"); b.disabled = s.gold < n * it.price;
-        b.onclick = () => this.send({ t: "buy", item: it.id, count: n }); row.append(b);
-      }
-      card.append(row); grid.append(card);
-    }
-    shop.append(grid); panel.append(shop);
-    h.append(panel);
+  setLook(look: Look): void { this.look = look; }
+  update(state: BagState): void {
+    const wasPending = this.pending; this.state = state; this.pending = false;
+    if (this.opened && screenVisible(this.host)) { if (state.result) this.result = state.result; else if (wasPending) this.result = "Operação concluída."; this.render(); }
+  }
+  fail(message: string): void {
+    if (!this.pending) return;
+    this.pending = false; this.result = message;
+    if (this.opened && screenVisible(this.host)) { this.render(); this.send({ t: "bag" }); }
+  }
+  private request(message: Record<string, unknown>): void {
+    if (this.pending) return;
+    this.pending = true; this.result = "Processando…"; this.render(); this.send(message);
+  }
+  private render(): void {
+    if (!this.look) return;
+    renderForgeScene({
+      host: this.host, state: this.state, look: this.look, selected: this.selected, tab: this.tab,
+      fusionRecipe: this.fusionRecipe, fusionAvailableOnly: this.fusionAvailableOnly,
+      composeStone: this.composeStone, buyItem: this.buyItem, buyQuantity: this.buyQuantity,
+      pending: this.pending, result: this.result,
+      onBack: () => { this.opened = false; this.onBack(); },
+      send: message => this.request(message),
+      select: id => { this.selected = id; this.render(); },
+      setTab: tab => { this.tab = tab; this.render(); },
+      setFusionAvailableOnly: value => { this.fusionAvailableOnly = value; this.render(); },
+      setFusionRecipe: ref => { this.fusionRecipe = ref; this.render(); },
+      setComposeStone: id => { this.composeStone = id; this.render(); },
+      setBuyItem: id => { this.buyItem = id; this.render(); },
+      setBuyQuantity: quantity => { this.buyQuantity = quantity; },
+    });
   }
 }

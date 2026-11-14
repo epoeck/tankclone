@@ -45,16 +45,41 @@ Nas camadas de rosto e roupa, `/2` é a máscara de pele e `/3` a de íris ou ro
 respectivamente. Os chapéus atuais não têm máscara separada: a tintura cobre toda
 a silhueta do chapéu, preservando o relevo.
 
-## Importação CN pendente de aval
+## Slots de equipamento e acessórios
 
-O dono determinou: primeiro deixar o sistema funcional e revisável; **somente depois
-de seu aval copiar os assets crus do CN e integrá-los**. Nenhum arquivo do pacote
-CN foi importado para esta implementação. As miniaturas usam apenas assets já presentes
-no projeto e o recorte é feito em memória.
+A mochila tem slots ativos para arma principal, arma secundária, pet, efeito, traje,
+colar, duas pulseiras e dois anéis, além do vestuário. Compra, equipar, troca e retirada
+passam pelo servidor. Arma, traje, efeito, colar, arma secundária e pet de teste usam
+templates CN 14.7 fixos; acessórios da loja são a **Pulseira de Aniversário** (`8015`)
+e o **Anel do Romance** (`9024`). Seus atributos de template entram no painel e nos
+stats autoritativos da partida junto com arma, roupa, chapéu, composição e forja.
 
-Na etapa posterior, conferir completude GAME/SHOW, camadas, variantes de cabelo,
-expressões, arquivos codificados e itens com apenas ícone antes de oferecer as peças.
-Não ampliar os limites de seleção para imagens ausentes.
+O Ferreiro oferece fusão garantida de quatro instâncias iguais sem equipar:
+`8015` vai até `85154` (+10); `9024` vai até `95242` (+8), conforme as cadeias CN.
+Todas as etapas exigem quatro nesta versão, conforme o pedido do dono. Só os tiers +0
+são vendidos. A fusão consome as quatro instâncias e cria uma nova com os atributos
+fixos do tier seguinte; composição e fortalecimento não são transferidos.
+
+Os ícones necessários são copiados apenas para `packages/client/public/ui-local/`
+(gitignored), pelo importador reprodutível:
+`python3 scripts/import-cn-equipment-icons.py /caminho/NaiKuaiDDT`. O restante do
+pacote CN não é importado. Slots com arte de personagem ainda não integrada usam o
+ícone do template na interface; seus atributos continuam valendo.
+Pet e arma secundária fornecem somente seus atributos de template: habilidades de pet
+e cura da arma secundária ainda não fazem parte do combate. Por isso, a arma secundária
+não recebe Super Pedra nesta versão.
+
+## Stats de equipamento e POW
+
+Os presets de build foram removidos. A base da partida é neutra; atributos dos templates
+de arma e demais itens, roupas, acessórios, composição e fortalecimento determinam os
+stats. O painel mostra o dano da arma já fortalecido; o combate usa esse dano-base uma
+vez no cálculo.
+
+POW alterna com **B** quando a fúria está cheia e o jogador está na vez. O HUD e o
+teclado chamam a mesma validação. Ao disparar, o evento autoritativo marca o especial:
+todos os clientes mostram o boneco ampliado atrás do jogador, e quem ativou vê uma
+prévia breve ao armar o POW.
 
 ## Verificação
 

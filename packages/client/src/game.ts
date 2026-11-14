@@ -1,5 +1,5 @@
 /** Partida local (hot-seat) sobre o Match do core, usando a mesma visão do jogo em rede. */
-import { BUILDS, Match, MAPS, sanitizeLook, type Intent } from "@tankclone/core";
+import { BUILDS, Match, MAPS, WEAPONS, sanitizeLook, type Intent } from "@tankclone/core";
 import { loadClientMaps } from "./maps";
 import { Hud } from "./hud";
 import { Controls } from "./controls";
@@ -15,18 +15,18 @@ async function main() {
   const map = MAPS[mapId] ?? MAPS.planalto!;
   const S1 = map.spawns!["1"], S2 = map.spawns!["2"];
   const players = [
-    { id: "A1", team: 1, x: S1[0]!, weaponId: "prism", build: "media", facing: 1 as const, look: sanitizeLook({ appearance: { skin: 2, face: 0, hair: 1, hairColor: 2 }, equipped: { outfit: 0, hat: 1 } }) },
-    { id: "B1", team: 2, x: S2[0]!, weaponId: "sledge", build: "media", facing: -1 as const, look: sanitizeLook({ appearance: { skin: 4, face: 3, hair: 1, hairColor: 4 }, equipped: { outfit: 1, hat: 0 } }) },
-    { id: "A2", team: 1, x: S1[1]!, weaponId: "furnace", build: "canhao", facing: 1 as const, look: sanitizeLook({ appearance: { skin: 0, face: 2, hair: 2, hairColor: 5 }, equipped: { outfit: 2, hat: 2, wings: 1 } }) },
-    { id: "B2", team: 2, x: S2[1]!, weaponId: "prism", build: "tanque", facing: -1 as const, look: sanitizeLook({ appearance: { skin: 5, face: 4, hair: 0, hairColor: 0 }, equipped: { outfit: 1, hat: 1, glasses: 1 } }) },
+    { id: "A1", team: 1, x: S1[0]!, weaponId: "prism", build: "equipamento", facing: 1 as const, look: sanitizeLook({ appearance: { skin: 2, face: 0, hair: 1, hairColor: 2 }, equipped: { outfit: 0, hat: 1 } }) },
+    { id: "B1", team: 2, x: S2[0]!, weaponId: "sledge", build: "equipamento", facing: -1 as const, look: sanitizeLook({ appearance: { skin: 4, face: 3, hair: 1, hairColor: 4 }, equipped: { outfit: 1, hat: 0 } }) },
+    { id: "A2", team: 1, x: S1[1]!, weaponId: "furnace", build: "equipamento", facing: 1 as const, look: sanitizeLook({ appearance: { skin: 0, face: 2, hair: 2, hairColor: 5 }, equipped: { outfit: 2, hat: 2, wings: 1 } }) },
+    { id: "B2", team: 2, x: S2[1]!, weaponId: "prism", build: "equipamento", facing: -1 as const, look: sanitizeLook({ appearance: { skin: 5, face: 4, hair: 0, hairColor: 0 }, equipped: { outfit: 1, hat: 1, glasses: 1 } }) },
   ];
 
-  players.forEach(p => Object.assign(p, { spawnY: map.spawnsY?.[p.team === 1 ? "1" : "2"]?.[p.id.endsWith("1") ? 0 : 1] }));
+  const equipped = players.map(p => ({ ...p, spawnY: map.spawnsY?.[p.team === 1 ? "1" : "2"]?.[p.id.endsWith("1") ? 0 : 1], stats: { ...BUILDS[p.build]!, ...WEAPONS[p.weaponId]!.stats } }));
   const match = new Match({
     seed: (Date.now() & 0xffff) | 1, terrain: map.build(), config: { windMultiplier: map.windMultiplier ?? 1 },
-    players: players.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: (p as typeof p & { spawnY?: number }).spawnY, weaponId: p.weaponId, facing: p.facing, stats: BUILDS[p.build] })),
+    players: equipped.map(p => ({ id: p.id, team: p.team, x: p.x, spawnY: p.spawnY, weaponId: p.weaponId, facing: p.facing, stats: p.stats })),
   });
-  const view = new MatchView(mapId, players);
+  const view = new MatchView(mapId, equipped);
   view.push(match.startEvents);
 
   const hud = new Hud(document.getElementById("hud")!, view, () => null, k => { if (view.canAct) controls.send({ type: "item", key: k }); }, () => { if (view.canAct) controls.send({ type: "pass" }); });

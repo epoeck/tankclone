@@ -65,7 +65,7 @@ export type MatchEvent = (
   | { type: "move"; playerId: string; path: Array<{ x: number; y: number }>; energyLeft: number; facing: Facing }
   | { type: "fall"; playerId: string; fromY: number; toY: number }
   | { type: "item"; playerId: string; key: ItemKey; energyLeft: number }
-  | { type: "shot"; playerId: string; index: number; points: Array<{ x: number; y: number }>; hit: { x: number; y: number } | null;
+  | { type: "shot"; playerId: string; index: number; points: Array<{ x: number; y: number }>; hit: { x: number; y: number } | null; special?: boolean;
       hitKind: "terrain" | "player" | null; targetId: string | null; damageMult: number; stepSeconds: number; duration: number; ballId?: number; aimDeg?: number; power?: number; aimFacing?: Facing }
   | { type: "crater"; x: number; y: number; ballId: number }
   | { type: "damage"; playerId: string; amount: number; hp: number; crit: boolean }
@@ -377,7 +377,7 @@ export class Match {
       // As bolas do leque saem juntas. Os impactos são aplicados em ordem de chegada.
       for (const { r, mult } of results) events.push({
         type: "shot", playerId: c.id, index: index++, points: r.points, hit: r.hit, hitKind: r.hitKind,
-        targetId: r.targetId, damageMult: mult, ballId: this.visualBall(c, special, count), aimDeg: ang, power: pow, aimFacing: c.facing, stepSeconds: this.physics.dt, duration: r.duration, at: start,
+        targetId: r.targetId, damageMult: mult, ballId: this.visualBall(c, special, count), ...(special ? { special: true } : {}), aimDeg: ang, power: pow, aimFacing: c.facing, stepSeconds: this.physics.dt, duration: r.duration, at: start,
       });
       for (const { r, mult } of [...results].sort((a, b) => a.r.duration - b.r.duration)) {
         const effects: MatchEvent[] = [];

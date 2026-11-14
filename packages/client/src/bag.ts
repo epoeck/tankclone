@@ -1,22 +1,22 @@
 /** Mochila original (aba Equipar do bagAndInfo): slots em duas colunas de cada lado do personagem, grade de itens à direita
  * (abas Equipamentos e Itens), tooltip, duplo clique/arrastar para equipar e painel de atributos. O servidor decide tudo. */
-import { SHOP_ITEMS, STRENGTHEN_MAX, OWNABLE_KINDS, canCompose, canStrengthen, type ItemInstance, type ItemKind, type Look } from "@tankclone/core";
+import { SHOP_ITEMS, STRENGTHEN_MAX, OWNABLE_KINDS, canCompose, canStrengthen, type ItemInstance, type ItemKind, type EquipPlace, type Look } from "@tankclone/core";
 import { drawCharPortrait } from "./chars";
 import { KIND_LABEL, itemBaseStats, itemName } from "./catalog-ui";
 import { el, itemThumb, stoneIcon, strengthenText, weaponName, type BagState } from "./forge";
 
 type Send = (m: Record<string, unknown>) => void;
 /** Pares de slots (esquerda e direita) na ordem do Place do original; `null` = lugar sem item nesta versão. */
-const LEFT: Array<[ItemKind, ItemKind]> = [["head", "glass"], ["hair", "eff"], ["cloth", "face"], ["weapon", "offhand"]];
-const RIGHT: Array<[ItemKind, ItemKind | null]> = [["armlet", null], ["ring", null], ["suits", "necklace"], ["wing", null]];
-const OPTIONAL: ItemKind[] = ["head", "glass", "wing"];
+const LEFT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["head","head","glass","glass"], ["hair","hair","eff","eff"], ["cloth","cloth","face","face"], ["weapon","weapon","offhand","offhand"]];
+const RIGHT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["armlet","armlet1","armlet","armlet2"], ["ring","ring1","ring","ring2"], ["suits","suits","necklace","necklace"], ["wing","wing","pet","pet"]];
+const OPTIONAL: EquipPlace[] = ["head", "glass", "wing", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet"];
 
 export class Bag {
   private state: BagState | null = null;
   private look: Look | null = null;
   private tab: "equip" | "items" = "equip";
   private selected = 0;
-  constructor(private host: HTMLElement, private send: Send, private onBack: () => void, private openShop: () => void, private openForge: (itemId?: number) => void) {}
+  constructor(private host: HTMLElement, private send: Send, private onBack: () => void, private openShop: () => void, private openForge: (itemId?: number) => void, private openPets: () => void = () => {}) {}
 
   open(look: Look): void { this.look = look; this.send({ t: "bag" }); this.render(); }
   setLook(look: Look) { this.look = look; if (this.state) this.render(); }
@@ -24,15 +24,15 @@ export class Bag {
 
   private equipped(kind: ItemKind): ItemInstance | undefined { return this.state?.items.find(i => i.kind === kind && i.place); }
   private pick(id: number) { this.selected = id; this.render(); }
-  private toggle(it: ItemInstance) {
-    if (!it.place) this.send({ t: "equip", itemId: it.id });
-    else this.send({ t: "unequip", place: it.kind });
+  private toggle(it: ItemInstance, place?: EquipPlace) {
+    if (!it.place) this.send({ t: "equip", itemId: it.id, ...(place ? { place } : {}) });
+    else this.send({ t: "unequip", place: it.place });
   }
 
-  private slot(kind: ItemKind | null): HTMLElement {
+  private slot(kind: ItemKind | null, place?: EquipPlace): HTMLElement {
     const b = el("div", "", "bag__slot"); if (!kind) { b.classList.add("bag__slot--off"); return b; }
-    const it = this.equipped(kind), usable = (OWNABLE_KINDS as readonly string[]).includes(kind);
-    b.title = usable ? KIND_LABEL[kind] : `${KIND_LABEL[kind]}: ainda sem arte nesta versão`;
+    const usable = (OWNABLE_KINDS as readonly string[]).includes(kind), it = this.state?.items.find(i => i.place === (place ?? kind));
+    b.title = usable ? `${KIND_LABEL[kind]}${place?.endsWith("2") ? " 2" : place?.endsWith("1") ? " 1" : ""}` : `${KIND_LABEL[kind]}: bloqueado`;
     b.dataset.kind = kind; if (!usable) b.classList.add("bag__slot--off");
     if (it) {
       b.append(itemThumb(it, this.look!, 52, 52));
@@ -43,7 +43,7 @@ export class Bag {
     } else b.append(el("small", KIND_LABEL[kind], "bag__slot-name"));
     if (usable) {
       b.ondragover = e => e.preventDefault();
-      b.ondrop = e => { e.preventDefault(); const id = Number(e.dataTransfer?.getData("text/plain").replace("item:", "")); const dragged = this.state!.items.find(i => i.id === id); if (dragged && dragged.kind === kind && !dragged.place) this.toggle(dragged); };
+      b.ondrop = e => { e.preventDefault(); const id = Number(e.dataTransfer?.getData("text/plain").replace("item:", "")); const dragged = this.state!.items.find(i => i.id === id); if (dragged && dragged.kind === kind && !dragged.place) this.toggle(dragged, place); };
     }
     return b;
   }
@@ -55,8 +55,9 @@ export class Bag {
     head.append(el("span", this.state ? `${this.state.gold.toLocaleString("pt-BR")} gold` : "carregando…", "chip"));
     const shop = el("button", "Loja", "btn btn--sm"); shop.onclick = this.openShop;
     const forge = el("button", "Ferreiro", "btn btn--sm"); forge.onclick = () => this.openForge(this.selected || undefined);
+    const pets = el("button", "Pets", "btn btn--sm"); pets.onclick = this.openPets;
     const back = el("button", "Voltar", "btn btn--steel btn--sm"); back.onclick = this.onBack;
-    head.append(shop, forge, back); panel.append(head);
+    head.append(shop, forge, pets, back); panel.append(head);
     if (!this.state || !this.look) { h.append(panel); return; }
     const s = this.state;
     if (s.result) panel.append(el("div", s.result, "forge__result"));
@@ -64,9 +65,9 @@ export class Bag {
 
     // personagem com slots dos dois lados
     const left = el("div", "", "bag__side");
-    for (const [a, b] of LEFT) left.append(this.slot(a), this.slot(b));
+    for (const [a, ap, b, bp] of LEFT) left.append(this.slot(a, ap), this.slot(b, bp));
     const right = el("div", "", "bag__side");
-    for (const [a, b] of RIGHT) right.append(this.slot(a), this.slot(b));
+    for (const [a, ap, b, bp] of RIGHT) right.append(this.slot(a, ap), this.slot(b, bp));
     const stage = el("div", "", "bag__stage"); const cv = el("canvas"); cv.width = 250; cv.height = 330; cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "Personagem com o equipamento vestido");
     const w = this.equipped("weapon");
     drawCharPortrait(cv, this.look, w ? (w.level >= 12 ? `${w.ref}:2` : w.level >= 10 ? `${w.ref}:1` : w.ref) : "sledge");
@@ -128,7 +129,7 @@ export class Bag {
     if (!canCompose(it.kind)) box.append(el("span", "Não recebe composição.", "muted"));
     const actions = el("div", "", "row");
     const usable = (OWNABLE_KINDS as readonly string[]).includes(it.kind);
-    const eq = el("button", it.place ? "Retirar" : "Equipar", "btn btn--sm"); eq.disabled = !usable || (!!it.place && !OPTIONAL.includes(it.kind));
+    const eq = el("button", it.place ? "Retirar" : "Equipar", "btn btn--sm"); eq.disabled = !usable || (!!it.place && !OPTIONAL.includes(it.place));
     eq.onclick = () => this.toggle(it); actions.append(eq);
     if (canStrengthen(it.kind) || canCompose(it.kind)) { const f = el("button", "Ferreiro", "btn btn--sm btn--steel"); f.onclick = () => this.openForge(it.id); actions.append(f); }
     box.append(actions);

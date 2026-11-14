@@ -1,5 +1,5 @@
 /** Cliente de rede: login → saguão → sala → partida. O servidor decide tudo; aqui só enviamos intenções e animamos eventos. */
-import { BUILDS, MAPS, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
+import { MAPS, WEAPONS, type Look, type MatchEvent } from "@tankclone/core";
 import type { ClientMsg, MatchSetup, RoomInfo, ServerMsg } from "../../server/src/protocol";
 import { drawCharPortrait as drawPortrait } from "./chars";
 import { loadClientMaps } from "./maps";
@@ -10,9 +10,10 @@ import { MatchView, VIEW_H, VIEW_W } from "./view";
 import { Wardrobe } from "./wardrobe";
 import { Forge } from "./forge";
 import { Bag } from "./bag";
+import { Pets } from "./pets";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const screens = ["s-login", "s-lobby", "s-bag", "s-wardrobe", "s-forge", "s-room", "match"];
+const screens = ["s-login", "s-lobby", "s-bag", "s-wardrobe", "s-forge", "s-pets", "s-room", "match"];
 const show = (id: string) => screens.forEach(s => $(s).classList.toggle("on", s === id));
 const toast = (msg: string) => { const t = $("toast"); t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 3500); };
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, text = "", cls = "") => { const e = document.createElement(tag); if (text) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -51,7 +52,7 @@ function startMatch(setup: MatchSetup, events: MatchEvent[]) {
   show("match");
   controls ??= new Controls(view, () => view?.hud.player === me?.nick, i => send({ t: "intent", intent: i } as unknown as ClientMsg));
   controls.view = view;
-  hud = new Hud($("hud"), view, () => me?.nick ?? null, k => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "item", key: k } } as unknown as ClientMsg); }, () => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "pass" } } as unknown as ClientMsg); });
+  hud = new Hud($("hud"), view, () => me?.nick ?? null, k => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "item", key: k } } as unknown as ClientMsg); }, () => { if (view?.canAct && view.hud.player === me?.nick) send({ t: "intent", intent: { type: "pass" } } as unknown as ClientMsg); }, () => controls?.togglePow());
   hud.bindChat(text => send({ t: "chat", text }));
 }
 
@@ -59,9 +60,9 @@ function onMsg(m: ServerMsg) {
   handlers.forEach(h => h(m));
   switch (m.t) {
     case "authOk": me = { nick: m.nick, level: m.level, xp: m.xp, gold: m.gold ?? 0, unlocks: m.unlocks, look: m.look }; renderMe(); wardrobe.confirm(m.look); bag.setLook(m.look); forge.setLook(m.look); if ($("s-login").classList.contains("on")) { show("s-lobby"); send({ t: "rooms" }); } break;
-    case "error": toast(m.msg); wardrobe.fail(m.msg); break;
+    case "error": toast(m.msg); wardrobe.fail(m.msg); forge.fail(m.msg); pets.fail(m.msg); break;
     case "rooms": renderRooms(m.rooms); break;
-    case "room": { room = m.room; const away = $("s-wardrobe").classList.contains("on") || $("s-forge").classList.contains("on") || $("s-bag").classList.contains("on");
+    case "room": { room = m.room; const away = $("s-wardrobe").classList.contains("on") || $("s-forge").classList.contains("on") || $("s-bag").classList.contains("on") || $("s-pets").classList.contains("on");
       if (room) { if (!view) { renderRoom(); if (!away) show("s-room"); } } else { if (!away) show("s-lobby"); send({ t: "rooms" }); } break; }
     case "start": startMatch(m.setup, m.events); break;
     case "resume": startMatch(m.setup, m.events); break;
@@ -74,7 +75,7 @@ function onMsg(m: ServerMsg) {
       endPending = true; endCards = !!m.cards && !!mine; endWinner = m.winnerTeam;
       break;
     }
-    case "bag": { if (me) { me.gold = m.gold; renderMe(); } forge.update(m); bag.update(m); wardrobe.setItems(m.items); if (m.result) toast(m.result); break; }
+    case "bag": { if (me) { me.gold = m.gold; renderMe(); } forge.update(m); bag.update(m); pets.update(m); wardrobe.setItems(m.items); if (m.result) toast(m.result); break; }
     case "card": {
       if (me) { me.xp = m.xp; me.level = m.level; me.gold = m.gold; renderMe(); }
       const what = m.reward.kind === "gold" ? `+${m.reward.amount} gold` : `+${m.reward.amount} XP`;
@@ -125,11 +126,15 @@ function openForge(itemId?: number) {
   if (!me) return;
   show("s-forge"); forge.open(me.look, itemId);
 }
-const bag: Bag = new Bag($("s-bag"), m => send(m as unknown as ClientMsg), home, () => openWardrobe(() => openBag()), id => openForge(id));
+const bag: Bag = new Bag($("s-bag"), m => send(m as unknown as ClientMsg), home, () => openWardrobe(() => openBag()), id => openForge(id), openPets);
+const pets = new Pets($("s-pets"), m => send(m as unknown as ClientMsg), home);
 function openBag() { if (!me) return; show("s-bag"); bag.open(me.look); }
+function openPets() { if (!me) return; show("s-pets"); pets.open(); }
 $("btn-bag").onclick = openBag;
 $("btn-forge").onclick = () => openForge();
 $("btn-room-forge").onclick = () => openForge();
+$("btn-pets").onclick = openPets;
+$("btn-room-pets").onclick = openPets;
 $("btn-room-bag").onclick = openBag;
 $("btn-wardrobe").onclick = () => openWardrobe();
 $("btn-room-wardrobe").onclick = () => openWardrobe();
@@ -158,15 +163,11 @@ function renderRoom() {
   for (const p of room.players) {
     const row = el("div", "", "paper row"); row.style.padding = "8px 12px";
     const cv = el("canvas"); cv.width = 48; cv.height = 64; drawPortrait(cv, p.look, p.weaponId);
-    const name = el("div", "", "grow"); name.append(el("b", p.nick + (p.nick === room.host ? " ★" : "")), el("br"), el("small", `${WEAPONS[p.weaponId]?.name ?? p.weaponId} · build ${p.build}`, "muted"));
+    const name = el("div", "", "grow"); name.append(el("b", p.nick + (p.nick === room.host ? " ★" : "")), el("br"), el("small", `${WEAPONS[p.weaponId]?.name ?? p.weaponId} · equipamento equipado`, "muted"));
     row.append(cv, name, el("span", p.team === 1 ? "Time Azul" : "Time Vermelho", "chip"));
     if (p.bot && room.host === me.nick) { const x = el("button", "Remover", "btn btn--sm btn--steel"); x.onclick = () => send({ t: "removeBot", nick: p.nick }); row.append(x); }
     box.append(row);
   }
-  const w = $("weapons"); w.replaceChildren();
-  for (const d of Object.values(WEAPONS)) { const b = el("button", d.name, "btn btn--sm btn--steel"); b.onclick = () => send({ t: "setLoadout", weaponId: d.id }); w.append(b); }
-  const bl = $("builds"); bl.replaceChildren();
-  for (const k of Object.keys(BUILDS)) { const b = el("button", k, "btn btn--sm btn--steel"); b.onclick = () => send({ t: "setLoadout", build: k }); bl.append(b); }
   $<HTMLButtonElement>("btn-start").hidden = room.host !== me.nick;
   $<HTMLButtonElement>("btn-bot").hidden = room.host !== me.nick;
 }

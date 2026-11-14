@@ -37,7 +37,7 @@ export class Controls {
     if (!this.canControl() || this.view.hud.over || this.burst || this.view.ui.fired) return;
     // Reborn: itens e POW também valem enquanto carrega a força (isAttacking só cai ao soltar); andar e passar, não
     if (own(ITEMS, k)) { sfx("click"); this.send({ type: "item", key: k }); this.view.ui.pressed = { key: k, at: performance.now() }; return; }
-    if (k === "R" || k === "B") { this.togglePow(); return; }
+    if (k === "B") { if (!e.repeat) this.togglePow(); return; }
     if (this.charging || !this.view.canAct) return;
     if (k === "P") { sfx("pass"); this.send({ type: "pass" }); }
   }
@@ -64,8 +64,10 @@ export class Controls {
   }
   /** POW (estouro): só com a fúria cheia; o especial é decidido no primeiro tiro. */
   togglePow(): void {
-    const me = this.view.current; if (!me || me.fury < 200) { this.view.ui.special = false; return; }
-    sfx("click"); this.view.ui.special = !this.view.ui.special;
+    const me = this.view.current;
+    if (!me || !this.canControl() || this.view.hud.over || this.view.ui.fired || this.burst) return;
+    if (me.fury < 200) { this.view.ui.special = false; return; }
+    sfx("click"); this.view.ui.special = !this.view.ui.special; this.view.previewPow(this.view.ui.special);
   }
   /** Mesma conta do servidor (Match.doShoot): voo não tem extras; +1/+2 e o especial somam tiros. */
   private extraShots(special: boolean): number {

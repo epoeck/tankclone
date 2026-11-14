@@ -2,7 +2,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { randomInt } from "node:crypto";
-import { COMPOSE_KINDS, OWNABLE_KINDS, STRENGTHEN_EXP, STRENGTHEN_MAX, SUPER_STONE, SUPER_STONE_EXP, TEST_PRICE, WEAPONS, WING_COUNT, canCompose, canStrengthen, composeWith, isAvailablePiece, own, shopItem, strengthenWith, type ItemKind, type WardrobeSlot } from "@tankclone/core";
+import { ACCESSORIES, COMPOSE_KINDS, OWNABLE_KINDS, STRENGTHEN_EXP, STRENGTHEN_MAX, SUPER_STONE, SUPER_STONE_EXP, TEST_PRICE, WEAPONS, WING_COUNT, accessoryByRef, canCompose, canStrengthen, composeWith, isAvailablePiece, own, shopItem, slotGear, strengthenWith, type EquipPlace, type ItemKind, type WardrobeSlot } from "@tankclone/core";
 import { sanitizeLook } from "@tankclone/core";
 import { deriveLook, gearOf, statsPanel } from "./bag";
 import { Db, levelForXp, unlocksAt } from "./db";
@@ -191,11 +191,11 @@ export function startServer(opts: ServerOptions = {}) {
         const it = db.item(nick, Number(m.itemId)); if (!it) return err("item não encontrado");
         if (!(OWNABLE_KINDS as readonly string[]).includes(it.kind)) return err("este lugar ainda não tem arte nesta versão");
         if (it.sex && it.sex !== db.getLook(nick).appearance.sex) return err("peça do outro avatar: troque o sexo na loja");
-        const e = db.equipItem(nick, it.id); return e ? err(e) : refreshLook(nick);
+        const e = db.equipItem(nick, it.id, m.place ?? undefined); return e ? err(e) : refreshLook(nick);
       }
       case "unequip": {
-        const kind = String(m.place) as ItemKind;
-        if (kind !== "head" && kind !== "glass" && kind !== "wing") return err("troque por outra peça: este lugar não fica vazio");
+        const kind = String(m.place) as EquipPlace;
+        if (!["head", "glass", "wing", "eff", "suits", "necklace", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet"].includes(kind)) return err("troque por outra peça: este lugar não fica vazio");
         db.unequipPlace(nick, kind); return refreshLook(nick);
       }
       case "buy": {
@@ -205,6 +205,8 @@ export function startServer(opts: ServerOptions = {}) {
           const slot = SLOT[kind];
           if (slot) { if (!isAvailablePiece(sex, slot.slot, ref - slot.offset)) return err("peça indisponível"); }
           else if (kind === "wing") { if (ref >= WING_COUNT) return err("peça indisponível"); }
+          else if ((kind === "armlet" || kind === "ring") && ((kind === "armlet" && String(ref) === "8015") || (kind === "ring" && String(ref) === "9024"))) { const e = db.buyAccessory(nick, String(ref), TEST_PRICE); return e ? err(e) : sendBag(nick, "Comprado: na sua mochila"); }
+          else if (slotGear(kind, String(ref))) { const e = db.buyPiece(nick, kind, String(ref), "", TEST_PRICE); return e ? err(e) : sendBag(nick, "Comprado: na sua mochila"); }
           else return err("este item não é vendido");
           const e = db.buyPiece(nick, kind, String(ref), kind === "wing" ? "" : sex, TEST_PRICE); return e ? err(e) : sendBag(nick, "Comprado: na sua mochila");
         }
@@ -233,6 +235,14 @@ export function startServer(opts: ServerOptions = {}) {
         const next = composeWith(it, stone.attr, stone.value);
         const e = db.spendAndSetItem(nick, stone.id, 1, it.id, next); if (e) return err(e);
         return sendBag(nick, `Composição: ${stone.attr.toUpperCase()} ${stone.value}`);
+      }
+      case "fuse": {
+        if (!Array.isArray(m.itemIds) || m.itemIds.length !== 4 || m.itemIds.some(id => !Number.isInteger(id))) return err("selecione quatro acessórios");
+        const selected = m.itemIds.map(id => db.item(nick, id));
+        if (selected.some(i => !i || (i.kind !== "armlet" && i.kind !== "ring"))) return err("selecione quatro acessórios iguais");
+        const target = accessoryByRef(selected[0]!.ref)?.next;
+        if (!target) return err("este acessório já está no nível máximo");
+        const e = db.fuseAccessories(nick, m.itemIds); return e ? err(e) : sendBag(nick, `Fusão garantida: ${accessoryByRef(target)?.name}`);
       }
       case "pickCard": { const r = cards.pick(nick, m.index); if (typeof r === "string") return err(r); grantCard(nick, r, false); return; }
       case "intent": {

@@ -29,7 +29,7 @@ export class Hud {
   private dander!: HTMLCanvasElement;
   private lastOrder = ""; private meCanvas!: HTMLCanvasElement; private estouro!: HTMLElement; private blue!: HTMLElement; private red!: HTMLElement;
 
-  constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void, private onPass: () => void = () => {}) {
+  constructor(readonly root: HTMLElement, private view: MatchView, private me: () => string | null, private onItem: (k: ItemKey) => void, private onPass: () => void = () => {}, private onPow: () => void = () => {}) {
     root.className = "hud";
     root.innerHTML = `
       <div class="me"><div class="me__name"><span data-k="name"></span><span class="chip chip--lvl" data-k="weapon"></span></div><div class="me__ring"><canvas width="110" height="150"></canvas></div></div>
@@ -65,12 +65,12 @@ export class Hud {
     this.hpBar = el(root, ".vitals2 .bar--hp"); this.hpText = el(this.hpBar, ".bar__text"); this.enBar = el(root, ".bar--energy"); this.enText = el(this.enBar, ".bar__text");
     this.power = el(root, ".power"); this.angle = el(root, ".dial"); this.angleVal = el(root, ".dial__value"); this.gauge = el(root, ".gauge"); this.gaugeLabel = el(root, ".gauge__label"); this.banner = el(root, ".banner");
     this.blue = el(root, '[data-k="blue"]'); this.red = el(root, '[data-k="red"]');
-    this.estouro = document.createElement("div"); this.estouro.className = "slot"; this.estouro.title = "Estouro (R)";
-    this.estouro.innerHTML = `${iconImg("pow", "/assets/ui/stats/stat-atk.svg", "POW")}<span class="slot__key">R</span><span class="slot__tag">POW</span>`;
-    this.estouro.onclick = () => this.togglePow();
+    this.estouro = document.createElement("div"); this.estouro.className = "slot"; this.estouro.title = "POW (B)";
+    this.estouro.innerHTML = `${iconImg("pow", "/assets/ui/stats/stat-atk.svg", "POW")}<span class="slot__key">B</span><span class="slot__tag">POW</span>`;
+    this.estouro.onclick = () => this.onPow();
     // medidor de fúria do Reborn (DanderBar) por cima do manômetro, quando houver os assets locais
     this.dander = document.createElement("canvas"); this.dander.width = 104; this.dander.height = 106; this.dander.className = "dander";
-    this.dander.onclick = () => this.togglePow();
+    this.dander.onclick = () => this.onPow();
     this.gauge.append(this.dander);
     el(root, ".skills").append(this.estouro);
     el<HTMLButtonElement>(root, ".passbtn").onclick = () => this.onPass();
@@ -83,13 +83,6 @@ export class Hud {
       d.onclick = () => { sfx("click"); this.view.ui.pressed = { key: k, at: performance.now() }; this.onItem(k); };
       (k === "F" ? skills : items).append(d); this.slots.set(k, d); this.counts.set(k, el(d, ".slot__count"));
     });
-  }
-
-  /** POW: só com a fúria cheia e na sua vez, antes do primeiro tiro. */
-  private togglePow(): void {
-    const v = this.view, cur = v.current, me = this.me();
-    if (!cur || (me && me !== cur.id) || v.ui.fired || cur.fury < 200 || v.hud.over) return;
-    sfx("click"); v.ui.special = !v.ui.special;
   }
 
   /** DanderBar: fundo, preenchimento em setor de 90° a −180° (270° no total), brilho e a animação de POW pronto. */

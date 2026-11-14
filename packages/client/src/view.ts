@@ -13,10 +13,10 @@ import { drawImpact, drawProjectile, drawTrail, impactDuration, TRAIL_MAX_LIFE }
 import { preloadLocalSfx, projectileSfx, sfx, stopSfx } from "./sound";
 import {
   BUILDS, DEFAULT_LOOK, HANDCLIP_SECONDS, ballInfo, weaponStage, MatchPlayback, allowedAbsoluteRange, FLY_ANGLE, FLY_BALL_ID, ITEMS, MAPS, PLAYER_HITBOX, Terrain, WEAPONS, clampAbsoluteAngle, own, sampleTrajectory,
-  type Facing, type ItemKey, type Look, type MatchEvent,
+  type Facing, type ItemKey, type Look, type MatchEvent, type Stats,
 } from "@tankclone/core";
 
-export interface PlayerInfo { id: string; team: number; weaponId: string; build: string; x: number; spawnY?: number; facing: Facing; look?: Look; weaponLevel?: number }
+export interface PlayerInfo { id: string; team: number; weaponId: string; build: string; x: number; spawnY?: number; facing: Facing; look?: Look; weaponLevel?: number; stats?: Stats }
 
 export interface CharView {
   id: string; team: number; weaponId: string; x: number; y: number; hp: number; maxHp: number;
@@ -46,6 +46,7 @@ export class MatchView {
   private pendingShots = new Map<string, LastShot[]>();
   private tails: Array<{ weapon: string; special: boolean; trail: Array<{ x: number; y: number }>; elapsed: number; age: number }> = [];
   private damagePopups: Array<{ playerId: string; amount: number; crit: boolean; x: number; y: number; age: number; variant: number }> = [];
+  private powEcho = new Map<string, number>();
   private impacts: Array<{ x: number; y: number; weapon: string; special: boolean; ballId?: number; age: number }> = [];
   private layer: TerrainLayer;
   private playback = new MatchPlayback();
@@ -66,7 +67,7 @@ export class MatchView {
       if (def.manifest.background) { const bg = new Image(); bg.onload = () => (this.bg = bg); bg.src = def.artBase + def.manifest.background; }
     }
     for (const p of players) {
-      const st = own(BUILDS, p.build) ?? BUILDS.media!;
+      const st = p.stats ?? own(BUILDS, p.build) ?? BUILDS.equipamento!;
       const y = this.terrain.surfaceY(p.x, p.spawnY ?? 0);
       const maxEnergy = 240 + Math.floor(st.agi / 30);
       this.chars.set(p.id, { id: p.id, team: p.team, weaponId: p.weaponId, weaponArt: weaponStage(p.weaponLevel ?? 0) ? `${p.weaponId}:${weaponStage(p.weaponLevel ?? 0)}` : p.weaponId, x: p.x, y, hp: st.hp, maxHp: st.hp, fury: 0, alive: true, facing: p.facing, energy: maxEnergy, maxEnergy, look: p.look ?? DEFAULT_LOOK, walk: 0, delay: 0 });
@@ -87,6 +88,7 @@ export class MatchView {
   get terrainCanvas(): HTMLCanvasElement { return this.layer.canvas; }
   get camX(): number { return this.cam; }
   get camY(): number { return this.cameraY; }
+  previewPow(enabled: boolean): void { if (enabled && this.current) this.powEcho.set(this.current.id, performance.now() / 1000); else if (this.current) this.powEcho.delete(this.current.id); }
   moveCameraTo(x: number, y: number): void {
     this.manualCamera = true;
     this.cam = Math.max(0, Math.min(Math.max(0, this.width - VIEW_W), x - VIEW_W / 2));
@@ -147,6 +149,7 @@ export class MatchView {
       case "gameOver": { this.hud.over = true; this.hud.winner = e.winnerTeam; const mine = this.me ? this.chars.get(this.me)?.team : undefined; sfx("gameEnd"); if (mine !== undefined) sfx(e.winnerTeam === mine ? "win" : "lose"); break; }
       case "shot": {
         this.manualCamera = false;
+        if (v && e.special && e.index === 0) this.powEcho.set(v.id, performance.now() / 1000);
         // Logs de servidores anteriores enviavam o ID da arma mesmo com o item F ativo.
         // O evento de item já é autoritativo e precede o disparo na mesma linha do tempo.
         if (this.ui.fly) e.ballId = FLY_BALL_ID;
@@ -252,6 +255,7 @@ export class MatchView {
         drawDeath(ctx, c.look, c.weaponArt, c.x, c.y, c.facing, c.deathAge ?? 0, this.terrain.slopeDeg(c.x, c.y, c.facing));
         continue;
       }
+      this.drawPowEcho(ctx, c);
       this.drawTank(ctx, c, c.id === this.hud.player && !this.busy);
       this.drawCharFx(ctx, c);
       const bx = c.x - 22, by = c.y - PLAYER_HITBOX.h - 22;
@@ -271,6 +275,18 @@ export class MatchView {
     for (const popup of this.damagePopups) drawDamagePopup(ctx, popup.amount, popup.crit, popup.x, popup.y, popup.age, popup.variant);
     ctx.restore();
 
+  }
+
+  /** Eco visual do POW: retrato ampliado atrás do personagem por 0,9 s. É acionado pelo evento shot autoritativo, para todos. */
+  private drawPowEcho(ctx: CanvasRenderingContext2D, c: CharView): void {
+    const started = this.powEcho.get(c.id); if (started === undefined) return;
+    const age = performance.now() / 1000 - started, duration = 0.9;
+    if (age >= duration) { this.powEcho.delete(c.id); return; }
+    const fade = 1 - age / duration;
+    ctx.save(); ctx.globalAlpha = 0.32 * fade;
+    ctx.shadowColor = "#ffb52e"; ctx.shadowBlur = 18 * fade;
+    drawCharacter(ctx, c.look, { facing: c.facing, angleDeg: 45, slopeDeg: this.terrain.slopeDeg(c.x, c.y, c.facing), walk: 0, weaponId: c.weaponArt, aiming: false }, c.x - c.facing * (22 + age * 16), c.y + 2, 1.55 + age * 0.35);
+    ctx.restore();
   }
 
   /** Efeitos do Reborn sobre o boneco (só com os assets locais): fogo de fúria cheia e a animação de pegar item. */

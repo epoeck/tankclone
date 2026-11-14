@@ -65,20 +65,18 @@ describe("stats na partida", () => {
   });
 });
 
-import { BUILDS } from "../src/builds";
-describe("escala antiga (build PvP)", () => {
-  const shot = (a: string, t: string) => statDamage({ weapon: w(200), attacker: BUILDS[a]!, target: BUILDS[t]!, bonus: 0, shotMult: 1, falloff: 1, crit: false });
-  it("builds preservam a fórmula de referência sem reajustar stats para esconder a diferença", () => {
-    expect(shot("media", "media")).toBe(877);
-    expect(shot("media", "canhao")).toBe(1070);
-    expect(shot("tanque", "media")).toBe(431);
+import { BUILDS, DEFAULT_BUILD } from "../src/builds";
+describe("stats base vêm do equipamento", () => {
+  it("remove presets e mantém só a base neutra para o equipamento vestido", () => {
+    expect(Object.keys(BUILDS)).toEqual([DEFAULT_BUILD]);
+    expect(BUILDS[DEFAULT_BUILD]).toEqual({ atk: 0, def: 0, agi: 0, luck: 0, hp: 1000, armor: 0, damage: 0 });
   });
-  it("canhão de vidro bate mais forte que o tanque e morre mais fácil", () => {
-    expect(shot("canhao", "media")).toBeGreaterThan(shot("tanque", "media"));
-    expect(shot("media", "canhao") / BUILDS.canhao!.hp).toBeGreaterThan(shot("media", "tanque") / BUILDS.tanque!.hp);
-  });
-  it("crítico de build média segue o servidor de referência", () => {
-    expect(critChancePct(BUILDS.media!.luck)).toBe(15);
-    expect(critBonusPct(BUILDS.media!.luck)).toBeCloseTo(56);
+  it("atributos de combate são determinados pelas peças do loadout", () => {
+    const empty = BUILDS[DEFAULT_BUILD]!;
+    const equipped = { ...empty, atk: 220, def: 320, agi: 70, luck: 100 };
+    const shot = (target: typeof empty) => statDamage({ weapon: w(200), attacker: equipped, target, bonus: 0, shotMult: 1, falloff: 1, crit: false });
+    expect(shot(empty)).toBeGreaterThan(shot(equipped));
+    expect(critChancePct(equipped.luck)).toBeGreaterThan(critChancePct(empty.luck));
+    expect(critBonusPct(equipped.luck)).toBeGreaterThan(critBonusPct(empty.luck));
   });
 });

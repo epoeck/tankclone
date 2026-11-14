@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Match, NEW_WEAPON, STRENGTHEN_EXP, STRENGTHEN_MAX, Terrain, composeWith, lookStats, shopItem, stonesToNext, strengthenWith, strengthenedDamage, weaponStage, type MatchEvent } from "../src/index";
+import { ACCESSORIES, Match, NEW_WEAPON, STRENGTHEN_EXP, STRENGTHEN_MAX, Terrain, accessoryByRef, composeWith, lookStats, shopItem, stonesToNext, strengthenWith, strengthenedDamage, weaponStage, type MatchEvent } from "../src/index";
 
 describe("ferreiro garantido (CN 14.7: EXP por nível, máximo +12)", () => {
   it("sobe exatamente ao completar a EXP; sobra fica no nível novo; nada de sorteio", () => {
@@ -26,6 +26,17 @@ describe("ferreiro garantido (CN 14.7: EXP por nível, máximo +12)", () => {
   });
   it("roupas somam os atributos do catálogo CN (+5 por peça) e as clássicas não somam", () => {
     expect(lookStats({ appearance: { face: 0, hair: 0 }, equipped: { outfit: 0 } })).toEqual({ atk: 0, def: 0, agi: 0, luck: 0 });
+  });
+});
+
+describe("tiers de fusão CN 14.7", () => {
+  it("usa quatro iguais até os tetos locais: pulseira +10, anel +8", () => {
+    const bracelet = ACCESSORIES.filter(a => a.kind === "armlet"), ring = ACCESSORIES.filter(a => a.kind === "ring");
+    expect(bracelet[0]).toMatchObject({ ref: "8015", atk: 20, def: 15, agi: 15, luck: 20, next: "8115" });
+    expect(bracelet.at(-1)).toMatchObject({ ref: "85154", atk: 535, def: 400 }); expect(bracelet.at(-1)).not.toHaveProperty("next");
+    expect(ring[0]).toMatchObject({ ref: "9024", name: "Anel do Romance", next: "9124" });
+    expect(ring.at(-1)).toMatchObject({ ref: "95242", atk: 146 }); expect(ring.at(-1)).not.toHaveProperty("next");
+    expect(accessoryByRef("95241")?.next).toBe("95242");
   });
 });
 

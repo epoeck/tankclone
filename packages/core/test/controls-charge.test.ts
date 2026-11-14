@@ -29,3 +29,23 @@ it("rajada automática usa ângulo atualizado e preserva a força", () => {
   key("keydown", "ArrowUp"); vi.spyOn(performance, "now").mockReturnValue(2000); controls.update(0);
   expect(sent.filter(e => e.type === "shoot")).toEqual([{ type: "shoot", angleDeg: 45, power: 25, special: false }, { type: "shoot", angleDeg: 46, power: 25, special: false }]);
 });
+
+it("B alterna POW uma vez por toque, exige fúria cheia e a vez do jogador, e mostra a prévia", () => {
+  const { view } = setup();
+  const previewPow = vi.fn();
+  Object.assign(view, { previewPow });
+  const handlers = new Map<string, (e: KeyboardEvent) => void>();
+  // Capture the listeners this instance registers, without changing the shared setup helper.
+  vi.stubGlobal("addEventListener", (type: string, fn: (e: KeyboardEvent) => void) => handlers.set(type, fn));
+  const canControl = vi.fn(() => true);
+  const powControls = new Controls(view as unknown as MatchView, canControl, () => {});
+  const key = (repeat = false) => handlers.get("keydown")!({ code: "KeyB", key: "b", repeat, preventDefault() {}, target: null } as KeyboardEvent);
+
+  key(); expect(view.ui.special).toBe(true); expect(previewPow).toHaveBeenLastCalledWith(true);
+  key(true); expect(view.ui.special).toBe(true); expect(previewPow).toHaveBeenCalledTimes(1);
+  key(); expect(view.ui.special).toBe(false); expect(previewPow).toHaveBeenLastCalledWith(false);
+  view.current!.fury = 199; key(); expect(view.ui.special).toBe(false);
+  view.current!.fury = 200; canControl.mockReturnValue(false); key(); expect(view.ui.special).toBe(false);
+  expect(previewPow).toHaveBeenCalledTimes(2);
+  void powControls;
+});

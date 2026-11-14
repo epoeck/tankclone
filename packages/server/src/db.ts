@@ -1,5 +1,5 @@
 /** Contas, XP e nível em SQLite (node:sqlite, embutido no Node ≥ 22.5; sem serviço externo). */
-import { DEFAULT_LOOK, sanitizeLook, type Look } from "@tankclone/core";
+import { DEFAULT_LOOK, accessoryByKind, sanitizeLook, type EquipPlace, type Look } from "@tankclone/core";
 import { NEW_WEAPON, OLD_STONE_IDS, REQUIRED_KINDS, SUPER_STONE, WEAPONS, superStonesFromOld, type GearState, type ItemInstance, type ItemKind, type WeaponState } from "@tankclone/core";
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
@@ -123,10 +123,10 @@ export class Db {
   items(nick: string): ItemInstance[] {
     return (this.db.prepare("SELECT id, kind, ref, sex, level, exp, atk, def, agi, luck, place FROM items WHERE nick = ? ORDER BY id").all(nick) as Array<Record<string, unknown>>)
       .map(r => ({ id: Number(r.id), kind: r.kind as ItemKind, ref: String(r.ref), sex: r.sex as "m" | "f" | "", level: Number(r.level), exp: Number(r.exp),
-        compose: { atk: Number(r.atk), def: Number(r.def), agi: Number(r.agi), luck: Number(r.luck) }, place: (r.place as ItemKind | null) ?? null }));
+        compose: { atk: Number(r.atk), def: Number(r.def), agi: Number(r.agi), luck: Number(r.luck) }, place: (r.place as EquipPlace | null) ?? null }));
   }
   item(nick: string, id: number): ItemInstance | undefined { return this.items(nick).find(i => i.id === id); }
-  private insertItem(nick: string, kind: ItemKind, ref: string, sex: string, place: ItemKind | null, g: GearState = NEW_WEAPON): number {
+  private insertItem(nick: string, kind: ItemKind, ref: string, sex: string, place: EquipPlace | null, g: GearState = NEW_WEAPON): number {
     const r = this.db.prepare("INSERT INTO items (nick, kind, ref, sex, level, exp, atk, def, agi, luck, place) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
       .run(nick, kind, ref, sex, g.level, g.exp, g.compose.atk, g.compose.def, g.compose.agi, g.compose.luck, place);
     return Number(r.lastInsertRowid);
@@ -158,7 +158,7 @@ export class Db {
         const sexed = kind !== "weapon" ? sex : "";
         const spare = now.find(i => i.kind === kind && i.sex === sexed && i.ref === (kind === "weapon" ? "sledge" : "0")) ?? now.find(i => i.kind === kind && (i.sex === sexed));
         if (spare) this.db.prepare("UPDATE items SET place = ? WHERE id = ?").run(kind, spare.id);
-        else this.insertItem(nick, kind, kind === "weapon" ? "sledge" : "0", sexed, kind);
+        else this.insertItem(nick, kind, kind === "weapon" ? "sledge" : "0", sexed, kind as EquipPlace);
       }
       this.db.exec("COMMIT");
     } catch (err) { this.db.exec("ROLLBACK"); throw err; }
@@ -173,17 +173,56 @@ export class Db {
       this.db.exec("COMMIT"); return null;
     } catch (err) { this.db.exec("ROLLBACK"); throw err; }
   }
-  /** Equipa o item; o que estava no lugar volta para a mochila (troca). */
-  equipItem(nick: string, id: number): string | null {
-    const it = this.item(nick, id); if (!it) return "item não encontrado";
+  buyAccessory(nick: string, ref: string, price: number): string | null {
+    const a = accessoryByKind("armlet").concat(accessoryByKind("ring")).find(x => x.ref === ref);
+    if (!a || !["8015", "9024"].includes(ref)) return "acessório indisponível";
     this.db.exec("BEGIN");
     try {
-      this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, it.kind);
-      this.db.prepare("UPDATE items SET place = ? WHERE id = ?").run(it.kind, id);
+      const r = this.db.prepare("UPDATE accounts SET gold = gold - ? WHERE nick = ? AND gold >= ?").run(price, nick, price);
+      if (Number(r.changes) !== 1) { this.db.exec("ROLLBACK"); return "gold insuficiente"; }
+      this.insertItem(nick, a.kind, ref, "", null);
       this.db.exec("COMMIT"); return null;
     } catch (err) { this.db.exec("ROLLBACK"); throw err; }
   }
-  unequipPlace(nick: string, kind: ItemKind): void { this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, kind); }
+  /** Fusão garantida: consome quatro instâncias do mesmo tier e cria o tier CN seguinte. */
+  fuseAccessories(nick: string, ids: number[]): string | null {
+    if (ids.length !== 4 || new Set(ids).size !== 4) return "selecione quatro acessórios diferentes";
+    const rows = ids.map(id => this.item(nick, id));
+    if (rows.some(i => !i)) return "acessório não encontrado";
+    const selected = rows as ItemInstance[], first = selected[0]!, def = accessoryByKind(first.kind).find(a => a.ref === first.ref);
+    if (!def?.next || selected.some(i => i.kind !== first.kind || i.ref !== first.ref || !!i.place)) return "a fusão exige quatro acessórios iguais sem equipar";
+    const next = def.next, nextDef = accessoryByKind(first.kind).find(a => a.ref === next)!;
+    this.db.exec("BEGIN");
+    try {
+      const del = this.db.prepare(`DELETE FROM items WHERE nick = ? AND id IN (${ids.map(() => "?").join(",")}) AND place IS NULL`).run(nick, ...ids);
+      if (Number(del.changes) !== 4) { this.db.exec("ROLLBACK"); return "os acessórios mudaram; tente novamente"; }
+      this.insertItem(nick, first.kind, next, "", null);
+      this.db.exec("COMMIT"); return null;
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  /** Equipa o item; o que estava no lugar volta para a mochila (troca). */
+  equipItem(nick: string, id: number, requestedPlace?: EquipPlace): string | null {
+    const it = this.item(nick, id); if (!it) return "item não encontrado";
+    this.db.exec("BEGIN");
+    try {
+      const before = this.items(nick);
+      const valid: EquipPlace[] = it.kind === "armlet" ? ["armlet1", "armlet2"] : it.kind === "ring" ? ["ring1", "ring2"] : [it.kind as EquipPlace];
+      let place = requestedPlace;
+      if (place && !valid.includes(place)) { this.db.exec("ROLLBACK"); return "espaço incompatível com o item"; }
+      if (it.place) {
+        if (!place || place === it.place) { this.db.exec("COMMIT"); return null; }
+        const occupant = before.find(i => i.place === place && i.id !== id);
+        if (occupant) this.db.prepare("UPDATE items SET place = ? WHERE id = ? AND nick = ?").run(it.place, occupant.id, nick);
+        this.db.prepare("UPDATE items SET place = ? WHERE id = ? AND nick = ?").run(place, id, nick);
+        this.db.exec("COMMIT"); return null;
+      }
+      const target = place ?? valid.find(p => !before.some(i => i.place === p)) ?? valid[0]!;
+      this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, target);
+      this.db.prepare("UPDATE items SET place = ? WHERE id = ? AND nick = ?").run(target, id, nick);
+      this.db.exec("COMMIT"); return null;
+    } catch (err) { this.db.exec("ROLLBACK"); throw err; }
+  }
+  unequipPlace(nick: string, kind: EquipPlace): void { this.db.prepare("UPDATE items SET place = NULL WHERE nick = ? AND place = ?").run(nick, kind); }
   /** Gasta `used` do material e grava o novo estado do item, juntos. */
   spendAndSetItem(nick: string, material: string, used: number, id: number, g: GearState): string | null {
     this.db.exec("BEGIN");

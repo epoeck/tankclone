@@ -6,8 +6,9 @@ const PAGE_SIZE = 12;
 const same = (a: Look, b: Look) => JSON.stringify(a) === JSON.stringify(b);
 /** O que a loja salva: sexo, pele, cor do cabelo e tinturas. As peças experimentadas são só prévia (comprar põe na mochila). */
 const coreOf = (l: Look) => JSON.stringify({ sex: l.appearance.sex, skin: l.appearance.skin, hairColor: l.appearance.hairColor, tints: l.tints });
-const value = (look: Look, c: Category) => c === "hair" || c === "face" ? look.appearance[c] : look.equipped[c];
+const value = (look: Look, c: Category) => c === "hair" || c === "face" ? look.appearance[c] : c === "bracelets" || c === "rings" || c === "offhand" || c === "pets" || c === "effects" || c === "suits" || c === "necklaces" ? 0 : look.equipped[c];
 function equip(look: Look, c: Category, index: number) {
+  if (c === "bracelets" || c === "rings" || c === "offhand" || c === "pets" || c === "effects" || c === "suits" || c === "necklaces") return;
   if (c === "hair" || c === "face") look.appearance[c] = index;
   else look.equipped[c] = index;
 }
@@ -166,7 +167,7 @@ export class Wardrobe {
 
   private renderSlots() {
     const slots = this.get("slots"); slots.replaceChildren();
-    for (const c of CATEGORIES) {
+    for (const c of CATEGORIES.filter(c => !["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(c.id))) {
       const current = this.pieces.find(p => p.category === c.id && p.index === value(this.draft, c.id));
       const b = button("", "wardrobe__slot");
       b.setAttribute("aria-label", `${c.singular}: ${current?.name ?? "sem peça"}. Ver ${c.label.toLowerCase()}`);
@@ -230,12 +231,15 @@ export class Wardrobe {
       const b = button("", "wardrobe__item"); b.dataset.item = piece.id;
       b.setAttribute("aria-pressed", String(this.selected.id === piece.id));
       b.setAttribute("aria-label", `${piece.name}${worn ? ", em uso na prévia" : ""}`);
-      const image = piece.complete ? document.createElement("canvas") : document.createElement("img");
-      image.width = 148; image.height = 112; image.setAttribute("aria-hidden", "true");
+      const nonVisual = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(piece.category);
+      const image = nonVisual ? (piece.icon ? document.createElement("img") : document.createElement("span")) : piece.complete ? document.createElement("canvas") : document.createElement("img");
+      image.setAttribute("aria-hidden", "true");
       if (image instanceof HTMLCanvasElement) {
+        image.width = 148; image.height = 112;
         const thumbLook = structuredClone(this.draft); equip(thumbLook, piece.category, piece.index);
-        drawWardrobePiece(image, thumbLook, piece.category);
-      } else if (piece.icon) image.src = `/assets/avatar/${piece.icon}`;
+        drawWardrobePiece(image, thumbLook, piece.category as "outfit" | "hair" | "face" | "hat" | "glasses" | "wings");
+      } else if (image instanceof HTMLImageElement && piece.icon) { image.width = 148; image.height = 112; image.src = piece.icon.startsWith("/") ? piece.icon : `/assets/avatar/${piece.icon}`; }
+      else image.textContent = piece.category === "bracelets" ? "◈" : piece.category === "rings" ? "♡" : piece.category === "pets" ? "🐤" : piece.category === "effects" ? "✦" : piece.category === "suits" ? "♟" : piece.category === "necklaces" ? "◇" : "🛡";
       const title = document.createElement("span"); title.textContent = piece.name;
       const badge = document.createElement("small"); const own = this.count(piece); badge.textContent = worn ? "Experimentando" : own ? `Você tem ${own}` : piece.complete ? "1 gold" : "Incompleta";
       b.append(image, title, badge);
@@ -247,7 +251,7 @@ export class Wardrobe {
         }
         this.renderDetail(true);
       };
-      b.ondblclick = () => { if (piece.complete) this.mutate(l => equip(l, piece.category, piece.index)); };
+      b.ondblclick = () => { if (piece.complete && !nonVisual) this.mutate(l => equip(l, piece.category, piece.index)); };
       b.disabled = !!this.pending; grid.append(b);
     }
     if (!list.length) { const empty = document.createElement("p"); empty.className = "wardrobe__empty";
@@ -265,13 +269,16 @@ export class Wardrobe {
     const text = document.createElement("div"), name = document.createElement("b"), desc = document.createElement("span");
     const st = p.stats, bonus = st && (st.atk || st.def || st.agi || st.luck) ? `Ataque +${st.atk} · Defesa +${st.def} · Agilidade +${st.agi} · Sorte +${st.luck}` : "sem bônus de atributos";
     const total = lookStats(this.draft);
-    name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus} · Total vestido: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
+      const equipmentOnly = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(p.category);
+      name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus}${p.category === "bracelets" || p.category === "rings" ? " · Quatro iguais fundem no próximo nível." : equipmentOnly ? "" : ` · Prévia do vestuário: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}`}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
     text.append(name, desc); host.append(text);
-    const worn = value(this.draft, p.category) === p.index;
+    const accessory = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(p.category);
+    const worn = !accessory && value(this.draft, p.category) === p.index;
     const bought = this.count(p);
     const purchase = button(`Comprar (1 gold)${bought ? ` · você tem ${bought}` : ""}`, "btn btn--ember btn--sm"); purchase.disabled = !p.complete || !!this.pending;
     purchase.onclick = () => { if (!this.buy({ t: "buy", catalogKind: KIND_OF[p.category], ref: String(p.index), sex: this.draft.appearance.sex })) this.statusText = "Sem conexão."; };
     host.append(purchase);
+    if (accessory) { const n = document.createElement("span"); n.textContent = ["bracelets","rings"].includes(p.category) ? "Ao equipar, os atributos base entram nos stats. A fusão consome quatro cópias e cria o tier seguinte; composição e fortalecimento das peças consumidas não são transferidos." : "Ao equipar, os atributos CN deste item entram nos stats da partida. O efeito visual ainda não tem arte de personagem instalada."; host.append(n); return; }
     const tryOn = button(worn ? "Experimentando" : "Experimentar", "btn btn--steel btn--sm"); tryOn.disabled = worn || !p.complete || !!this.pending;
     tryOn.onclick = () => this.mutate(l => equip(l, p.category, p.index)); host.append(tryOn);
     if (p.category === "outfit" || p.category === "face" || p.category === "hat") {

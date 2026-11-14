@@ -3,9 +3,9 @@ import WebSocket from "ws";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NEW_WEAPON, SUPER_STONE, strengthenArmor, strengthenWith } from "@tankclone/core";
+import { BASE_ARMOR, NEW_WEAPON, SUPER_STONE, strengthenArmor, strengthenWith } from "@tankclone/core";
 import { Db } from "../src/db";
-import { deriveLook, gearOf } from "../src/bag";
+import { deriveLook, gearOf, statsPanel } from "../src/bag";
 import { equippedStats } from "../src/rooms";
 import { startServer } from "../src/server";
 import type { ClientMsg, ServerMsg } from "../src/protocol";
@@ -39,6 +39,42 @@ describe("loja e mochila no banco", () => {
     expect(it.filter(i => i.kind === "weapon").map(i => i.ref).sort()).toEqual(["furnace", "prism", "sledge"]);
     expect(it.filter(i => i.place).map(i => i.kind).sort()).toEqual(["cloth", "face", "hair", "weapon"]);
     expect(gearOf(it).weaponId).toBe("sledge");
+    db.close();
+  });
+  it("painel parte dos atributos CN do loadout e mostra dano de arma uma vez", async () => {
+    const db = new Db(":memory:"); await db.register("painel", "segredo1"); db.ensureStarter("painel"); db.addGold("painel", 3);
+    const empty = statsPanel(db.getLook("painel"), db.items("painel"));
+    expect(empty).toMatchObject({ atk: 180, def: 130, agi: 30, luck: 40, armor: BASE_ARMOR, damage: 200 });
+    db.buyAccessory("painel", "8015", 1); const armlet = db.items("painel").find(i => i.kind === "armlet")!; db.equipItem("painel", armlet.id);
+    const wearing = statsPanel(db.getLook("painel"), db.items("painel"));
+    expect(wearing.atk).toBe(empty.atk + 20); expect(wearing.def).toBe(empty.def + 15); expect(wearing.damage).toBe(200);
+    db.close();
+  });
+  it("ocupa duas pulseiras/anéis; troca um espaço escolhido; fusão consome quatro iguais e cria o próximo tier", async () => {
+    const db = new Db(":memory:"); await db.register("fusao", "segredo1"); await db.register("outro", "segredo1");
+    db.ensureStarter("fusao"); db.ensureStarter("outro"); db.addGold("fusao", 20);
+    const ids: number[] = [];
+    for (let n = 0; n < 4; n++) { expect(db.buyAccessory("fusao", "8015", 1)).toBeNull(); ids.push(db.items("fusao").at(-1)!.id); }
+    expect(db.buyAccessory("fusao", "85154", 1)).toBe("acessório indisponível");
+    expect(db.fuseAccessories("outro", ids)).toBe("acessório não encontrado");
+    expect(db.fuseAccessories("fusao", [ids[0]!,ids[0]!,ids[2]!,ids[3]!])).toBe("selecione quatro acessórios diferentes");
+    expect(db.fuseAccessories("fusao", [ids[0]!,ids[1]!,ids[2]!,99999])).toBe("acessório não encontrado");
+    expect(db.equipItem("fusao", ids[0]!)).toBeNull(); expect(db.item("fusao", ids[0]!)!.place).toBe("armlet1");
+    expect(db.equipItem("fusao", ids[1]!)).toBeNull(); expect(db.item("fusao", ids[1]!)!.place).toBe("armlet2");
+    expect(gearOf(db.items("fusao").filter(i => i.kind === "armlet")).compose).toMatchObject({ atk: 40, def: 30, agi: 30, luck: 40 });
+    expect(db.buyAccessory("fusao", "9024", 1)).toBeNull(); expect(db.buyAccessory("fusao", "9024", 1)).toBeNull();
+    const rings = db.items("fusao").filter(i => i.kind === "ring");
+    db.equipItem("fusao", rings[0]!.id); db.equipItem("fusao", rings[1]!.id);
+    expect(rings[0]!.place).toBeNull(); // cópias que ainda estão na mochila não ganham slot por engano
+    expect(db.items("fusao").filter(i => i.place === "ring1" || i.place === "ring2")).toHaveLength(2);
+    expect(db.fuseAccessories("fusao", ids)).toMatch(/iguais sem equipar/);
+    expect(db.equipItem("fusao", ids[2]!, "armlet1")).toBeNull();
+    expect(db.item("fusao", ids[0]!)!.place).toBeNull(); expect(db.item("fusao", ids[2]!)!.place).toBe("armlet1");
+    db.unequipPlace("fusao", "armlet1"); db.unequipPlace("fusao", "armlet2");
+    const before = db.items("fusao").length;
+    expect(db.fuseAccessories("fusao", ids)).toBeNull();
+    expect(db.items("fusao")).toHaveLength(before - 3);
+    expect(db.items("fusao").find(i => i.kind === "armlet" && i.ref === "8115")).toMatchObject({ level: 0, exp: 0, compose: { atk: 0, def: 0, agi: 0, luck: 0 } });
     db.close();
   });
   it("equipar troca de lugar; sexo oposto some do equipado e ganha padrão", async () => {
@@ -136,8 +172,9 @@ describe("mochila pelo protocolo", () => {
     c.send({ t: "addBot" }); await c.next("room");
     c.send({ t: "start" });
     const st = await c.next("start"), me = st.setup.players.find(p => p.id === "lutador")!;
-    expect(me).toMatchObject({ weaponId: "prism", weaponLevel: 1, armorBonus: strengthenArmor(1) });
-    expect(me.compose!.atk).toBe(51);
+    expect(me).toMatchObject({ weaponId: "prism", weaponLevel: 1, armorBonus: BASE_ARMOR + strengthenArmor(1) });
+    expect(me.stats!.atk).toBe(40 + 51); expect(me.stats!.damage).toBe(0);
+    expect(me.compose!.atk).toBe(91); // +51 pedra e +40 atributos base da Prisma CN
     c.ws.close();
   });
 });

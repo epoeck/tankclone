@@ -61,6 +61,8 @@ export interface WeaponDef {
   /** Nome interno provisório. */
   name: string;
   baseDamage: number;
+  /** Atributos próprios da arma (CN TemplateAlllist). */
+  stats: { atk: number; def: number; agi: number; luck: number };
   /** BallInfo.Radii, separado da cratera visual. */
   damageRadius: number;
   /** Property8 da arma + BallInfo.Delay (confirmado no balls.json do Reborn). */
@@ -80,11 +82,11 @@ export interface WeaponDef {
 export const FLY_BALL_ID = 3;
 
 export const WEAPONS: Record<string, WeaponDef> = {
-  prism: { id: "prism", name: "Prisma", baseDamage: 200, damageRadius: 55, delay: 2, ballDelay: 200, angle: { min: 55, max: 70 }, ballId: 101, windFactor: 1,
+  prism: { id: "prism", name: "Prisma", baseDamage: 200, stats: { atk: 40, def: 250, agi: 30, luck: 60 }, damageRadius: 55, delay: 2, ballDelay: 200, angle: { min: 55, max: 70 }, ballId: 101, windFactor: 1,
     special: { shots: 0, damageMult: 1, ballId: 111, damageRadius: 65, balls: 1 } },
-  sledge: { id: "sledge", name: "Marreta", baseDamage: 200, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 65 }, ballId: 381, windFactor: 1,
+  sledge: { id: "sledge", name: "Marreta", baseDamage: 200, stats: { atk: 180, def: 130, agi: 30, luck: 40 }, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 65 }, ballId: 381, windFactor: 1,
     special: { shots: 0, damageMult: 1, ballId: 391, damageRadius: 65, balls: 1 } },
-  furnace: { id: "furnace", name: "Fornalha", baseDamage: 205, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 50 }, ballId: 161, windFactor: 1,
+  furnace: { id: "furnace", name: "Fornalha", baseDamage: 205, stats: { atk: 250, def: 60, agi: 40, luck: 30 }, damageRadius: 55, delay: 1, ballDelay: 200, angle: { min: 20, max: 50 }, ballId: 161, windFactor: 1,
     special: { shots: 0, damageMult: 1, ballId: 171, damageRadius: 45, balls: 3 } },
 };
 

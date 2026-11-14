@@ -1,12 +1,12 @@
-# Mochila original, Super Pedra e loja
+# Mochila, loja e Ferreiro
 
-Implementa `docs/especificacao-mochila.md` (sem RNG, tudo a 1 gold, assets do original só locais).
+Slots equipáveis vêm do equipamento real: arma principal, secundária, pet, efeito, traje, colar, roupa, chapéu, rosto, cabelo, óculos, dois braceletes e dois anéis. A loja de vestuário é também a loja de equipamento. Atributos vêm dos templates CN; não há presets nem modos de energia/dano. A compra de acessórios custa 1 gold, sem RNG.
 
-- **Itens por instância** (`items` no SQLite): `kind`, `ref`, `sex`, `level`/`exp` (+0..+12), composição `atk/def/agi/luck` e `place` (null = mochila). Contas antigas migram sozinhas na primeira entrada (`Db.ensureStarter`): peças do Look e as 3 armas (com a evolução da tabela `weapons`). Pedras `str1..str5` viram Super Pedras por EXP.
-- **Look derivado**: o Look salvo reflete o equipado (`server/src/bag.ts: deriveLook`); a loja só salva sexo, pele, cor do cabelo e tinturas.
-- **Super Pedra** (`super`, ícone `strength11`, 10 EXP): fortalece chapéu, roupa, arma e secundária. Chapéu/roupa dão armadura `round(60·1,1^N) − 60`; a arma, dano × 1,1^N.
-- **Composição**: chapéu, óculos, roupa, arma, bracelete e anel (listas em `core/src/items.ts`).
-- **Protocolo**: `bag`, `equip`, `unequip`, `buy {catalogKind, ref, sex}` / `buy {item, count}`, `strengthen {itemId, count}`, `compose {itemId, stone}`; resposta `{t:"bag", gold, materials, items, stats}`.
-- **Partida**: `weaponLevel`, `compose` somado e `armorBonus` vêm do equipado (`gearOf`).
-- **UI**: Mochila (`client/src/bag.ts`, equipar por duplo clique ou arrastar), Loja (`wardrobe.ts`, Comprar 1 gold, Experimentar só prévia) e Ferreiro (`forge.ts`, sobre qualquer item).
-- Lugares sem arte nesta versão (efeito, bracelete, anel, traje, colar, secundária) aparecem bloqueados.
+- **Slots duplos**: bracelete 1/2 e anel 1/2 aceitam instâncias separadas; pet, secundária, efeito, traje e colar também podem ser equipados. Ícones locais CN necessários são importados por `scripts/import-cn-equipment-icons.py`.
+- **Atributos da partida**: ATQ/DEF/AGI/SOR são somados a partir dos itens equipados e da composição. Armadura vem de chapéu e roupa; nível da arma fortalece seu dano. O painel usa esses mesmos valores autoritativos enviados no setup da sala.
+- **Acessórios**: apenas Pulseira de Aniversário e Anel do Romance. A loja vende o nível base por 1 gold; a cadeia termina nos níveis CN máximos (+10 e +8, respectivamente). Sem RNG.
+- **Fusão**: no Ferreiro, quatro instâncias diferentes do mesmo acessório e nível viram uma instância do próximo nível. Os quatro itens são consumidos; composição e fortalecimento não são transferidos. A cadeia não passa do teto CN.
+- **Fortalecimento**: Super Pedra (`super`, ícone `strength11`, 10 EXP) aplica-se a chapéu, roupa e arma. Chapéu/roupa dão armadura `round(60·1,1^N)`; arma escala o dano por `1,1^N`. Secundária não recebe armadura inventada: o template CN representa cura, ainda não implementada no combate.
+- **Migração**: contas antigas recebem peças do Look e as armas no primeiro acesso (`Db.ensureStarter`). Pedras `str1..str5` viram Super Pedras por EXP.
+- **POW**: B alterna o especial com fúria cheia; o evento autoritativo do disparo anima o eco ampliado atrás do boneco para todos os jogadores.
+- **UI/protocolo**: Mochila (`client/src/bag.ts`, clique duplo ou arrastar), loja de vestuário (`wardrobe.ts`), Ferreiro (`forge.ts`); `bag`, `equip`, `unequip`, `buy`, `strengthen`, `compose`, `fuse`. A resposta da mochila contém ouro, itens e stats.

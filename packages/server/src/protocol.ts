@@ -21,15 +21,17 @@ export type ClientMsg =
   | { t: "pickCard"; index: number }
   /** Mochila original: itens possuídos (tudo garantido; sem sorteio; peças e materiais a 1 gold na fase de testes). */
   | { t: "bag" }
-  | { t: "equip"; itemId: number }
-  | { t: "unequip"; place: ItemKind }
+  | { t: "equip"; itemId: number; place?: ItemInstance["place"] }
+  | { t: "unequip"; place: NonNullable<ItemInstance["place"]> }
   /** Comprar peça (catalogKind + ref do catálogo) ou material (item + count). */
   | { t: "buy"; catalogKind: ItemKind; ref: string; sex?: "m" | "f" }
   | { t: "buy"; item: string; count: number }
   /** Fortalecer com Super Pedras (chapéu, roupa, arma, secundária). */
   | { t: "strengthen"; itemId: number; count: number }
   /** Compor com uma pedra (chapéu, óculos, roupa, arma, bracelete, anel). */
-  | { t: "compose"; itemId: number; stone: string };
+  | { t: "compose"; itemId: number; stone: string }
+  | { t: "fuse"; itemIds: number[] }
+  | { t: "fuse"; itemIds: number[] };
 
 export interface RoomInfo {
   id: string;
@@ -43,9 +45,9 @@ export interface RoomInfo {
 export interface MatchSetup {
   seed: number;
   mapId: string;
-  players: Array<{ id: string; team: number; x: number; spawnY?: number; weaponId: string; build: string; look: Look; facing: 1 | -1;
+  players: Array<{ id: string; team: number; x: number; spawnY?: number; weaponId: string; build: string; look: Look; facing: 1 | -1; stats?: Stats;
     /** Ferreiro: nível (+0..+12) e atributos compostos da arma escolhida. */
-    weaponLevel?: number; compose?: { atk: number; def: number; agi: number; luck: number }; armorBonus?: number }>;
+    weaponLevel?: number; compose?: { atk: number; def: number; agi: number; luck: number }; armorBonus?: number; hpBonus?: number }>;
 }
 
 export type ServerMsg =

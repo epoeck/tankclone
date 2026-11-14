@@ -109,6 +109,9 @@
 .forge__stone { display: grid; justify-items: center; gap: 4px; min-width: 96px; padding: 6px; border-radius: 10px; border: 2px solid var(--ink, #1a1030); background: rgba(255,255,255,.55); cursor: pointer; }
 .forge__stone:disabled { opacity: .45; cursor: default; }
 .forge__noicon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: #3b5bb5; color: #fff; font-weight: 900; font-size: 12px; }
+.forge__fusion-item { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--navy-600); border-radius: 8px; background: var(--navy-800); color: var(--cream); cursor: pointer; font-size: 11px; }
+.forge__fusion-item img, .forge__fusion-item canvas { width: 44px; height: 44px; object-fit: contain; }
+.forge__fusion-item:has(input:checked) { border-color: var(--brass-500); box-shadow: 0 0 0 1px var(--brass-900); }
 
 /* Mochila original (aba Equipar) */
 #s-bag { max-width: 1140px; }

@@ -7,6 +7,21 @@ vi.mock("../../client/src/chars", () => ({ drawCharacter: () => {} }));
 vi.mock("../../client/src/death", () => ({ drawDeath: () => {} }));
 import { MatchView } from "../../client/src/view";
 
+it("MatchView usa os stats autoritativos do setup e exibe eco ao receber tiro especial", () => {
+  const context = { createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData: () => {} };
+  vi.stubGlobal("document", { createElement: () => ({ getContext: () => context }) });
+  vi.stubGlobal("Image", class { onload = null; src = ""; });
+  const player = { id: "a", team: 1, x: 200, weaponId: "sledge", build: "equipamento", facing: 1 as const,
+    stats: { atk: 125, def: 80, agi: 90, luck: 25, hp: 4321, armor: 66, damage: 42 } };
+  const view = new MatchView("colinas", [player]);
+  expect(view.chars.get("a")).toMatchObject({ hp: 4321, maxHp: 4321, maxEnergy: 243 });
+  view.push([{ type: "shot", playerId: "a", index: 0, points: [], hit: null, hitKind: null, targetId: null,
+    damageMult: 1, stepSeconds: 0, duration: 0, special: true }]);
+  view.update(0);
+  expect((view as unknown as { powEcho: Map<string, number> }).powEcho.has("a")).toBe(true);
+  vi.unstubAllGlobals();
+});
+
 it.each([false, true])("item F reproduz avião e sons no MatchView (log legado: %s)", legacy => {
   calls.sound.mockClear(); calls.projectile.mockClear(); calls.impact.mockClear();
   const context = new Proxy({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), createLinearGradient: () => ({ addColorStop: () => {} }) }, { get: (target, key) => key in target ? target[key as keyof typeof target] : () => {} });

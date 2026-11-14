@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { COMPOSE_KINDS, STRENGTHEN_KINDS, SUPER_STONE, canCompose, canStrengthen, shopItem, strengthenArmor, superStonesFromOld } from "../src/index";
 
 describe("mochila original (CN CanStrengthen / CanCompose)", () => {
-  it("fortalecem: chapéu, roupa, arma e secundária; óculos, cabelo, rosto, efeito, asa, bracelete e anel não", () => {
-    expect([...STRENGTHEN_KINDS].sort()).toEqual(["cloth", "head", "offhand", "weapon"]);
-    for (const k of ["glass", "hair", "face", "eff", "wing", "armlet", "ring"]) expect(canStrengthen(k)).toBe(false);
+  it("fortalecem: chapéu, roupa e arma; a secundária de cura ainda não tem fortalecimento", () => {
+    expect([...STRENGTHEN_KINDS].sort()).toEqual(["cloth", "head", "weapon"]);
+    for (const k of ["glass", "hair", "face", "eff", "wing", "armlet", "ring", "offhand"]) expect(canStrengthen(k)).toBe(false);
   });
   it("compõem: chapéu, óculos, roupa, arma, bracelete e anel; cabelo, rosto, efeito, traje, colar, asa e secundária não", () => {
     expect([...COMPOSE_KINDS].sort()).toEqual(["armlet", "cloth", "glass", "head", "ring", "weapon"]);
