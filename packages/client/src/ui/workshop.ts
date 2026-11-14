@@ -1,5 +1,5 @@
 import { ACCESSORIES, SLOT_GEAR, type ItemInstance, type Look } from "@tankclone/core";
-import { CATEGORY_OF, itemBaseStats, itemIndex, itemName, pieces } from "../catalog-ui";
+import { CATEGORY_OF, SLOT_ICON, itemBaseStats, itemIndex, itemName, pieces } from "../catalog-ui";
 import { el, itemThumb, weaponName } from "../forge";
 
 export const ATTRIBUTES = { atk: "Ataque", def: "Defesa", agi: "Agilidade", luck: "Sorte" } as const;
@@ -28,7 +28,7 @@ export function itemIcon(item: ItemInstance, look?: Look, size = 48): HTMLElemen
   const arm = ({ sledge: "brick", prism: "bomb", furnace: "bombpack" } as Record<string, string>)[item.ref];
   let src = item.kind === "weapon" && arm ? item.level < 10 ? `/ui-local/forge/weapon-${arm}.png` : `/assets/avatar/arm/${arm}${item.level >= 12 ? 3 : 2}/1/icon.png` : "";
   if (!src && accessory) src = `/ui-local/accessories/${accessory.icon}.png`;
-  if (!src && SLOT_GEAR.some(g => g.kind === item.kind && g.ref === item.ref)) src = ({ pet: "/ui-local/slots/pet.png", offhand: "/ui-local/slots/offhand.png", eff: "/ui-local/slots/effect.png", necklace: "/ui-local/slots/necklace.png" } as Record<string, string>)[item.kind] ?? "";
+  if (!src && SLOT_GEAR.some(g => g.kind === item.kind && g.ref === item.ref)) src = SLOT_ICON[item.kind] ?? "";
   if (!src && category) src = pieces(item.sex === "f" ? "f" : "m").find(p => p.category === category && p.index === itemIndex(item))?.icon ?? "";
   if (src) { const img = el("img", "", "workshop-item-icon"); img.src = src; img.alt = ""; img.width = size; img.height = size; img.draggable = false; return img; }
   if (look) { const canvas = itemThumb(item, look, size * 3, size * 3); canvas.className = "workshop-item-icon"; canvas.style.width = `${size}px`; canvas.style.height = `${size}px`; return canvas; }

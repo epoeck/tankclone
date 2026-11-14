@@ -17,6 +17,8 @@ items = {
     "slots/pet.png": source / "unfrightprop/chicken0/icon.png",
     "slots/effect.png": source / "equip/m/eff/eff1/icon_1.png",
     "slots/necklace.png": source / "equip/necklace/xingxiu1/icon.png",
+    "slots/chatball.png": source / "specialprop/chatball/chatball1/icon.png",  # Pic chatBall1
+    "slots/healstone.png": source / "equip/recover/recover1/icon.png",  # Pic recover1
 }
 copied = 0
 for rel, src in items.items():

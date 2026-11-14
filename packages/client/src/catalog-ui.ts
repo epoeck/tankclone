@@ -1,7 +1,7 @@
 /** Catálogo de peças para as telas de loja e mochila (nomes, ícones, atributos), e a ponte item da mochila ↔ categoria do visual. */
-import { ACCESSORIES, SLOT_GEAR, WEAPONS, accessoryStats, slotGear, cn147Wing, cnPieces, legacyCount, pieceInfo, COUNTS, type AvatarSex, type ItemInstance, type ItemKind, type Look, type PieceStats, type WardrobeSlot } from "@tankclone/core";
+import { ACCESSORIES, SLOT_GEAR, SLOT_GEAR_NOTE, WEAPONS, accessoryStats, slotGear, cn147Wing, cnPieces, legacyCount, pieceInfo, COUNTS, type AvatarSex, type ItemInstance, type ItemKind, type Look, type PieceStats, type WardrobeSlot } from "@tankclone/core";
 
-export type Category = "outfit" | "hair" | "face" | "hat" | "glasses" | "wings" | "bracelets" | "rings" | "offhand" | "pets" | "effects" | "suits" | "necklaces";
+export type Category = "outfit" | "hair" | "face" | "hat" | "glasses" | "wings" | "bracelets" | "rings" | "offhand" | "pets" | "effects" | "suits" | "necklaces" | "chatballs" | "healstones";
 export type Piece = { id: string; category: Category; index: number; name: string; complete: boolean; icon?: string | null; stats?: PieceStats };
 export const CATEGORIES: { id: Category; label: string; singular: string; optional?: boolean }[] = [
   { id: "outfit", label: "Roupas", singular: "Roupa" },
@@ -17,6 +17,8 @@ export const CATEGORIES: { id: Category; label: string; singular: string; option
   { id: "effects", label: "Efeitos", singular: "Efeito", optional: true },
   { id: "suits", label: "Trajes", singular: "Traje", optional: true },
   { id: "necklaces", label: "Colares", singular: "Colar", optional: true },
+  { id: "chatballs", label: "Balões de chat", singular: "Balão de chat", optional: true },
+  { id: "healstones", label: "Pedras de cura", singular: "Pedra de cura", optional: true },
 ];
 // Catálogo da build atual. A importação futura pode substituir esta lista mantendo a UI.
 export const LEGACY_PIECES: Piece[] = CATEGORIES.slice(0, 6).flatMap(c => Array.from(
@@ -29,8 +31,8 @@ export const slotFor: Partial<Record<Category, WardrobeSlot>> = { outfit: "cloth
 export function pieces(sex: AvatarSex): Piece[] {
   return [...LEGACY_PIECES, ...CATEGORIES.flatMap<Piece>(c => {
     if (c.id === "bracelets" || c.id === "rings") return ACCESSORIES.filter(a => a.kind === (c.id === "bracelets" ? "armlet" : "ring") && (a.ref === "8015" || a.ref === "9024")).map(a => ({ id: `accessory-${a.ref}`, category: c.id, index: Number(a.ref), name: a.name, complete: true, icon: `/ui-local/accessories/${a.icon}.png`, stats: accessoryStats(a.ref) }));
-    const kinds: Partial<Record<Category, ItemKind>> = { offhand: "offhand", pets: "pet", effects: "eff", suits: "suits", necklaces: "necklace" };
-    if (kinds[c.id]) return SLOT_GEAR.filter(a => a.kind === kinds[c.id]).map(a => ({ id: `gear-${a.ref}`, category: c.id, index: Number(a.ref), name: a.name, complete: true, icon: ({ offhand: "/ui-local/slots/offhand.png", pets: "/ui-local/slots/pet.png", effects: "/ui-local/slots/effect.png", necklaces: "/ui-local/slots/necklace.png" } as Partial<Record<Category,string>>)[c.id], stats: { atk:a.atk, def:a.def, agi:a.agi, luck:a.luck } } as Piece));
+    const kinds: Partial<Record<Category, ItemKind>> = { offhand: "offhand", pets: "pet", effects: "eff", suits: "suits", necklaces: "necklace", chatballs: "chatball", healstones: "healstone" };
+    if (kinds[c.id]) return SLOT_GEAR.filter(a => a.kind === kinds[c.id]).map(a => ({ id: `gear-${a.ref}`, category: c.id, index: Number(a.ref), name: a.name, complete: true, icon: SLOT_ICON[KIND_OF[c.id]], stats: { atk:a.atk, def:a.def, agi:a.agi, luck:a.luck } } as Piece));
     const slot = slotFor[c.id]; if (!slot) return [];
     const offset = c.optional ? 1 : 0;
     return cnPieces(sex, slot).map((item, i) => ({ id: `${c.id}-${i + legacyCount(slot) + offset}`, category: c.id,
@@ -40,11 +42,17 @@ export function pieces(sex: AvatarSex): Piece[] {
 }
 
 /** Categoria do visual ↔ tipo do item da mochila. */
-export const KIND_OF: Record<Category, ItemKind> = { outfit: "cloth", hair: "hair", face: "face", hat: "head", glasses: "glass", wings: "wing", bracelets: "armlet", rings: "ring", offhand: "offhand", pets: "pet", effects: "eff", suits: "suits", necklaces: "necklace" };
-export const CATEGORY_OF: Partial<Record<ItemKind, Category>> = { cloth: "outfit", hair: "hair", face: "face", head: "hat", glass: "glasses", wing: "wings", armlet: "bracelets", ring: "rings", offhand: "offhand", pet: "pets", eff: "effects", suits: "suits", necklace: "necklaces" };
+export const KIND_OF: Record<Category, ItemKind> = { outfit: "cloth", hair: "hair", face: "face", hat: "head", glasses: "glass", wings: "wing", bracelets: "armlet", rings: "ring", offhand: "offhand", pets: "pet", effects: "eff", suits: "suits", necklaces: "necklace", chatballs: "chatball", healstones: "healstone" };
+export const CATEGORY_OF: Partial<Record<ItemKind, Category>> = { cloth: "outfit", hair: "hair", face: "face", head: "hat", glass: "glasses", wing: "wings", armlet: "bracelets", ring: "rings", offhand: "offhand", pet: "pets", eff: "effects", suits: "suits", necklace: "necklaces", chatball: "chatballs", healstone: "healstones" };
+/** Ícones locais (gitignored, via scripts/import-cn-equipment-icons.py) dos itens de lugar único. */
+export const SLOT_ICON: Partial<Record<ItemKind, string>> = { offhand: "/ui-local/slots/offhand.png", pet: "/ui-local/slots/pet.png", eff: "/ui-local/slots/effect.png", necklace: "/ui-local/slots/necklace.png", chatball: "/ui-local/slots/chatball.png", healstone: "/ui-local/slots/healstone.png" };
+/** Categorias de equipamento sem prévia no boneco (só vão para a mochila). */
+export type EquipmentCategory = Exclude<Category, "outfit" | "hair" | "face" | "hat" | "glasses" | "wings">;
+export const EQUIPMENT_CATEGORIES: readonly EquipmentCategory[] = ["bracelets", "rings", "offhand", "pets", "effects", "suits", "necklaces", "chatballs", "healstones"];
+export const SLOT_GEAR_TEXT = (item: { kind: string; ref: string }) => SLOT_GEAR_NOTE[`${item.kind}:${item.ref}`];
 /** Índice do visual de uma peça (mesmo valor guardado no Look; chapéu e óculos já contam o deslocamento +1). */
 export const itemIndex = (item: ItemInstance) => Number(item.ref) || 0;
-export const KIND_LABEL: Record<ItemKind, string> = { head: "Chapéu", glass: "Óculos", hair: "Cabelo", eff: "Efeito", cloth: "Roupa", face: "Rosto", weapon: "Arma", wing: "Asas", armlet: "Bracelete", ring: "Anel", suits: "Traje", necklace: "Colar", offhand: "Secundária", pet: "Pet" };
+export const KIND_LABEL: Record<ItemKind, string> = { head: "Chapéu", glass: "Óculos", hair: "Cabelo", eff: "Efeito", cloth: "Roupa", face: "Rosto", weapon: "Arma", wing: "Asas", armlet: "Bracelete", ring: "Anel", suits: "Traje", necklace: "Colar", offhand: "Secundária", pet: "Pet", chatball: "Balão de chat", badge: "Emblema", healstone: "Pedra de cura" };
 
 export function itemName(item: ItemInstance, weaponName: (id: string) => string): string {
   if (item.kind === "weapon") return weaponName(item.ref);
@@ -71,3 +79,4 @@ export function lookWith(base: Look, item: ItemInstance): Look {
   else if (["outfit", "hat", "glasses", "wings"].includes(category)) l.equipped[category as "outfit" | "hat" | "glasses" | "wings"] = itemIndex(item);
   return l;
 }
+export const isEquipmentCategory = (c: Category): c is EquipmentCategory => (EQUIPMENT_CATEGORIES as readonly Category[]).includes(c);

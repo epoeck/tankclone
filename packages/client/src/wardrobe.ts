@@ -1,14 +1,14 @@
 import { lookStats, HAIR_COLORS, HAIR_ORIGINAL, PIECE_COLORS, SKIN_TONES, sanitizeLook, type ItemInstance, type Look } from "@tankclone/core";
 import { drawCharPortrait, drawWardrobePiece } from "./chars";
 
-import { CATEGORIES, KIND_OF, LEGACY_PIECES, pieces, type Category, type Piece } from "./catalog-ui";
+import { CATEGORIES, isEquipmentCategory, KIND_OF, SLOT_GEAR_TEXT, LEGACY_PIECES, pieces, type Category, type Piece } from "./catalog-ui";
 const PAGE_SIZE = 12;
 const same = (a: Look, b: Look) => JSON.stringify(a) === JSON.stringify(b);
 /** O que a loja salva: sexo, pele, cor do cabelo e tinturas. As peças experimentadas são só prévia (comprar põe na mochila). */
 const coreOf = (l: Look) => JSON.stringify({ sex: l.appearance.sex, skin: l.appearance.skin, hairColor: l.appearance.hairColor, tints: l.tints });
-const value = (look: Look, c: Category) => c === "hair" || c === "face" ? look.appearance[c] : c === "bracelets" || c === "rings" || c === "offhand" || c === "pets" || c === "effects" || c === "suits" || c === "necklaces" ? 0 : look.equipped[c];
+const value = (look: Look, c: Category) => c === "hair" || c === "face" ? look.appearance[c] : isEquipmentCategory(c) ? 0 : look.equipped[c];
 function equip(look: Look, c: Category, index: number) {
-  if (c === "bracelets" || c === "rings" || c === "offhand" || c === "pets" || c === "effects" || c === "suits" || c === "necklaces") return;
+  if (isEquipmentCategory(c)) return;
   if (c === "hair" || c === "face") look.appearance[c] = index;
   else look.equipped[c] = index;
 }
@@ -167,7 +167,7 @@ export class Wardrobe {
 
   private renderSlots() {
     const slots = this.get("slots"); slots.replaceChildren();
-    for (const c of CATEGORIES.filter(c => !["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(c.id))) {
+    for (const c of CATEGORIES.filter(c => !isEquipmentCategory(c.id))) {
       const current = this.pieces.find(p => p.category === c.id && p.index === value(this.draft, c.id));
       const b = button("", "wardrobe__slot");
       b.setAttribute("aria-label", `${c.singular}: ${current?.name ?? "sem peça"}. Ver ${c.label.toLowerCase()}`);
@@ -231,7 +231,7 @@ export class Wardrobe {
       const b = button("", "wardrobe__item"); b.dataset.item = piece.id;
       b.setAttribute("aria-pressed", String(this.selected.id === piece.id));
       b.setAttribute("aria-label", `${piece.name}${worn ? ", em uso na prévia" : ""}`);
-      const nonVisual = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(piece.category);
+      const nonVisual = isEquipmentCategory(piece.category);
       const image = nonVisual ? (piece.icon ? document.createElement("img") : document.createElement("span")) : piece.complete ? document.createElement("canvas") : document.createElement("img");
       image.setAttribute("aria-hidden", "true");
       if (image instanceof HTMLCanvasElement) {
@@ -239,7 +239,7 @@ export class Wardrobe {
         const thumbLook = structuredClone(this.draft); equip(thumbLook, piece.category, piece.index);
         drawWardrobePiece(image, thumbLook, piece.category as "outfit" | "hair" | "face" | "hat" | "glasses" | "wings");
       } else if (image instanceof HTMLImageElement && piece.icon) { image.width = 148; image.height = 112; image.src = piece.icon.startsWith("/") ? piece.icon : `/assets/avatar/${piece.icon}`; }
-      else image.textContent = piece.category === "bracelets" ? "◈" : piece.category === "rings" ? "♡" : piece.category === "pets" ? "🐤" : piece.category === "effects" ? "✦" : piece.category === "suits" ? "♟" : piece.category === "necklaces" ? "◇" : "🛡";
+      else image.textContent = piece.category === "bracelets" ? "◈" : piece.category === "rings" ? "♡" : piece.category === "pets" ? "🐤" : piece.category === "effects" ? "✦" : piece.category === "suits" ? "♟" : piece.category === "necklaces" ? "◇" : piece.category === "chatballs" ? "☁" : piece.category === "healstones" ? "✚" : "🛡";
       const title = document.createElement("span"); title.textContent = piece.name;
       const badge = document.createElement("small"); const own = this.count(piece); badge.textContent = worn ? "Experimentando" : own ? `Você tem ${own}` : piece.complete ? "1 gold" : "Incompleta";
       b.append(image, title, badge);
@@ -269,10 +269,10 @@ export class Wardrobe {
     const text = document.createElement("div"), name = document.createElement("b"), desc = document.createElement("span");
     const st = p.stats, bonus = st && (st.atk || st.def || st.agi || st.luck) ? `Ataque +${st.atk} · Defesa +${st.def} · Agilidade +${st.agi} · Sorte +${st.luck}` : "sem bônus de atributos";
     const total = lookStats(this.draft);
-      const equipmentOnly = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(p.category);
-      name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus}${p.category === "bracelets" || p.category === "rings" ? " · Quatro iguais fundem no próximo nível." : equipmentOnly ? "" : ` · Prévia do vestuário: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}`}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
+      const equipmentOnly = isEquipmentCategory(p.category);
+      name.textContent = p.name; desc.textContent = p.complete ? `${c.singular} · ${bonus}${p.category === "bracelets" || p.category === "rings" ? " · Quatro iguais fundem no próximo nível." : equipmentOnly ? (SLOT_GEAR_TEXT({ kind: KIND_OF[p.category], ref: String(p.index) }) ? ` · ${SLOT_GEAR_TEXT({ kind: KIND_OF[p.category], ref: String(p.index) })}` : "") : ` · Prévia do vestuário: ATQ ${total.atk} DEF ${total.def} AGI ${total.agi} SOR ${total.luck}`}` : `${c.singular} · Recursos GAME/SHOW incompletos ou incompatíveis; não equipável`;
     text.append(name, desc); host.append(text);
-    const accessory = ["bracelets","rings","offhand","pets","effects","suits","necklaces"].includes(p.category);
+    const accessory = isEquipmentCategory(p.category);
     const worn = !accessory && value(this.draft, p.category) === p.index;
     const bought = this.count(p);
     const purchase = button(`Comprar (1 gold)${bought ? ` · você tem ${bought}` : ""}`, "btn btn--ember btn--sm"); purchase.disabled = !p.complete || !!this.pending;

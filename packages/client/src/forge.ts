@@ -4,7 +4,7 @@ import { ACCESSORIES, BASE_ARMOR, SLOT_GEAR, WEAPONS, strengthenArmor, strengthe
 import { drawCharPortrait, drawWardrobePiece } from "./chars";
 import { renderForgeScene, type ForgeTab } from "./forge-scene";
 import { screenVisible } from "./ui/workshop";
-import { CATEGORY_OF, lookWith } from "./catalog-ui";
+import { CATEGORY_OF, SLOT_ICON, lookWith } from "./catalog-ui";
 
 export type BagState = { gold: number; materials: Record<string, number>; items: ItemInstance[]; stats: Stats; result?: string };
 type Send = (m: Record<string, unknown>) => void;
@@ -21,11 +21,11 @@ export function stoneIcon(item: ShopItem): HTMLElement {
 /** Miniatura de um item da mochila (peça do visual ou arma). */
 export function itemThumb(item: ItemInstance, look: Look, w = 64, h = 64): HTMLCanvasElement {
   const cv = el("canvas"); cv.width = w; cv.height = h; cv.setAttribute("aria-hidden", "true");
-  if (item.kind === "armlet" || item.kind === "ring" || item.kind === "offhand" || item.kind === "pet" || item.kind === "eff" || item.kind === "suits" || item.kind === "necklace") {
+  if (item.kind === "armlet" || item.kind === "ring" || item.kind === "offhand" || item.kind === "pet" || item.kind === "eff" || item.kind === "suits" || item.kind === "necklace" || item.kind === "chatball" || item.kind === "healstone") {
     const a = ACCESSORIES.find(x => x.ref === item.ref), g = SLOT_GEAR.find(x => x.kind === item.kind && x.ref === item.ref);
-    const src = a ? `/ui-local/accessories/${a.icon}.png` : g?.kind === "pet" ? "/ui-local/slots/pet.png" : g?.kind === "offhand" ? "/ui-local/slots/offhand.png" : g?.kind === "eff" ? "/ui-local/slots/effect.png" : g?.kind === "necklace" ? "/ui-local/slots/necklace.png" : "";
+    const src = a ? `/ui-local/accessories/${a.icon}.png` : g ? SLOT_ICON[g.kind] ?? "" : "";
     if (src) { const img = new Image(); img.onload = () => cv.getContext("2d")?.drawImage(img, 2, 2, w - 4, h - 4); img.src = src; }
-    else { const ctx = cv.getContext("2d")!; ctx.fillStyle = "#f1c65a"; ctx.font = `bold ${Math.max(18, Math.round(w * .5))}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(item.kind === "suits" ? "♟" : item.kind === "necklace" ? "◇" : "✦", w / 2, h / 2); }
+    else { const ctx = cv.getContext("2d")!; ctx.fillStyle = "#f1c65a"; ctx.font = `bold ${Math.max(18, Math.round(w * .5))}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(item.kind === "suits" ? "♟" : item.kind === "necklace" ? "◇" : item.kind === "chatball" ? "☁" : item.kind === "healstone" ? "✚" : "✦", w / 2, h / 2); }
   }
   else if (item.kind === "weapon") drawCharPortrait(cv, look, item.level >= 12 ? `${item.ref}:2` : item.level >= 10 ? `${item.ref}:1` : item.ref);
   else { const c = CATEGORY_OF[item.kind]; if (c && ["outfit", "hair", "face", "hat", "glasses", "wings"].includes(c)) drawWardrobePiece(cv, lookWith(look, item), c as "outfit" | "hair" | "face" | "hat" | "glasses" | "wings"); }

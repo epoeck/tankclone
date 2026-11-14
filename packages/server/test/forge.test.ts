@@ -156,6 +156,25 @@ describe("mochila pelo protocolo", () => {
     c.send({ t: "equip", itemId: 99999 }); expect((await c.next("error")).msg).toMatch(/não encontrado/);
     c.ws.close();
   });
+  it("balão de chat e pedra de cura: compra por 1 gold, equipa, atributos do balão no painel; emblema não é vendido", async () => {
+    const c = await login("emblema");
+    srv!.db.addGold("emblema", 10);
+    c.send({ t: "bag" }); let bag = await c.next("bag"); const before = bag.stats;
+    c.send({ t: "buy", catalogKind: "badge", ref: "50101" }); expect((await c.next("error")).msg).toMatch(/não é vendido/);
+    c.send({ t: "buy", catalogKind: "chatball", ref: "16001" }); bag = await c.next("bag");
+    c.send({ t: "buy", catalogKind: "healstone", ref: "315001" }); bag = await c.next("bag");
+    expect(srv!.db.getGold("emblema")).toBe(8);
+    const ball = bag.items.find(i => i.kind === "chatball")!, stone = bag.items.find(i => i.kind === "healstone")!;
+    c.send({ t: "equip", itemId: ball.id }); await c.next("authOk"); bag = await c.next("bag");
+    expect(bag.items.find(i => i.id === ball.id)!.place).toBe("chatball");
+    expect(bag.stats.atk).toBe(before.atk); // balão: cosmético (0 no TemplateAlllist atual)
+    c.send({ t: "equip", itemId: stone.id }); await c.next("authOk"); bag = await c.next("bag");
+    expect(bag.stats.atk).toBe(before.atk); // pedra de cura: sem efeito
+    c.send({ t: "strengthen", itemId: ball.id, count: 1 }); expect((await c.next("error")).msg).toMatch(/fortalecido/);
+    c.send({ t: "unequip", place: "chatball" }); await c.next("authOk"); bag = await c.next("bag");
+    expect(bag.stats.atk).toBe(before.atk);
+    c.ws.close();
+  });
   it("a partida leva a arma vestida (+N), a composição somada e a armadura do chapéu/roupa fortalecidos", async () => {
     const c = await login("lutador");
     srv!.db.addGold("lutador", 100);

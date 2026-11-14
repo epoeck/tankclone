@@ -120,6 +120,7 @@
 .bag__character { background: var(--navy-950); border: 2px solid var(--ink); border-radius: 12px; padding: 14px; }
 .bag__equip { display: grid; grid-template-columns: 112px minmax(0, 1fr) 112px; gap: 10px; align-items: start; }
 .bag__side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; }
+.bag__bottom { display: grid; grid-template-columns: repeat(3, minmax(0, 56px)); justify-content: center; gap: 6px; margin-top: 10px; }
 .bag__stage { display: grid; place-items: center; }
 .bag__stage canvas { width: 190px; height: 251px; }
 .bag__slot { position: relative; display: grid; place-items: center; min-height: 54px; background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 7px; cursor: pointer; }
@@ -138,3 +139,13 @@
 .bag__tip { display: flex; flex-direction: column; gap: 6px; padding: 12px; font-size: 12px; background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 9px; }
 .bag__tip b { color: var(--brass-200); font-size: 15px; }
 @media (max-width: 900px) { .bag__body { grid-template-columns: 1fr; } }
+/* Celular: o personagem vai para cima e as duas colunas de slots ficam lado a lado embaixo dele (sem sobrepor) */
+@media (max-width: 520px) {
+  .bag__equip { grid-template-columns: 1fr 1fr; grid-template-areas: "stage stage" "left right"; }
+  .bag__equip > .bag__stage { grid-area: stage; }
+  .bag__equip > .bag__side:first-child { grid-area: left; }
+  .bag__equip > .bag__side:last-child { grid-area: right; }
+  .bag__stage canvas { width: 150px; height: 198px; }
+  .bag__stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) { .bag__head > h3 { flex-basis: 100%; } }

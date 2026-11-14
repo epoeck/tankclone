@@ -2,14 +2,16 @@
  * (abas Equipamentos e Itens), tooltip, duplo clique/arrastar para equipar e painel de atributos. O servidor decide tudo. */
 import { SHOP_ITEMS, STRENGTHEN_MAX, OWNABLE_KINDS, canCompose, canStrengthen, type ItemInstance, type ItemKind, type EquipPlace, type Look } from "@tankclone/core";
 import { drawCharPortrait } from "./chars";
-import { KIND_LABEL, itemBaseStats, itemName } from "./catalog-ui";
+import { KIND_LABEL, SLOT_GEAR_TEXT, itemBaseStats, itemName } from "./catalog-ui";
 import { el, itemThumb, stoneIcon, strengthenText, weaponName, type BagState } from "./forge";
 
 type Send = (m: Record<string, unknown>) => void;
 /** Pares de slots (esquerda e direita) na ordem do Place do original; `null` = lugar sem item nesta versão. */
 const LEFT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["head","head","glass","glass"], ["hair","hair","eff","eff"], ["cloth","cloth","face","face"], ["weapon","weapon","offhand","offhand"]];
 const RIGHT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["armlet","armlet1","armlet","armlet2"], ["ring","ring1","ring","ring2"], ["suits","suits","necklace","necklace"], ["wing","wing","pet","pet"]];
-const OPTIONAL: EquipPlace[] = ["head", "glass", "wing", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet"];
+/** Fileira sob o personagem (lugares 14, 17 e 18 do original). */
+const BOTTOM: Array<[ItemKind, EquipPlace]> = [["chatball", "chatball"], ["badge", "badge"], ["healstone", "healstone"]];
+const OPTIONAL: EquipPlace[] = ["head", "glass", "wing", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet", "chatball", "badge", "healstone"];
 
 export class Bag {
   private state: BagState | null = null;
@@ -51,7 +53,7 @@ export class Bag {
   private render(): void {
     const h = this.host; h.replaceChildren();
     const panel = el("div", "", "panel bag");
-    const head = el("div", "", "row"); head.append(el("h3", "Mochila", "title title--lg grow"));
+    const head = el("div", "", "row bag__head"); head.append(el("h3", "Mochila", "title title--lg grow"));
     head.append(el("span", this.state ? `${this.state.gold.toLocaleString("pt-BR")} gold` : "carregando…", "chip"));
     const shop = el("button", "Loja", "btn btn--sm"); shop.onclick = this.openShop;
     const forge = el("button", "Ferreiro", "btn btn--sm"); forge.onclick = () => this.openForge(this.selected || undefined);
@@ -78,7 +80,10 @@ export class Bag {
     }
     const character = el("section", "", "bag__character");
     const row = el("div", "", "bag__equip"); row.append(left, stage, right);
-    character.append(row, stats);
+    // fileira de baixo do original: balão de chat (14), emblema (17) e pedra de cura (18)
+    const bottom = el("div", "", "bag__bottom");
+    for (const [k, p] of BOTTOM) bottom.append(this.slot(k, p));
+    character.append(row, bottom, stats);
     // soltar um item equipado na grade desequipa
     character.ondragover = e => e.preventDefault();
 
@@ -124,6 +129,7 @@ export class Bag {
     const base = itemBaseStats(it), c = it.compose;
     if (base && (base.atk || base.def || base.agi || base.luck)) box.append(el("span", `Atributos base: ATQ +${base.atk} · DEF +${base.def} · AGI +${base.agi} · SOR +${base.luck}`));
     if (c.atk || c.def || c.agi || c.luck) box.append(el("span", `Composição: ATQ ${c.atk} · DEF ${c.def} · AGI ${c.agi} · SOR ${c.luck}`));
+    const note = SLOT_GEAR_TEXT(it); if (note) box.append(el("span", note));
     if (canStrengthen(it.kind)) box.append(el("span", `Fortalecimento +${it.level}/${STRENGTHEN_MAX}: ${strengthenText(it)}`));
     else box.append(el("span", "Não fortalece.", "muted"));
     if (!canCompose(it.kind)) box.append(el("span", "Não recebe composição.", "muted"));

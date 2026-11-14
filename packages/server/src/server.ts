@@ -195,7 +195,7 @@ export function startServer(opts: ServerOptions = {}) {
       }
       case "unequip": {
         const kind = String(m.place) as EquipPlace;
-        if (!["head", "glass", "wing", "eff", "suits", "necklace", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet"].includes(kind)) return err("troque por outra peça: este lugar não fica vazio");
+        if (!["head", "glass", "wing", "eff", "suits", "necklace", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet", "chatball", "badge", "healstone"].includes(kind)) return err("troque por outra peça: este lugar não fica vazio");
         db.unequipPlace(nick, kind); return refreshLook(nick);
       }
       case "buy": {
