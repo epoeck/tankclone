@@ -1,0 +1,22 @@
+{
+  "id": "ilhas",
+  "name": "Ilhas Flutuantes",
+  "width": 2400,
+  "height": 600,
+  "art": "art.png",
+  "mask": "mask.png",
+  "spawns": {
+    "1": [
+      150,
+      260,
+      370,
+      480
+    ],
+    "2": [
+      2250,
+      2140,
+      2030,
+      1920
+    ]
+  }
+}

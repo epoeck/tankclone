@@ -1,0 +1,113 @@
+/* DDClank — tokens de design.
+   Identidade tirada da logo: latão rebitado, brasa laranja, contorno azul-marinho, asas brancas.
+   Regra: componentes usam só estas variáveis; nada de cor solta no CSS dos componentes. */
+
+@font-face {
+  font-family: "Lilita One";
+  src: url("/assets/fonts/lilita-one-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("/assets/fonts/nunito-latin-var.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* contorno e fundos */
+  --ink: #141a3a;          /* contorno de tudo (o "traço" da logo) */
+  --navy-950: #0c1130;
+  --navy-900: #111836;
+  --navy-800: #18234f;
+  --navy-700: #24336f;
+  --navy-600: #2f4290;
+  --navy-400: #5b6fc0;
+  --purple-shadow: #3b2266; /* sombra projetada da logo */
+
+  /* latão (primária) */
+  --brass-200: #fff2b8;
+  --brass-300: #ffe98a;
+  --brass-500: #f5bd24;
+  --brass-700: #b8740a;
+  --brass-900: #6b4206;
+
+  /* brasa (ação / perigo / destaque) */
+  --ember-300: #ffc061;
+  --ember-500: #ff6d1f;
+  --ember-700: #b52a16;
+
+  /* aço (neutro metálico) */
+  --steel-100: #f4f7fa;
+  --steel-300: #b4bec9;
+  --steel-500: #7f8a99;
+  --steel-700: #4a5466;
+
+  /* papel (painéis de leitura) */
+  --cream: #fff6e0;
+  --parchment: #f3e2b8;
+  --parchment-line: #d9bf85;
+  --text-on-paper: #3a2810;
+
+  /* céu / asas */
+  --sky-100: #e8f4ff;
+  --sky-300: #bcdcff;
+  --sky-500: #6fb6ff;
+
+  /* times */
+  --team-blue: #2f7bf0;
+  --team-blue-dark: #1846a8;
+  --team-red: #e0372a;
+  --team-red-dark: #8e1b13;
+
+  /* barras de status */
+  --bar-hp: #e8331f;
+  --bar-armor: #3b8cf0;
+  --bar-dmg: #ff8a1f;
+  --bar-energy: #f5bd24;
+  --bar-xp: #9b6bff;
+  --bar-power: #ff6d1f;
+  --ok: #4fc263;
+  --warn: #ffcf3a;
+
+  --text: #fff6e0;
+  --text-dim: #b9c2e6;
+
+  /* gradientes prontos */
+  --g-brass: linear-gradient(180deg, var(--brass-300) 0%, var(--brass-500) 45%, var(--brass-700) 100%);
+  --g-ember: linear-gradient(180deg, var(--ember-300) 0%, var(--ember-500) 50%, var(--ember-700) 100%);
+  --g-steel: linear-gradient(180deg, var(--steel-100) 0%, var(--steel-300) 50%, var(--steel-700) 100%);
+  --g-sky: linear-gradient(180deg, #ffffff 0%, var(--sky-300) 100%);
+  --g-navy: linear-gradient(180deg, var(--navy-600) 0%, var(--navy-800) 100%);
+  --g-teamblue: linear-gradient(180deg, #6fb0ff 0%, var(--team-blue) 50%, var(--team-blue-dark) 100%);
+  --g-teamred: linear-gradient(180deg, #ff8a7a 0%, var(--team-red) 50%, var(--team-red-dark) 100%);
+
+  /* tipografia */
+  --font-display: "Lilita One", "Arial Black", "Segoe UI Black", sans-serif;
+  --font-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;
+
+  /* forma */
+  --line: 3px;            /* espessura do contorno */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --gap-1: 4px;
+  --gap-2: 8px;
+  --gap-3: 12px;
+  --gap-4: 16px;
+  --gap-5: 24px;
+
+  /* sombra "adesivo" da logo: deslocada, roxa, sem blur */
+  --drop: 0 4px 0 var(--purple-shadow);
+  --drop-sm: 0 2px 0 var(--purple-shadow);
+  --inset-shine: inset 0 2px 0 rgba(255, 255, 255, .55), inset 0 -3px 0 rgba(0, 0, 0, .25);
+}

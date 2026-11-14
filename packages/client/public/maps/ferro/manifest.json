@@ -1,0 +1,22 @@
+{
+  "id": "ferro",
+  "name": "Pátio de Ferro",
+  "width": 2400,
+  "height": 600,
+  "art": "art.png",
+  "mask": "mask.png",
+  "spawns": {
+    "1": [
+      180,
+      330,
+      480,
+      630
+    ],
+    "2": [
+      2220,
+      2070,
+      1920,
+      1770
+    ]
+  }
+}

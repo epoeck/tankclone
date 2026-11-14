@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DDClank</title>
+<link rel="icon" href="/assets/brand/mark.svg">
+<link rel="stylesheet" href="/src/ui/tokens.css">
+<link rel="stylesheet" href="/src/ui/components.css">
+<link rel="stylesheet" href="/src/ui/stage.css">
+<link rel="stylesheet" href="/src/ui/wardrobe.css">
+<link rel="stylesheet" href="/src/ui/workshop.css">
+<style>
+  body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% 0%, rgba(111,182,255,.25), transparent 60%), linear-gradient(180deg, var(--navy-700), var(--navy-900)); }
+  .screen { display: none; max-width: 1000px; margin: 0 auto; padding: 16px; gap: 14px; }
+  .screen.on { display: grid; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 0; }
+  .muted { color: var(--text-dim); }
+  #toast { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 9; }
+  #toast[hidden] { display: none; }
+  
+  .opts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .opts button { min-width: 34px; }
+  .opts button[aria-pressed="true"] { outline: 3px solid var(--brass-300); }
+</style>
+</head>
+<body class="dd">
+<img src="/assets/brand/logo.png" alt="DDClank: O Retorno" style="display:block; margin:12px auto 0; height:96px;">
+
+<section id="s-login" class="screen on">
+  <form class="panel" id="login-form" style="display:grid; gap:14px; max-width:420px; margin:20px auto; width:100%;">
+    <label class="field"><span class="label">Apelido</span><input id="nick" autocomplete="username" maxlength="16"></label>
+    <label class="field"><span class="label">Senha</span><input id="pass" type="password" autocomplete="current-password"></label>
+    <div class="row" style="justify-content:space-between;">
+      <button type="button" class="btn btn--steel btn--sm" id="btn-register">Criar conta</button>
+      <button type="submit" class="btn btn--ember btn--lg">Entrar</button>
+    </div>
+    <span class="chip" id="conn">conectando…</span>
+  </form>
+</section>
+
+<section id="s-lobby" class="screen">
+  <header class="panel row">
+    <canvas id="portrait-mini" width="64" height="80"></canvas>
+    <div class="grow"><span class="title title--sm title--cream" id="me-nick"></span> <span class="chip chip--lvl" id="me-level"></span>
+      <div class="muted" style="font-size:12px" id="me-unlocks"></div></div>
+    <button class="btn btn--sm" id="btn-bag">Mochila</button>
+    <button class="btn btn--sm" id="btn-wardrobe">Loja</button>
+    <button class="btn btn--sm" id="btn-forge">Ferreiro</button>
+    <button class="btn btn--sm" id="btn-pets">Pets</button>
+  </header>
+  <section class="panel">
+    <div class="panel__head"><h3 class="title title--lg">Salas</h3></div>
+    <div class="paper" style="overflow:auto; max-height:320px;"><table class="list"><thead><tr><th>Nº</th><th>Mapa</th><th>Jogadores</th><th></th></tr></thead><tbody id="rooms"></tbody></table></div>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <select id="new-map"></select>
+      <img id="new-map-preview" alt="Prévia do mapa" hidden style="max-width:295px;width:100%;margin:8px 0;border-radius:6px">
+      <select id="new-max"><option value="2">1 contra 1</option><option value="4">2 contra 2</option><option value="8">4 contra 4</option></select>
+      <button class="btn btn--steel" id="btn-refresh">Atualizar</button>
+      <button class="btn btn--ember" id="btn-create">Criar sala</button>
+    </div>
+  </section>
+  <div class="paper" style="display:grid; grid-template-rows:1fr auto; height:180px;"><div class="chat" id="chat-lobby" aria-live="polite" style="overflow:auto"></div><div class="chat__input field" style="padding:0 8px 8px;"><input id="chat-lobby-in" maxlength="200" placeholder="Conversa do saguão — Enter envia" autocomplete="off"></div></div>
+</section>
+
+<section id="s-bag" class="screen" aria-label="Mochila"></section>
+<section id="s-wardrobe" class="screen" aria-label="Loja de vestuário"></section>
+<section id="s-forge" class="screen" aria-label="Ferreiro e loja"></section>
+<section id="s-pets" class="screen" aria-label="Pets"></section>
+
+<section id="s-room" class="screen">
+  <header class="row"><h3 class="title title--lg grow" id="room-title"></h3><button class="btn btn--sm" id="btn-room-bag">Mochila</button><button class="btn btn--sm" id="btn-room-wardrobe">Loja</button><button class="btn btn--sm" id="btn-room-forge">Ferreiro</button><button class="btn btn--sm" id="btn-room-pets">Pets</button><button class="btn btn--steel btn--sm" id="btn-leave">Sair da sala</button></header>
+  <div class="panel" style="display:grid; gap:10px;"><div id="members" style="display:grid; gap:8px;"></div></div>
+  <div class="panel row">
+    <span class="chip">Arma e atributos vêm dos itens equipados na Mochila.</span><div class="grow"></div>
+    <button class="btn btn--steel btn--sm" id="btn-bot" title="Boneco parado que passa a vez, para testar mira e dano">+ Bot dummy</button>
+    <button class="btn btn--ember btn--lg" id="btn-start">Iniciar</button>
+  </div>
+  <div class="paper" style="display:grid; grid-template-rows:1fr auto; height:180px;"><div class="chat" id="chat-room" aria-live="polite" style="overflow:auto"></div><div class="chat__input field" style="padding:0 8px 8px;"><input id="chat-room-in" maxlength="200" placeholder="Conversa da sala — Enter envia" autocomplete="off"></div></div>
+</section>
+
+<section id="match" class="screen" style="max-width:1280px">
+  <div class="fit"><div class="stage"><canvas id="c" width="1280" height="720"></canvas><div id="hud"></div></div></div>
+  <small class="muted">M liga/desliga o som · ←/→ andar · ↑/↓ ângulo · <b>segure Espaço</b> e solte para atirar · 1–8 e F itens · B POW · P passar a vez</small>
+</section>
+
+<div id="toast" class="chip chip--wait" hidden></div>
+<script type="module" src="/src/play.ts"></script>
+</body>
+</html>

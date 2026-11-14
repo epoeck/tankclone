@@ -1,0 +1,22 @@
+{
+  "id": "nuvens",
+  "name": "Torres de Nuvem",
+  "width": 2400,
+  "height": 600,
+  "art": "art.png",
+  "mask": "mask.png",
+  "spawns": {
+    "1": [
+      160,
+      330,
+      500,
+      670
+    ],
+    "2": [
+      2240,
+      2070,
+      1900,
+      1730
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { avatarFrameRect, avatarFrames, avatarLayers, avatarTint, COUNTS, DEFAULT_LOOK, sanitizeLook } from "../src/index";
+import catalog from "../src/reference/avatar.json";
+
+describe("avatar clássico", () => {
+  it("contas antigas recebem masculino e mantêm os índices de aparência", () => {
+    const look = sanitizeLook({ appearance: { hair: 2, skin: 4 }, equipped: { hat: 2 } });
+    expect(look.appearance).toMatchObject({ sex: "m", hair: 2, skin: 4 });
+    expect(look.equipped.hat).toBe(2);
+    expect(sanitizeLook({ appearance: { sex: "f" } }).appearance.sex).toBe("f");
+    expect(sanitizeLook({ appearance: { sex: "constructor" } }).appearance.sex).toBe("m");
+  });
+  it("usa cabelo com e sem chapéu nas variantes A e B, como no cliente original", () => {
+    const normal = avatarLayers(DEFAULT_LOOK, "sledge", "game");
+    const hat = avatarLayers(sanitizeLook({ ...DEFAULT_LOOK, equipped: { ...DEFAULT_LOOK.equipped, hat: 1 } }), "sledge", "game");
+    expect(normal.find(p => p.slot === "hair")!.file).toContain("/B/game.png");
+    expect(hat.find(p => p.slot === "hair")!.file).toContain("/A/game.png");
+    expect(hat.some(p => p.slot === "head")).toBe(true);
+  });
+  it("todas as combinações de opções apontam somente para arquivos importados", () => {
+    for (const sex of ["m", "f"] as const) for (const mode of ["game", "show"] as const) {
+      for (let hair = 0; hair < COUNTS.hair; hair++) for (let face = 0; face < COUNTS.face; face++)
+        for (let outfit = 0; outfit < COUNTS.outfit; outfit++) for (let hat = 0; hat < COUNTS.hat; hat++) {
+          const look = sanitizeLook({ appearance: { sex, hair, face }, equipped: { outfit, hat, glasses: 1, wings: 1 } });
+          for (const part of avatarLayers(look, "sledge", mode)) expect(Object.hasOwn(catalog.files, part.file)).toBe(true);
+        }
+    }
+  });
+  // os PNGs do original ficam só no disco (fora do git): sem eles, pula
+  it.skipIf(!existsSync(new URL("../../client/public/assets/avatar/", import.meta.url)))("arquivos locais mantêm os hashes e tamanhos dos PNGs originais", () => {
+    for (const [file, metadata] of Object.entries(catalog.files)) {
+      const bytes = readFileSync(new URL(`../../client/public/assets/avatar/${file}`, import.meta.url));
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(metadata.sha256);
+      expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([metadata.width, metadata.height]);
+      if (file.endsWith("game.png")) expect([metadata.width, metadata.height]).toEqual([1482, 285]);
+    }
+  });
+  it("isola pele, olhos, roupa e chapéu e conserva cores por peça", () => {
+    const look = sanitizeLook({ appearance: { skin: 4, face: 1 }, equipped: { outfit: 2, hat: 1 },
+      tints: { face: [-1, 4], outfit: [-1, 1, 2], hat: [-1, 3] } });
+    const parts = avatarLayers(look, "sledge", "show");
+    const layer = (slot: string, n: number) => parts.find(p => p.slot === slot && p.file.includes(`/${n}/show.png`));
+    expect(layer("face", 2)?.tint).toBe("#8A5530");
+    expect(layer("cloth", 2)?.tint).toBe("#8A5530");
+    expect(layer("face", 3)?.tint).toBe("#3B6FD1");
+    expect(layer("cloth", 3)?.tint).toBe("#F5C542");
+    expect(layer("head", 1)?.tint).toBe("#E0372A");
+    const changed = avatarLayers(sanitizeLook({ ...look, equipped: { ...look.equipped, outfit: 1 } }), "sledge", "show");
+    expect(changed.find(p => p.slot === "cloth" && p.file.includes("/3/show.png"))?.tint).toBe("#1F1F2B");
+    expect(sanitizeLook(JSON.parse(JSON.stringify(look)))).toEqual(look);
+    expect(sanitizeLook({ tints: { face: [99, -2, "x"] } }).tints?.face).toEqual({}); // cores por peça: inválidas são descartadas
+  });
+  it("recorta os 39 quadros da folha 13×3 de 114×95", () => {
+    expect(avatarFrameRect(0)).toEqual({ x: 0, y: 0, w: 114, h: 95 });
+    expect(avatarFrameRect(13)).toEqual({ x: 0, y: 95, w: 114, h: 95 });
+    expect(avatarFrameRect(38)).toEqual({ x: 1368, y: 190, w: 114, h: 95 });
+    expect(avatarFrameRect(-1)).toEqual(avatarFrameRect(0));
+    expect(avatarFrameRect(999)).toEqual(avatarFrameRect(0));
+  });
+  it("caminhar usa a sequência original; mirar permanece agachado; disparar e receber dano têm quadros próprios", () => {
+    expect(Array.from({ length: 10 }, (_, i) => avatarFrames(i / 25 + 1e-9, true, true).face)).toEqual([1,1,2,2,3,3,4,4,5,5]);
+    expect(avatarFrames(0, false, true)).toEqual(avatarFrames(0, false, false));
+    expect(avatarFrames(0, false, false, "shoot", 0.09).face).toBe(26);
+    expect(avatarFrames(0, false, false, "hit").face).toBe(12);
+  });
+  it("a cor afeta somente as máscaras correspondentes", () => {
+    const parts = avatarLayers(DEFAULT_LOOK, "sledge", "game");
+    expect(parts.filter(p => p.tint).map(p => p.slot)).toEqual(["face", "hair", "cloth"]);
+    expect(avatarTint("#808080")).toEqual({ fill: [128,128,128], highlight: [0,0,0] });
+    expect(avatarTint("#F2C79F")).toEqual({ fill: [252,239,159], highlight: [50,0,0] });
+  });
+});
+
+it("cor original do cabelo: só a arte colorida, sem a máscara tingida; vale também para contas salvas", () => {
+  const base = sanitizeLook({ appearance: { hair: 0, hairColor: 3 } });
+  const original = sanitizeLook({ ...base, appearance: { ...base.appearance, hairColor: -1 } });
+  expect(original.appearance.hairColor).toBe(-1);
+  const hair = (l: typeof base) => avatarLayers(l, "sledge", "show").filter(p => p.slot === "hair");
+  expect(hair(base)).toHaveLength(2);
+  expect(hair(original)).toHaveLength(1);
+  expect(hair(original)[0]!.tint).toBeUndefined();
+  expect(sanitizeLook(JSON.parse(JSON.stringify(original)))).toEqual(original);
+  expect(sanitizeLook({ appearance: { hairColor: -2 } }).appearance.hairColor).not.toBe(-2);
+});
+
+it("chapéu-acessório (Property1 = 1) deixa o cabelo inteiro; chapéu fechado usa o cabelo cortado", async () => {
+  const { cnPieces, legacyCount } = await import("../src/wardrobe-catalog");
+  const heads = cnPieces("m", "head") as Array<{ complete: boolean; keepsHair?: boolean }>;
+  const idx = (keeps: boolean) => heads.findIndex(h => h.complete && h.keepsHair === keeps) + legacyCount("head") + 1; // hat é 1-based
+  const hairFiles = (hat: number) => avatarLayers(sanitizeLook({ appearance: { sex: "m", hair: 0 }, equipped: { hat } }), "sledge", "show").filter(p => p.slot === "hair").map(p => p.file);
+  const none = hairFiles(0), open = hairFiles(idx(true)), closed = hairFiles(idx(false)), legacy = hairFiles(1);
+  expect(open).toEqual(none);
+  expect(closed).not.toEqual(none);
+  expect(legacy).toEqual(closed); // head1/head2 clássicos têm Property1 = 0
+});

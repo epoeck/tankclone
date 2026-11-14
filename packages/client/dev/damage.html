@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel de dano</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #14161a; color: #dde; font: 14px system-ui, sans-serif; }
+  .cols { display: flex; gap: 24px; flex-wrap: wrap; }
+  fieldset { border: 1px solid #333; border-radius: 8px; min-width: 220px; }
+  label { display: grid; grid-template-columns: 90px 1fr; gap: 6px; margin: 4px 0; align-items: center; }
+  input, select { background: #0e1014; color: #dde; border: 1px solid #333; border-radius: 4px; padding: 4px; }
+  #out { background: #0e1014; padding: 12px; border-radius: 8px; line-height: 1.7; font-variant-numeric: tabular-nums; max-width: 520px; }
+  button { padding: 4px 10px; }
+</style>
+</head>
+<body>
+<h2>Stats → dano</h2>
+<div class="cols">
+  <fieldset id="atk"><legend>Atacante</legend></fieldset>
+  <fieldset id="tgt"><legend>Alvo</legend></fieldset>
+  <fieldset id="opt"><legend>Tiro</legend></fieldset>
+</div>
+<p><button id="ref">Carregar conta de referência nos dois</button></p>
+<div id="out"></div>
+<script type="module" src="/src/dev/damage.ts"></script>
+</body>
+</html>

@@ -1,0 +1,853 @@
+{
+  "version": 1,
+  "notes": "ids estáveis; file relativo a /assets/. anchor em fração (0..1) do tamanho.",
+  "assets": {
+    "item-1": {
+      "file": "ui/items/item-1.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-2": {
+      "file": "ui/items/item-2.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-3": {
+      "file": "ui/items/item-3.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-4": {
+      "file": "ui/items/item-4.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-5": {
+      "file": "ui/items/item-5.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-6": {
+      "file": "ui/items/item-6.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-7": {
+      "file": "ui/items/item-7.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-8": {
+      "file": "ui/items/item-8.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "item-f": {
+      "file": "ui/items/item-f.svg",
+      "w": 64,
+      "h": 64,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-atk": {
+      "file": "ui/stats/stat-atk.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-def": {
+      "file": "ui/stats/stat-def.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-agi": {
+      "file": "ui/stats/stat-agi.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-luck": {
+      "file": "ui/stats/stat-luck.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-hp": {
+      "file": "ui/stats/stat-hp.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-armor": {
+      "file": "ui/stats/stat-armor.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-dmg": {
+      "file": "ui/stats/stat-dmg.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-energy": {
+      "file": "ui/stats/stat-energy.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-power": {
+      "file": "ui/stats/stat-power.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "stat-xp": {
+      "file": "ui/stats/stat-xp.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-lock": {
+      "file": "ui/stats/icon-lock.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-gear": {
+      "file": "ui/stats/icon-gear.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-crown": {
+      "file": "ui/stats/icon-crown.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "icon-chat": {
+      "file": "ui/stats/icon-chat.svg",
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-prism": {
+      "file": "ui/weapons/weapon-prism.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-sledge": {
+      "file": "ui/weapons/weapon-sledge.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "weapon-furnace": {
+      "file": "ui/weapons/weapon-furnace.svg",
+      "w": 96,
+      "h": 48,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "wind-arrow": {
+      "file": "ui/hud/wind-arrow.svg",
+      "w": 96,
+      "h": 40,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "pressure-gauge": {
+      "file": "ui/hud/pressure-gauge.svg",
+      "w": 140,
+      "h": 140,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "pressure-needle": {
+      "file": "ui/hud/pressure-needle.svg",
+      "w": 140,
+      "h": 140,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "angle-dial": {
+      "file": "ui/hud/angle-dial.svg",
+      "w": 160,
+      "h": 96,
+      "anchor": [
+        0.5,
+        0.8958333333333334
+      ]
+    },
+    "shell": {
+      "file": "ui/hud/shell.svg",
+      "w": 24,
+      "h": 24,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "turn-marker": {
+      "file": "ui/hud/turn-marker.svg",
+      "w": 24,
+      "h": 20,
+      "anchor": [
+        0.5,
+        1
+      ]
+    },
+    "map-colinas": {
+      "file": "maps/map-colinas.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Colinas de Latão",
+      "indestructible": false
+    },
+    "map-ferro": {
+      "file": "maps/map-ferro.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Pátio de Ferro",
+      "indestructible": true
+    },
+    "map-ilhas": {
+      "file": "maps/map-ilhas.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Ilhas Flutuantes",
+      "indestructible": false
+    },
+    "map-forja": {
+      "file": "maps/map-forja.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Forja Vulcânica",
+      "indestructible": false
+    },
+    "map-nuvens": {
+      "file": "maps/map-nuvens.svg",
+      "w": 160,
+      "h": 90,
+      "anchor": [
+        0,
+        0
+      ],
+      "name": "Torres de Nuvem",
+      "indestructible": true
+    },
+    "logo": {
+      "file": "brand/logo.png",
+      "w": 1200,
+      "h": 531,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "mark": {
+      "file": "brand/mark.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.5
+      ]
+    },
+    "body-base": {
+      "file": "sprites/char/body-base.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "head-base": {
+      "file": "sprites/char/head-base.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "face-01": {
+      "file": "sprites/char/face-01.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "face-02": {
+      "file": "sprites/char/face-02.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "face-03": {
+      "file": "sprites/char/face-03.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-01-back": {
+      "file": "sprites/char/hair-01-back.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-01-front": {
+      "file": "sprites/char/hair-01-front.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-02-back": {
+      "file": "sprites/char/hair-02-back.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-02-front": {
+      "file": "sprites/char/hair-02-front.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-03-back": {
+      "file": "sprites/char/hair-03-back.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-03-front": {
+      "file": "sprites/char/hair-03-front.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "outfit-01": {
+      "file": "sprites/char/outfit-01.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "outfit-02": {
+      "file": "sprites/char/outfit-02.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "outfit-03": {
+      "file": "sprites/char/outfit-03.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hat-01": {
+      "file": "sprites/char/hat-01.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hat-02": {
+      "file": "sprites/char/hat-02.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "glasses-01": {
+      "file": "sprites/char/glasses-01.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "wings-01": {
+      "file": "sprites/char/wings-01.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "arm-front": {
+      "file": "sprites/char/arm-front.svg",
+      "w": 48,
+      "h": 20,
+      "anchor": [
+        0.16666666666666666,
+        0.5
+      ],
+      "mountAt": [
+        56,
+        82
+      ]
+    },
+    "body-1": {
+      "file": "chars/body/body-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "skin"
+    },
+    "face-1": {
+      "file": "chars/face/face-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "face-2": {
+      "file": "chars/face/face-2.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "face-3": {
+      "file": "chars/face/face-3.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hair-back-1": {
+      "file": "chars/hair-back/hair-back-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "hair-back-2": {
+      "file": "chars/hair-back/hair-back-2.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "hair-back-3": {
+      "file": "chars/hair-back/hair-back-3.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "hair-front-1": {
+      "file": "chars/hair-front/hair-front-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "hair-front-2": {
+      "file": "chars/hair-front/hair-front-2.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "hair-front-3": {
+      "file": "chars/hair-front/hair-front-3.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "hair"
+    },
+    "outfit-1": {
+      "file": "chars/outfit/outfit-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "outfit-2": {
+      "file": "chars/outfit/outfit-2.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "outfit-3": {
+      "file": "chars/outfit/outfit-3.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hat-1": {
+      "file": "chars/hat/hat-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "hat-2": {
+      "file": "chars/hat/hat-2.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "glasses-1": {
+      "file": "chars/glasses/glasses-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "wings-1": {
+      "file": "chars/wings/wings-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ]
+    },
+    "arm-1": {
+      "file": "chars/arm/arm-1.svg",
+      "w": 48,
+      "h": 20,
+      "anchor": [
+        0.16666666666666666,
+        0.5
+      ],
+      "tint": "skin"
+    },
+    "head-1": {
+      "file": "chars/head/head-1.svg",
+      "w": 96,
+      "h": 128,
+      "anchor": [
+        0.5,
+        0.96875
+      ],
+      "tint": "skin"
+    }
+  },
+  "character": {
+    "canvas": [
+      96,
+      128
+    ],
+    "feet": [
+      48,
+      124
+    ],
+    "facing": "direita (espelhar X para a esquerda)",
+    "gameHeightPx": 52,
+    "gameScale": 0.433,
+    "drawOrder": [
+      "wings",
+      "hair-back",
+      "body",
+      "outfit",
+      "head",
+      "face",
+      "hair-front",
+      "glasses",
+      "hat",
+      "weapon",
+      "arm"
+    ],
+    "headGroup": [
+      "hair-back",
+      "head",
+      "face",
+      "hair-front",
+      "glasses",
+      "hat"
+    ],
+    "poses": {
+      "stand": {
+        "use": "inventário, saguão, sala, retrato do canto superior esquerdo"
+      },
+      "crouch": {
+        "use": "dentro da partida",
+        "bodyScaleY": 0.72,
+        "bodyScaleOrigin": [
+          48,
+          124
+        ],
+        "headOffsetY": 14,
+        "armOffsetY": 12,
+        "bob": {
+          "amplitudePx": 2,
+          "periodS": 1.2,
+          "note": "só o grupo da cabeça sobe e desce (seno); corpo, roupa e asas parados"
+        }
+      }
+    },
+    "options": {
+      "body": 1,
+      "head": 1,
+      "face": 3,
+      "hair": 3,
+      "outfit": 3,
+      "hat": 2,
+      "glasses": 1,
+      "wings": 1
+    },
+    "zeroMeansNone": [
+      "hat",
+      "glasses",
+      "wings"
+    ],
+    "hairUsesTwoFiles": "o cabelo n usa hair-back-n (atrás da cabeça) e hair-front-n (franja, na frente do rosto)",
+    "source": {
+      "base": [
+        "body",
+        "face",
+        "hair",
+        "hairColor",
+        "skin"
+      ],
+      "equipment": [
+        "outfit",
+        "hat",
+        "glasses",
+        "wings",
+        "weapon"
+      ]
+    },
+    "tint": {
+      "how": "arquivos com tint usam fill/stroke=currentColor; carregue o SVG como texto e troque o atributo color=\"...\" da raiz <svg> (ou cada 'currentColor') pelo hex escolhido antes de rasterizar (ou use o SVG inline com style color)",
+      "skin": [
+        "#FFE0C7",
+        "#F2C79F",
+        "#D9A066",
+        "#B97A4B",
+        "#8A5530",
+        "#5E3A22"
+      ],
+      "hair": [
+        "#6B3A1F",
+        "#1F1F2B",
+        "#F5C542",
+        "#E0372A",
+        "#3B6FD1",
+        "#4FC263",
+        "#F28FC2",
+        "#E8ECF2"
+      ]
+    },
+    "arm": {
+      "shoulder": [
+        56,
+        82
+      ],
+      "pivotInFile": [
+        8,
+        10
+      ],
+      "hand": [
+        38,
+        10
+      ],
+      "note": "o braço é desenhado apontando para a direita (0°); gire o grupo braço+arma em torno do ombro pelo ângulo de mira"
+    },
+    "weapon": {
+      "files": "ui/weapons/*.svg (96x48)",
+      "grip": [
+        10,
+        27
+      ],
+      "note": "o ponto grip da arma vai na mão do braço; a arma gira junto com o braço"
+    },
+    "muzzle": "a física continua usando MUZZLE_HEIGHT = 30 px acima dos pés; na escala 0,433 a ponta da arma fica perto disso entre 30° e 60°, então basta nascer o projétil no ponto da física"
+  }
+}

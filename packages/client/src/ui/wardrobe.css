@@ -1,0 +1,151 @@
+/* Mochila de vestuário: componentes próprios, usando o catálogo já instalado. */
+#s-wardrobe { max-width: 1140px; }
+.wardrobe { padding: 22px; }
+.wardrobe button, .wardrobe input, .wardrobe__dialog button { touch-action: manipulation; }
+.wardrobe__header { display: flex; align-items: center; gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--navy-400); }
+.wardrobe__header .label { display: block; margin-bottom: 8px; }
+.wardrobe__header > [data-back] { margin-left: auto; }
+.wardrobe__section { align-self: end; color: var(--brass-200); padding: 7px 15px; background: var(--navy-950); border: 1px solid var(--brass-700); border-radius: 8px 8px 0 0; }
+.wardrobe__body { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 24px; padding: 20px 0; }
+.wardrobe__character { background: var(--navy-950); border: 2px solid var(--ink); border-radius: 12px; padding: 16px; }
+.wardrobe__identity { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wardrobe__identity b { overflow-wrap: anywhere; color: var(--brass-200); font-size: 18px; }
+.wardrobe__identity span { font-size: 11px; color: var(--steel-300); text-align: right; }
+.wardrobe__stage { height: 285px; position: relative; display: grid; place-items: center; overflow: hidden; }
+.wardrobe__stage canvas { position: relative; width: 205px; height: 271px; z-index: 1; }
+.wardrobe__halo { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(ellipse, var(--navy-600), transparent 68%); opacity: .65; }
+.wardrobe__pedestal { position: absolute; bottom: 5px; width: 170px; height: 22px; background: var(--navy-800); border: 2px solid var(--navy-400); border-radius: 50%; box-shadow: 0 5px 0 var(--ink); }
+.wardrobe__slots { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.wardrobe__slot { text-align: left; padding: 8px 10px; min-height: 55px; color: var(--cream); background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 7px; cursor: pointer; }
+.wardrobe__slot span { display: block; font: 11px var(--font-body); color: var(--steel-300); }
+.wardrobe__slot b { display: block; margin-top: 3px; font: 800 12px var(--font-body); }
+.wardrobe__slot[aria-pressed="true"] { border-color: var(--brass-500); background: var(--navy-700); }
+.wardrobe__appearance { border-top: 1px solid var(--navy-600); margin-top: 16px; padding-top: 12px; }
+.wardrobe__appearance summary { cursor: pointer; font-size: 12px; color: var(--brass-200); }
+.wardrobe__sex { display: flex; gap: 6px; margin: 12px 0; }
+.wardrobe__toggle { flex: 1; font: 800 12px var(--font-body); padding: 7px; color: var(--steel-300); border: 1px solid var(--navy-600); background: var(--navy-800); border-radius: 5px; cursor: pointer; }
+.wardrobe__toggle[aria-pressed="true"] { border-color: var(--brass-500); color: var(--brass-200); }
+.wardrobe__palette { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.wardrobe__palette > span { width: 43px; flex-shrink: 0; font-size: 11px; color: var(--steel-300); }
+.wardrobe__palette > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.wardrobe__swatch { width: 20px; height: 20px; border: 2px solid var(--navy-700); border-radius: 50%; background: var(--swatch); cursor: pointer; padding: 0; }
+.wardrobe__swatch[aria-pressed="true"] { outline: 2px solid var(--brass-500); outline-offset: 2px; }
+.wardrobe__inventory { display: flex; flex-direction: column; min-width: 0; }
+.wardrobe__inventory-head { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 14px; }
+.wardrobe__inventory-head h2 { margin: 0; color: var(--cream); font: 400 23px var(--font-display); }
+.wardrobe__inventory-head > span { color: var(--steel-300); font-size: 12px; }
+.wardrobe__filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.wardrobe__filter { font: 800 12px var(--font-body); background: var(--navy-950); border: 1px solid var(--navy-600); border-radius: 6px; padding: 7px 11px; color: var(--steel-300); cursor: pointer; }
+.wardrobe__filter[aria-pressed="true"] { background: var(--brass-500); border-color: var(--brass-300); color: var(--ink); }
+.wardrobe__search { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }
+.wardrobe__search > span { font-size: 10px; white-space: nowrap; }
+.wardrobe__search input { min-width: 0; width: 100%; padding: 9px 12px; font: 700 13px var(--font-body); color: var(--cream); background: var(--navy-950); border: 1px solid var(--navy-600); border-radius: 7px; }
+.wardrobe__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-content: start; min-height: 434px; }
+.wardrobe__item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 6px 4px 8px; border: 2px solid var(--navy-600); border-radius: 9px; background: linear-gradient(160deg, var(--navy-800), var(--navy-950)); color: var(--cream); cursor: pointer; }
+.wardrobe__item canvas { width: 100%; height: 84px; object-fit: contain; }
+.wardrobe__item > span { font: 800 12px var(--font-body); }
+.wardrobe__item > small { font: 700 10px var(--font-body); color: var(--steel-300); margin-top: 4px; }
+.wardrobe__item:hover { background: var(--navy-700); border-color: var(--navy-400); }
+.wardrobe__item[aria-pressed="true"] { border-color: var(--brass-500); box-shadow: 0 0 0 1px var(--brass-900), inset 0 0 22px color-mix(in srgb, var(--brass-500) 10%, transparent); }
+.wardrobe__item[aria-label*=", em uso"] > small { color: var(--brass-300); }
+.wardrobe__empty { grid-column: 1 / -1; align-self: start; text-align: center; margin: 50px 15px; color: var(--steel-300); font-size: 14px; }
+.wardrobe__pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 14px 0; color: var(--steel-300); font-size: 11px; }
+.wardrobe__pagination button { border: 1px solid var(--navy-600); background: var(--navy-950); color: var(--cream); border-radius: 5px; width: 32px; height: 28px; cursor: pointer; }
+.wardrobe__detail { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px; min-height: 77px; background: var(--navy-950); border: 1px solid var(--navy-600); border-radius: 8px; }
+.wardrobe__detail > div { flex: 1; min-width: 130px; }
+.wardrobe__detail b { display: block; color: var(--brass-200); font-size: 14px; }
+.wardrobe__detail span { display: block; margin-top: 4px; color: var(--steel-300); font-size: 11px; }
+.wardrobe__footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--navy-400); }
+.wardrobe__footer > p { margin: 0; font-size: 12px; color: var(--steel-300); }
+.wardrobe__footer > div { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.wardrobe button:disabled { opacity: .5; cursor: default; }
+.wardrobe button:focus-visible, .wardrobe input:focus-visible, .wardrobe summary:focus-visible { outline: 3px solid var(--sky-500); outline-offset: 3px; }
+.wardrobe__dialog { max-width: 460px; width: calc(100% - 32px); border: 2px solid var(--brass-700); border-radius: 12px; background: var(--navy-900); color: var(--cream); padding: 24px; font-family: var(--font-body); }
+.wardrobe__dialog::backdrop { background: color-mix(in srgb, var(--navy-950) 80%, transparent); }
+.wardrobe__dialog h2 { margin: 0; font: 400 26px var(--font-display); color: var(--brass-200); }
+.wardrobe__dialog p { font-size: 14px; line-height: 1.6; color: var(--steel-300); }
+.wardrobe__dialog > div { display: flex; gap: 10px; justify-content: end; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .wardrobe__body { grid-template-columns: 260px minmax(0, 1fr); gap: 16px; }
+  .wardrobe__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .wardrobe__palette { align-items: start; }
+}
+@media (max-width: 650px) {
+  #s-wardrobe { padding: 8px; }
+  .wardrobe { padding: 16px; }
+  .wardrobe__header { gap: 10px; }
+  .wardrobe__section { padding: 6px 9px; font-size: 12px; }
+  .wardrobe__body { grid-template-columns: 1fr; }
+  .wardrobe__character { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(120px, 1fr); gap: 10px; padding: 12px; }
+  .wardrobe__identity { grid-column: 1 / -1; }
+  .wardrobe__stage { height: 220px; }
+  .wardrobe__stage canvas { width: 160px; height: 211px; }
+  .wardrobe__slots { align-content: center; }
+  .wardrobe__slot { padding: 6px; }
+  .wardrobe__appearance { grid-column: 1 / -1; margin-top: 0; }
+  .wardrobe__sex { max-width: 300px; }
+  .wardrobe__grid { min-height: 0; }
+  .wardrobe__item canvas { height: 72px; }
+  .wardrobe__footer { flex-wrap: wrap; }
+  .wardrobe__footer > div { width: 100%; justify-content: end; }
+}
+
+.wardrobe__piece-palette { flex-basis: 100%; display: grid; gap: 6px; }
+.wardrobe__piece-palette > span { font-size: 12px; color: var(--steel-300); }
+.wardrobe__piece-palette > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.wardrobe__availability { display: flex; align-items: center; gap: 6px; color: var(--steel-300); font-size: 12px; }
+.wardrobe__item img { object-fit: contain; max-width: 100%; height: 112px; }
+
+/* Ferreiro e loja */
+#s-forge { max-width: 1040px; }
+.forge { display: grid; gap: 14px; padding: 18px; }
+.forge__result { padding: 8px 12px; border-radius: 10px; background: var(--navy-800, #1a2350); color: var(--brass-300, #ffe279); font-weight: 800; }
+.forge__weapons { display: flex; gap: 10px; flex-wrap: wrap; }
+.forge__weapon { display: grid; justify-items: center; gap: 2px; padding: 8px 12px; border-radius: 12px; border: 3px solid var(--ink, #1a1030); background: var(--navy-700, #23306a); color: #fff; cursor: pointer; }
+.forge__weapon[aria-pressed="true"] { outline: 3px solid var(--brass-300, #ffe279); }
+.forge__box { display: grid; gap: 8px; padding: 12px; }
+.forge__row { gap: 8px; }
+.forge__grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.forge__stone { display: grid; justify-items: center; gap: 4px; min-width: 96px; padding: 6px; border-radius: 10px; border: 2px solid var(--ink, #1a1030); background: rgba(255,255,255,.55); cursor: pointer; }
+.forge__stone:disabled { opacity: .45; cursor: default; }
+.forge__noicon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: #3b5bb5; color: #fff; font-weight: 900; font-size: 12px; }
+.forge__fusion-item { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--navy-600); border-radius: 8px; background: var(--navy-800); color: var(--cream); cursor: pointer; font-size: 11px; }
+.forge__fusion-item img, .forge__fusion-item canvas { width: 44px; height: 44px; object-fit: contain; }
+.forge__fusion-item:has(input:checked) { border-color: var(--brass-500); box-shadow: 0 0 0 1px var(--brass-900); }
+
+/* Mochila original (aba Equipar) */
+#s-bag { max-width: 1140px; }
+.bag { padding: 22px; }
+.bag__body { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 24px; padding-top: 16px; }
+.bag__character { background: var(--navy-950); border: 2px solid var(--ink); border-radius: 12px; padding: 14px; }
+.bag__equip { display: grid; grid-template-columns: 112px minmax(0, 1fr) 112px; gap: 10px; align-items: start; }
+.bag__side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; }
+.bag__bottom { display: grid; grid-template-columns: repeat(3, minmax(0, 56px)); justify-content: center; gap: 6px; margin-top: 10px; }
+.bag__stage { display: grid; place-items: center; }
+.bag__stage canvas { width: 190px; height: 251px; }
+.bag__slot { position: relative; display: grid; place-items: center; min-height: 54px; background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 7px; cursor: pointer; }
+.bag__slot canvas { width: 100%; height: 52px; object-fit: contain; }
+.bag__slot--off { opacity: .35; cursor: default; }
+.bag__slot--picked, .bag__cell[aria-pressed="true"] { border-color: var(--brass-500); box-shadow: 0 0 0 1px var(--brass-900); }
+.bag__slot-name { font: 700 9px var(--font-body); color: var(--steel-300); text-align: center; }
+.bag__lvl { position: absolute; right: 3px; bottom: 2px; font: 800 11px var(--font-body); color: var(--brass-200); font-style: normal; text-shadow: 0 1px 0 var(--ink); }
+.bag__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 10px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--navy-600); font-size: 12px; }
+.bag__stats dt { color: var(--steel-300); } .bag__stats dd { margin: 0; color: var(--cream); font-weight: 800; }
+.bag__inventory { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.bag__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; align-content: start; min-height: 260px; padding: 10px; background: var(--navy-950); border: 1px solid var(--navy-600); border-radius: 9px; }
+.bag__cell { position: relative; display: grid; place-items: center; min-height: 62px; padding: 3px; color: var(--cream); background: var(--navy-800); border: 2px solid var(--navy-600); border-radius: 7px; cursor: pointer; }
+.bag__cell canvas { width: 100%; height: 56px; object-fit: contain; }
+.bag__cell--stone small { font-size: 9px; text-align: center; }
+.bag__tip { display: flex; flex-direction: column; gap: 6px; padding: 12px; font-size: 12px; background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 9px; }
+.bag__tip b { color: var(--brass-200); font-size: 15px; }
+@media (max-width: 900px) { .bag__body { grid-template-columns: 1fr; } }
+/* Celular: o personagem vai para cima e as duas colunas de slots ficam lado a lado embaixo dele (sem sobrepor) */
+@media (max-width: 520px) {
+  .bag__equip { grid-template-columns: 1fr 1fr; grid-template-areas: "stage stage" "left right"; }
+  .bag__equip > .bag__stage { grid-area: stage; }
+  .bag__equip > .bag__side:first-child { grid-area: left; }
+  .bag__equip > .bag__side:last-child { grid-area: right; }
+  .bag__stage canvas { width: 150px; height: 198px; }
+  .bag__stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) { .bag__head > h3 { flex-basis: 100%; } }

@@ -1,5 +1,11 @@
 # Respostas do refinamento do plano (2026-11-11)
 
+Atualização de 2026-11-12: o dono solicitou alinhar os cálculos ao repositório `pnkl1999/DDTank41` e remover do documento de desenvolvimento a restrição de uso desse código. Para física, dano, crítico, fúria e delay, a referência atual é `docs/ddtank41.md`; as estimativas anteriores abaixo ficam como histórico.
+
+Ainda em 2026-11-12, autorizou a adaptação do `thurdev/ddtank-reborn`: delay 200 das bolas, integração float32, máscaras reais de explosão e reprodução simultânea dos leques. Detalhes e limites em `docs/ddtank-reborn.md`.
+
+Depois de testar, relatou flicker ao virar e pediu conferência da progressão do vento. Preferiu o sistema visual clássico do avatar às três imagens de referência da raiz. Direção agora é explícita nos eventos; vento gradual foi confirmado; avatar migrou para peças GAME/SHOW clássicas. Ver `docs/avatar.md`.
+
 1. Modos na v1: 1v1 e times até 4v4 (sem PvE).
 2. Época de referência: entre a clássica e a atual. Sistemas desejados:
    - Todos os equipamentos (inclusive armas secundárias).
@@ -35,7 +41,7 @@
 16. Acesso dos amigos: link público via Cloudflare Tunnel (só navegador, nada para instalar).
 17. Mapas da primeira build: 5 (2 com chão indestrutível, 3 tatuzáveis/destrutíveis). Provisórios: guias feitos no ArtCraft + imagens geradas no Qwen Image pelo workflow local (ComfyUI no PC). Mapas definitivos vêm depois.
    Impacto técnico: Terrain precisa de uma 2ª camada (pixels indestrutíveis) — hoje só há sólido/vazio.
-18. Formato dos mapas: imagem de arte + máscara PNG separada (preto = ar, branco = chão destrutível, cinza = indestrutível). A máscara pode ser o próprio guia do ArtCraft.
+18. Formato dos mapas: imagem de arte + máscara PNG separada (preto = ar, branco = chão destrutível, vermelho puro (255,0,0) = indestrutível; o cinza da borda antisserrilhada nunca vira indestrutível, por isso não se usa cinza). A máscara pode ser o próprio guia do ArtCraft.
 19. Visual do personagem: boneco placeholder na primeira build, mas código já preparado para sprites em camadas (cabelo, rosto, roupa, chapéu, arma) quando a arte chegar.
 20. Equipamentos na primeira build: stats fixos, sem forja (fortalecer/compor/gemas vêm depois).
 21. Backup: repositório privado no GitHub (Izzy cria o repo vazio; Claude envia os commits).
@@ -44,3 +50,22 @@
 24. Custos da tabela doyo confirmados pelo Izzy. Energia = 220 + AGI/30 (30 de agilidade = 1 de energia).
 25. Pérolas (~2022, print): 3 slots centrais = 1 ataque (topo) + 2 defesa (embaixo); ~15 slots de pérola de atributo ao redor. Ver docs/pesquisa-mecanicas.md §5.1.
 26. Print de conta forte: AGI 29551 → energia 1225 ⇒ base 240 (não 220). Atributos mágicos existem (Atq/Resist mágica). Ver pesquisa §6.
+32. Escala dos stats em revisão com mochila de equipamento (2026-11-13): removidos os presets de build. O loadout vestido fornece ATQ/DEF/AGI/SOR, vida, armadura e dano de equipamento; a base neutra fica em `core/src/builds.ts`. `REFERENCE_STATS` segue como referência, não como preset de partida.
+33. Itens de tiro (confirmado pelo dono): todos repetem no turno, exceto o 2 (tiro triplo), que só vale uma vez; +1 tiro = −10% por disparo, +2 tiros = −40%.
+
+- **Voo (F)** é tratado como uma arma de faixa 0–90° relativa ao corpo (`FLY_ANGLE`); na rampa a faixa gira junto, como nas armas. Pedido do Izzy em 2026-11-12.
+- **Dano próprio:** o atirador sofre dano dos próprios tiros, mas a vida desce no máximo até 1 (nunca morre por isso). Pode morrer andando/caindo para fora do mapa. Aliados continuam sem se ferir.
+- **Dano em si e em aliados (igual ao Reborn, decisão do Izzy em 2026-11-12):** a bomba fere o atirador e os aliados jogadores; se o dano mataria, vira vida − 1 (crítico zerado). Quem leva dano vivo ganha fúria pela fórmula `floor((floor(dano×2/5)+5)/2)`, inclusive dano próprio/aliado (no caso cortado para vida 1, usa-se o dano realmente aplicado). `friendlyFire` passou a ser true por padrão. Substitui a decisão anterior de dano próprio sem fúria.
+  Nota: com 1 de vida, cada auto-acerto ainda rende floor((0+5)/2) = 2 de fúria; mantido (aceito pela revisão; confirmar com o Reborn se necessário).
+
+## Limpeza de 2026-11-12 (aprovada pelo Izzy)
+- **Física antiga aposentada:** `TABLE_PHYSICS`, o ajuste por tabelas (`calibration.ts`, `scripts/calibrate.ts`, `calibration/`) e seus testes foram removidos; só existe o motor float32 do Reborn (`DEFAULT_PHYSICS`). Os valores históricos (gravity 507,32 etc.) ficam só no histórico do git.
+- **`MUZZLE_HEIGHT` (30,18) continua herdado do motor antigo.** Falta medir a ponta da arma no boneco agachado (precisa dos sprites locais); até lá, pode haver ~5 px de diferença visual entre o cano e a saída do tiro.
+- **Ids de bala** vêm só da ficha de cada arma (`WEAPONS[...].ballId` e `special.ballId`) e de `FLY_BALL_ID`; o cliente não tem mais números mágicos.
+- **`view.ts` dividido:** `controls.ts` (teclado) e `terrain-layer.ts` (pintura do terreno e bordas de cratera).
+- **Páginas de desenvolvimento** (design, dano, projéteis, avatar, visualizador de física) ficam em `packages/client/dev/` (`/dev/*.html`); o jogo é `play.html` (rede) e `game.html` (local).
+- **Vários tiros:** cada tiro é uma intenção própria; o ângulo e a força podem mudar entre eles, itens travam depois do primeiro tiro. O relógio para enquanto se carrega a força (não volta mais naquele turno, como no Reborn; depois disso andar e itens são recusados; sem prazo de jogo; só o timeout de segurança de 30 s no servidor).
+- **Sons:** arquivos do Reborn ficam só locais em `packages/client/public/sfx-local/<id>.ogg` (gitignored), com som sintetizado de reserva.
+- **Caixa única do boneco:** `PLAYER_HITBOX` (30×30, 10 px abaixo dos pés, como no Reborn) vale para a colisão do projétil e para o raio de dano.
+- **Ponto de saída do tiro (Reborn):** fixo no corpo, 30 px à frente e 23 px acima dos pés em chão plano, independente da mira, e girando com a inclinação do chão (`muzzlePoint` em physics.ts). Substitui `MUZZLE_HEIGHT` (30,18, herdado do motor antigo).
+- **Sem prazo de jogo depois que o relógio para:** só a barra de força limita (sobe 0→100 em ~4 s e desce; voltando a 0 passa a vez). Soltar sempre atira com a força atual. O servidor mantém um timeout de segurança de 30 s (desconexão).

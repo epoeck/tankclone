@@ -1,0 +1,30 @@
+/* Palco 1280×720 que escala para caber na largura (como nas telas de referência do design). */
+.fit { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; position: relative; container-type: inline-size; margin: 0 auto; }
+.stage { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; transform-origin: 0 0; transform: scale(calc(100cqw / 1280px)); overflow: hidden; border-radius: 14px; border: 3px solid var(--ink); }
+@supports not (transform: scale(calc(100cqw / 1280px))) { .stage { position: relative; } }
+.stage canvas { position: absolute; inset: 0; width: 1280px; height: 720px; }
+.hud .banner { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); text-align: center; padding: 18px 40px; }
+.hud .turns__item .portrait canvas { position: static; width: 42px; height: 42px; }
+.hud .slot { cursor: pointer; }
+.hud .slot.is-off { filter: grayscale(1) brightness(.6); }
+.hud .slot__count { position: absolute; bottom: 3px; left: 5px; font-weight: 900; font-size: 11px; color: var(--ember-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.hud .nameplates { position: absolute; inset: 0; pointer-events: none; }
+
+.hud .me__ring canvas { position: absolute; inset: auto; left: 50%; bottom: 4px; width: 110px; height: 150px; }
+.hud .minimap canvas { position: static; inset: auto; width: 300px; height: 130px; }
+.hud .feed__in { pointer-events: auto; width: 100%; margin-top: 4px; padding: 4px 8px; border-radius: 6px; border: 2px solid var(--ink); grid-column: 1 / -1; }
+.hud .feed__lines div { transition: opacity 1s; }
+.hud .feed__lines div.old { opacity: .35; }
+.hud .feed { pointer-events: none; }
+.hud .clock .btn, .hud .itemcol .slot, .hud .skills .slot { pointer-events: auto; }
+
+/* Reborn: medidor de fúria (DanderBar) e POW; itens com o leve "pulo" ao escolher e o brilho ao passar o mouse */
+.hud .gauge .dander { position: absolute; left: 10px; top: 9px; width: 104px; height: 106px; display: none; pointer-events: auto; cursor: pointer; }
+.hud .gauge.gauge--reborn .dander { display: block; }
+.hud .gauge.gauge--reborn > img { visibility: hidden; }
+.hud .gauge { pointer-events: auto; }
+.hud .slot img { transition: transform .08s ease-out; }
+.hud .slot.is-pressed img, .hud .slot:not(.is-off):hover img { transform: translateY(-3.6px) scale(1.2); }
+.hud .slot:not(.is-off):hover img { filter: drop-shadow(0 0 4px #ffff33); }
+.hud .slot.is-ready { box-shadow: 0 0 0 3px #ffcc00, 0 0 14px 4px #ff7a00; animation: powReady .6s ease-in-out infinite alternate; }
+@keyframes powReady { from { box-shadow: 0 0 0 3px #ffcc00, 0 0 6px 2px #ff7a00; } to { box-shadow: 0 0 0 3px #fff2a8, 0 0 18px 6px #ff7a00; } }

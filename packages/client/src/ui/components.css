@@ -1,0 +1,387 @@
+/* DDClank — componentes de UI. Depende de tokens.css.
+   Convenção: BEM simples (.bloco, .bloco__parte, .bloco--variante). Estados por atributo: [data-state], [aria-selected], [disabled]. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.dd {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Tipografia ---------- */
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: .02em;
+  color: var(--brass-300);
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 var(--purple-shadow);
+  margin: 0;
+  line-height: 1.05;
+}
+.title--xl { font-size: var(--fs-2xl); }
+.title--lg { font-size: var(--fs-xl); }
+.title--md { font-size: var(--fs-lg); -webkit-text-stroke-width: 5px; }
+.title--sm { font-size: var(--fs-md); -webkit-text-stroke-width: 4px; }
+.title--ember { color: var(--ember-300); }
+.title--cream { color: var(--cream); }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); font-weight: 800; }
+
+/* ---------- Painéis ---------- */
+/* Painel metálico: corpo azul, aro de latão, rebites nos cantos. */
+.panel {
+  position: relative;
+  background:
+    radial-gradient(circle at 12px 12px, var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at calc(100% - 12px) 12px, var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at 12px calc(100% - 12px), var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), var(--brass-300) 0 2px, var(--brass-900) 2.5px 3.5px, transparent 4px),
+    var(--g-navy);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 0 0 3px var(--brass-500), inset 0 0 0 5px var(--brass-900), var(--drop);
+  padding: var(--gap-5);
+}
+.panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--gap-3);
+  margin-bottom: var(--gap-4);
+}
+/* Papel: área de leitura dentro de um painel (listas, chat, inventário). */
+.paper {
+  background: var(--cream);
+  color: var(--text-on-paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 2px var(--parchment-line);
+}
+.well {
+  background: var(--navy-950);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.5);
+}
+
+/* ---------- Botões ---------- */
+.btn {
+  appearance: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-2);
+  font-family: var(--font-display); font-size: var(--fs-lg); letter-spacing: .02em;
+  color: var(--cream);
+  -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill;
+  padding: 8px 20px 10px;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--g-brass);
+  box-shadow: var(--inset-shine), var(--drop);
+  transition: transform .06s, filter .12s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(3px); box-shadow: var(--inset-shine), 0 1px 0 var(--purple-shadow); }
+.btn:focus-visible { outline: 3px solid var(--sky-300); outline-offset: 3px; }
+.btn[disabled] { filter: grayscale(.9) brightness(.8); cursor: not-allowed; }
+.btn--ember { background: var(--g-ember); }
+.btn--steel { background: var(--g-steel); }
+.btn--sky { background: var(--g-sky); color: var(--navy-700); -webkit-text-stroke: 0; }
+.btn--blue { background: var(--g-teamblue); }
+.btn--sm { font-size: var(--fs-md); padding: 4px 12px 6px; -webkit-text-stroke-width: 3px; }
+.btn--lg { font-size: var(--fs-xl); padding: 10px 32px 14px; }
+.btn--icon { padding: 6px; }
+.btn img { width: 24px; height: 24px; }
+
+/* ---------- Abas ---------- */
+.tabs { display: flex; gap: var(--gap-2); flex-wrap: wrap; }
+.tab {
+  appearance: none; cursor: pointer;
+  font-family: var(--font-display); font-size: var(--fs-md);
+  color: var(--steel-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+  padding: 6px 14px 8px;
+  border: var(--line) solid var(--ink); border-bottom-width: 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: var(--navy-800);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab[aria-selected="true"] { background: var(--g-brass); color: var(--cream); }
+.tab[aria-disabled="true"] { opacity: .65; cursor: not-allowed; }
+.tab img { width: 18px; height: 18px; }
+.tab small { font-family: var(--font-body); font-size: var(--fs-xs); -webkit-text-stroke: 0; color: var(--text-dim); }
+
+/* ---------- Campos ---------- */
+.field { display: grid; gap: var(--gap-1); }
+.field input, .field select {
+  font: 800 var(--fs-md) var(--font-body);
+  color: var(--text-on-paper); background: var(--cream);
+  border: var(--line) solid var(--ink); border-radius: var(--r-sm);
+  padding: 8px 12px; box-shadow: inset 0 2px 0 var(--parchment-line);
+}
+.field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--sky-500); outline-offset: 1px; }
+
+/* ---------- Barras (medidores) ---------- */
+.bar {
+  --value: 50%;
+  --fill: var(--bar-hp);
+  position: relative; height: 18px;
+  background: var(--navy-950);
+  border: 2px solid var(--ink); border-radius: 999px;
+  overflow: hidden;
+}
+.bar::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: var(--value);
+  background: linear-gradient(180deg, rgba(255,255,255,.45), transparent 45%, rgba(0,0,0,.25)), var(--fill);
+  border-radius: inherit;
+  transition: width .25s;
+}
+.bar__text {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: var(--fs-xs); font-weight: 900; color: #fff;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+}
+.bar--hp { --fill: var(--bar-hp); }
+.bar--armor { --fill: var(--bar-armor); }
+.bar--dmg { --fill: var(--bar-dmg); }
+.bar--energy { --fill: var(--bar-energy); }
+.bar--xp { --fill: var(--bar-xp); height: 12px; }
+.bar--ok { --fill: var(--ok); }
+.bar--lg { height: 24px; }
+/* custo previsto (itens selecionados) sobreposto na barra de energia */
+.bar__cost { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.65) 0 4px, rgba(255,255,255,.2) 4px 8px); }
+
+/* ---------- Slots (equipamento / inventário / itens de turno) ---------- */
+.slot {
+  position: relative; width: 64px; height: 64px;
+  display: grid; place-items: center;
+  border: var(--line) solid var(--ink); border-radius: var(--r-md);
+  background: radial-gradient(circle at 50% 40%, var(--navy-600), var(--navy-900));
+  box-shadow: inset 0 0 0 2px var(--brass-700);
+}
+.slot img { width: 52px; height: 52px; }
+.slot--empty { background: var(--parchment); box-shadow: inset 0 0 0 2px var(--parchment-line); }
+.slot--empty::after { content: attr(data-label); font-size: var(--fs-xs); color: var(--parchment-line); font-weight: 900; text-align: center; }
+.slot--locked { filter: grayscale(1) brightness(.6); }
+.slot[aria-selected="true"] { box-shadow: inset 0 0 0 3px var(--brass-300), 0 0 0 3px var(--ember-500); }
+.slot__key, .slot__cost, .slot__tag {
+  position: absolute; font-weight: 900; font-size: var(--fs-xs); line-height: 1;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; color: #fff;
+}
+.slot__key { top: 3px; left: 5px; font-family: var(--font-display); font-size: var(--fs-md); color: var(--brass-300); }
+.slot__cost { bottom: 3px; right: 4px; color: var(--sky-300); }
+.slot__tag { top: 4px; right: 4px; color: var(--ember-300); }
+
+/* ---------- Chips / etiquetas ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-xs); font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 8px; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--steel-300); color: var(--ink);
+}
+.chip--wait { background: var(--ok); }
+.chip--play { background: var(--ember-500); color: #fff; }
+.chip--full { background: var(--steel-500); color: #fff; }
+.chip--lvl { background: var(--g-brass); }
+.chip img { width: 14px; height: 14px; }
+
+/* Distintivo de nível (engrenagem com número) */
+.lvl {
+  position: relative; width: 40px; height: 40px; display: grid; place-items: center;
+  background: url("/assets/ui/stats/icon-gear.svg") center / contain no-repeat;
+  font-family: var(--font-display); font-size: var(--fs-md); color: #fff;
+  -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+}
+
+/* ---------- Retrato de jogador ---------- */
+.portrait {
+  position: relative; width: 56px; height: 56px; flex: none;
+  border: var(--line) solid var(--ink); border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--sky-100), var(--sky-500));
+  overflow: hidden; box-shadow: var(--drop-sm);
+}
+.portrait--blue { background: radial-gradient(circle at 50% 35%, #9cc8ff, var(--team-blue)); }
+.portrait--red { background: radial-gradient(circle at 50% 35%, #ffb1a6, var(--team-red)); }
+.portrait .char { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform: translate(-1px, 2px) scale(.6); }
+
+/* ---------- Boneco em camadas ----------
+   Todas as camadas são 96×128 com os pés em (48,124), olhando para a direita.
+   --angle gira o braço + arma em torno do ombro (56,82). */
+.char { position: relative; width: 96px; height: 128px; transform-origin: 48px 124px; }
+.char > img { position: absolute; inset: 0; width: 96px; height: 128px; }
+.char__aim { position: absolute; left: 56px; top: 82px; width: 0; height: 0; transform: rotate(calc(var(--angle, 30deg) * -1)); }
+.char__arm { position: absolute; left: -8px; top: -10px; width: 48px; height: 20px; }
+.char__weapon { position: absolute; left: 24px; top: -15px; width: 53px; height: 26px; }
+.char--flip { scale: -1 1; }
+/* Pose agachada (dentro da partida): corpo e roupa achatados a partir dos pés, cabeça desce e balança. */
+.char--crouch > .char__body { transform-origin: 48px 124px; transform: scaleY(.72); }
+.char--crouch > .char__head { transform: translateY(14px); animation: char-bob 1.2s ease-in-out infinite; }
+.char--crouch > .char__aim { translate: 0 12px; }
+@keyframes char-bob { 0%, 100% { transform: translateY(14px); } 50% { transform: translateY(12px); } }
+
+/* ---------- Seletores de aparência ---------- */
+.swatch { width: 40px; height: 40px; border-radius: 50%; border: var(--line) solid var(--ink); background: var(--c); cursor: pointer; box-shadow: var(--inset-shine), var(--drop-sm); }
+.swatch[aria-checked="true"] { outline: 3px solid var(--brass-300); outline-offset: 2px; }
+.pick { appearance: none; padding: 4px; border: var(--line) solid var(--ink); border-radius: var(--r-md); background: var(--navy-800); cursor: pointer; }
+.pick[aria-checked="true"] { background: var(--g-brass); }
+.pick .portrait { display: block; width: 72px; height: 72px; }
+.pick .portrait .char { transform: translate(-6px, 4px) scale(.82); }
+.swatch:focus-visible, .pick:focus-visible { outline: 3px solid var(--sky-300); outline-offset: 2px; }
+
+/* ---------- Mensagens de chat ---------- */
+.chat { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); padding: var(--gap-3); overflow: auto; }
+.chat b { color: var(--team-blue-dark); }
+.chat .sys { color: var(--brass-700); font-style: italic; }
+.chat__input { display: flex; gap: var(--gap-2); }
+.chat__input input { flex: 1; min-width: 0; }
+
+/* ---------- Tabela (lista de salas, online) ---------- */
+.list { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.list th { text-align: left; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--brass-700); padding: 8px 10px; border-bottom: 2px solid var(--parchment-line); }
+.list td { padding: 8px 10px; border-bottom: 1px dashed var(--parchment-line); }
+.list tr[aria-selected="true"] td { background: var(--brass-300); }
+.list tr:hover td { background: rgba(245, 189, 36, .18); }
+.list .muted { color: #8a6f3c; }
+
+/* =================================================================
+   HUD da partida — disposição pedida pelo Izzy (referência do original):
+   eu no canto sup. esquerdo + conversa; vento e relógio no topo central;
+   minimapa e rodada no canto sup. direito; itens 1–8 em coluna na direita;
+   ângulo no canto inf. esquerdo; barra de força embaixo em toda a largura;
+   vida, energia, Z/X/C e manômetro de pressão no canto inf. direito.
+   ================================================================= */
+.hud { position: absolute; inset: 0; pointer-events: none; }
+.hud > * { pointer-events: auto; position: absolute; }
+.hud .outline { -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+
+/* Eu (boneco em pé) */
+.me { left: 10px; top: 8px; width: 230px; display: grid; justify-items: start; gap: 4px; }
+.me__name { display: flex; gap: 6px; align-items: center; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--brass-300); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+.me__ring {
+  position: relative; width: 150px; height: 150px; border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background: radial-gradient(circle, var(--sky-100) 0 55%, var(--sky-500) 56% 64%, var(--brass-500) 65% 100%);
+  box-shadow: inset 0 0 0 4px var(--brass-700), var(--drop);
+  overflow: hidden;
+}
+.me__ring > * { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); }
+.me__name .chip { -webkit-text-stroke: 0; font-family: var(--font-body); }
+.me .lvl { position: absolute; left: 118px; top: 128px; width: 48px; height: 48px; font-size: var(--fs-lg); }
+
+/* Conversa / registro da partida (sem fundo, texto com contorno) */
+.feed { left: 10px; top: 214px; width: 380px; display: grid; grid-template-columns: 34px 1fr; gap: 8px; }
+.feed__tools { display: grid; gap: 6px; align-content: start; }
+.feed__tools .btn { width: 32px; height: 32px; padding: 0; }
+.feed__lines { display: grid; gap: 2px; font-size: var(--fs-sm); color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.feed__lines .sys { color: var(--brass-300); }
+.feed__lines b { color: var(--sky-300); }
+
+/* Ordem de turno (compacta) */
+.turns { left: 360px; top: 10px; display: flex; gap: 6px; }
+.turns__item { position: relative; display: grid; justify-items: center; gap: 2px; }
+.turns__item .portrait { width: 40px; height: 40px; }
+.turns__item small { font-size: 10px; font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.turns__item[aria-current="true"] .portrait { outline: 3px solid var(--brass-300); outline-offset: 2px; }
+
+/* Vento */
+.windbox { left: 50%; top: 6px; transform: translateX(-50%); display: grid; justify-items: center; }
+.wind { display: flex; align-items: center; gap: 4px; }
+.wind__label { font-size: var(--fs-sm); color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.wind__arrow { width: 96px; height: 40px; background: url("/assets/ui/hud/wind-arrow.svg") center / contain no-repeat; }
+.wind__arrow[data-dir="left"] { transform: scaleX(-1); }
+.wind__value { font-family: var(--font-display); font-size: var(--fs-xl); color: var(--sky-100); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; line-height: 1; }
+
+/* Relógio grande + Passar */
+.clock { left: 50%; top: 66px; transform: translateX(-50%); display: grid; justify-items: center; gap: 4px; }
+.clock__num { font-family: var(--font-display); font-size: 96px; line-height: .9; color: var(--brass-500); -webkit-text-stroke: 8px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--purple-shadow); }
+.clock[data-urgent] .clock__num { color: var(--ember-500); }
+
+/* Minimapa + botões */
+.minimap { right: 10px; top: 10px; width: 300px; height: 130px; padding: 0; overflow: hidden; }
+.minimap canvas, .minimap svg { width: 100%; height: 100%; display: block; }
+.minimap canvas { cursor: grab; touch-action: none; }
+.minimap canvas:active { cursor: grabbing; }
+.minimap__view { position: absolute; border: 2px solid var(--cream); border-radius: 3px; }
+.minimap__dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); transform: translate(-50%, -50%); }
+.minimap__tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; }
+.minimap__tools .btn { width: 30px; height: 30px; padding: 0; font-size: var(--fs-md); }
+
+/* Rodada / placar */
+.roundinfo { right: 76px; top: 150px; width: 234px; padding: 10px 14px; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.roundinfo div { display: flex; justify-content: space-between; }
+
+/* Itens 1–8 em coluna na direita */
+.itemcol { right: 10px; top: 150px; display: grid; gap: 4px; }
+.itemcol .slot { width: 50px; height: 50px; }
+.itemcol .slot img { width: 40px; height: 40px; }
+.slot.is-off { filter: grayscale(1) brightness(.7); }
+
+/* Ângulo (mostrador redondo no canto inferior esquerdo). --angle em graus absolutos. */
+.dial { left: 8px; bottom: 8px; width: 150px; height: 150px; border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background:
+    repeating-conic-gradient(from 0deg, var(--ink) 0 1deg, transparent 1deg 10deg) center / 100% 100%,
+    radial-gradient(circle, var(--navy-800) 0 62%, var(--steel-300) 63% 100%);
+  box-shadow: inset 0 0 0 3px var(--brass-500), var(--drop);
+}
+.dial::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, var(--navy-800) 0 70%, var(--navy-700) 71%); }
+.dial__range { position: absolute; inset: 5px; border-radius: 50%; background: conic-gradient(from var(--range-start, 25deg), #52dd68 0deg var(--range-size, 45deg), transparent var(--range-size, 45deg)); -webkit-mask: radial-gradient(circle closest-side, transparent 0 78%, #000 79%); mask: radial-gradient(circle closest-side, transparent 0 78%, #000 79%); }
+.dial__needle { position: absolute; left: 50%; top: 50%; width: 62px; height: 5px; margin-top: -2.5px; background: var(--ember-500); border: 1px solid var(--ink); border-radius: 3px; transform-origin: 0 50%; transform: rotate(calc(var(--angle, 45deg) * -1)); }
+.dial__last { position: absolute; left: 50%; top: 50%; width: 62px; height: 5px; margin-top: -2.5px; background: url("/ui-local/markers/arrow-clone.png") center / 100% 100% no-repeat, #aab4b8; border-radius: 3px; opacity: .8; transform-origin: 0 50%; transform: rotate(calc(var(--last-angle, 0deg) * -1)); }
+.dial__last[hidden], .power__history[hidden] { display: none; }
+.dial__value { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; font-family: var(--font-display); font-size: var(--fs-xl); color: var(--brass-300); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; }
+.dial__hub { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: var(--g-brass); border: 2px solid var(--ink); }
+
+/* Barra de força: vai de 0 a 100 e volta enquanto Espaço está seguro. --power, --last. */
+.powerbar { left: 168px; right: 380px; bottom: 10px; display: grid; gap: 2px; }
+.powerbar .power { height: 30px; }
+.powerbar__ruler { display: flex; justify-content: space-between; font-size: 11px; font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; padding: 0 1px; }
+.power__hint { position: absolute; inset: 0; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; z-index: 2; }
+.powerbar__label { position: absolute; left: -2px; top: -40px; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--cream); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+
+.power {
+  --power: 0%; --last: 0%;
+  position: relative; isolation: isolate; height: 30px;
+  border: var(--line) solid var(--ink); border-radius: var(--r-sm);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(255,255,255,.18) calc(10% - 2px) 10%),
+    var(--navy-950);
+}
+.power::before {
+  content: ""; position: absolute; z-index: 1; inset: 0 auto 0 0; width: var(--power);
+  background: linear-gradient(180deg, rgba(255,255,255,.5), transparent 50%), linear-gradient(90deg, var(--brass-500), var(--ember-500) 70%, var(--ember-700));
+}
+.power__history { position: absolute; z-index: 0; inset: 0 auto 0 0; width: var(--last); background: url("/ui-local/markers/power-gray.png") left center / 100% 100% no-repeat, rgba(190,198,202,.42); pointer-events: none; }
+
+/* Habilidades acima da barra (F voo, Q escudo…) e o Estouro */
+.skills { left: 230px; bottom: 66px; display: flex; gap: 6px; align-items: end; }
+.skills .slot { width: 54px; height: 54px; }
+.skills .slot img { width: 42px; height: 42px; }
+.skills__gap { width: 24px; }
+
+/* Canto inferior direito: Z/X/C, energia, vida, pressão */
+.zxc { right: 140px; bottom: 82px; display: flex; gap: 6px; }
+.zxc .slot { width: 48px; height: 48px; }
+.vitals2 { right: 140px; bottom: 10px; width: 230px; display: grid; gap: 6px; }
+.vitals2__row { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 900; color: var(--cream); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.gauge { right: 8px; bottom: 8px; width: 124px; height: 124px; }
+.gauge img { position: absolute; inset: 0; width: 124px; height: 124px; }
+.gauge__needle { transform: rotate(calc(-135deg + var(--pressure, 0) * 270deg)); transition: transform .3s; }
+.gauge__label { position: absolute; left: 0; right: 0; bottom: -4px; text-align: center; font-family: var(--font-display); font-size: var(--fs-sm); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.gauge[data-full] .gauge__label { color: var(--ember-300); }
+
+.banner { left: 50%; top: 40%; transform: translate(-50%, -50%); }
+
+/* Rótulos no mapa: nome e vida ficam ABAIXO do boneco */
+.nameplate .lv { font-family: var(--font-display); color: var(--brass-300); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; margin-right: 4px; }
+.nameplate { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; gap: 3px; pointer-events: none; }
+.nameplate b { font-size: var(--fs-sm); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.nameplate .bar { width: 70px; height: 9px; }
+.nameplate--blue b { color: var(--sky-300); }
+.nameplate--red b { color: #ffb1a6; }
+.nameplate--below { transform: translate(-50%, 0); }
+.dmgpop { position: absolute; font-family: var(--font-display); font-size: var(--fs-xl); color: var(--ember-300); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; transform: translate(-50%, -50%) rotate(-6deg); }
+.dmgpop--crit { color: var(--brass-300); font-size: var(--fs-2xl); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar::before, .gauge__needle, .btn { transition: none; }
+}

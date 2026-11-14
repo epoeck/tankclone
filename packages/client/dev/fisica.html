@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visualizador de trajetória</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #14161a; color: #dde; display: flex; gap: 16px; padding: 16px; flex-wrap: wrap; }
+  canvas { background: #1d2230; border: 1px solid #333; max-width: 100%; cursor: crosshair; }
+  #panel { width: 280px; display: flex; flex-direction: column; gap: 10px; }
+  label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+  label input[type=range] { grid-column: 1 / -1; }
+  h3 { margin: 8px 0 0; font-size: 13px; color: #8aa; text-transform: uppercase; letter-spacing: .05em; }
+  #out { font-variant-numeric: tabular-nums; background: #0e1014; padding: 8px; border-radius: 6px; line-height: 1.6; }
+  button { padding: 6px 10px; }
+  small { color: #889; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1000" height="600"></canvas>
+<div id="panel">
+  <h3>Tiro</h3>
+  <div id="shot"></div>
+  <button id="fire">Disparar (espaço)</button>
+  <button id="regen">Terreno ondulado</button>
+  <button id="flatbtn">Terreno plano (p/ tabelas)</button>
+  <label>Direção <button id="flip">→ direita</button></label>
+  <h3>Explosão</h3>
+  <div id="boom"></div>
+  <h3>Física (calibração)</h3>
+  <div id="phys"></div>
+  <button id="reset">Restaurar padrão</button>
+  <div id="out"></div>
+  <small>Clique no mapa para mover o atirador. Espaço dispara e abre uma cratera. Setas ←/→ = ângulo, ↑/↓ = força.</small>
+</div>
+<script type="module" src="/src/dev/fisica.ts"></script>
+</body>
+</html>
