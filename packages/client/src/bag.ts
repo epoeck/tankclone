@@ -6,11 +6,22 @@ import { KIND_LABEL, SLOT_GEAR_TEXT, itemBaseStats, itemName } from "./catalog-u
 import { el, itemThumb, stoneIcon, strengthenText, weaponName, type BagState } from "./forge";
 
 type Send = (m: Record<string, unknown>) => void;
-/** Pares de slots (esquerda e direita) na ordem do Place do original; `null` = lugar sem item nesta versão. */
-const LEFT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["head","head","glass","glass"], ["hair","hair","eff","eff"], ["cloth","cloth","face","face"], ["weapon","weapon","offhand","offhand"]];
-const RIGHT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [["armlet","armlet1","armlet","armlet2"], ["ring","ring1","ring","ring2"], ["suits","suits","necklace","necklace"], ["wing","wing","pet","pet"]];
-/** Fileira sob o personagem (lugares 14, 17 e 18 do original). */
-const BOTTOM: Array<[ItemKind, EquipPlace]> = [["chatball", "chatball"], ["badge", "badge"], ["healstone", "healstone"]];
+/** Disposição do bagAndInfo do CN 14.7 (ddtbagandinfo.xml, pos1..pos19 = Place 0..18):
+ * esquerda x23/83 em y79/133/187/242, direita x329/390 nas mesmas linhas, fileira de baixo em y268 (x144/206/268). */
+const LEFT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [
+  ["head", "head", "glass", "glass"],          // pos1 (0)  · pos2 (1)
+  ["hair", "hair", "eff", "eff"],              // pos3 (2)  · pos4 (3)
+  ["cloth", "cloth", "face", "face"],          // pos5 (4)  · pos6 (5)
+  ["suits", "suits", "wing", "wing"],          // pos12 (11) · pos14 (13)
+];
+const RIGHT: Array<[ItemKind, EquipPlace, ItemKind, EquipPlace]> = [
+  ["armlet", "armlet1", "ring", "ring1"],      // pos8 (7)  · pos10 (9)
+  ["armlet", "armlet2", "ring", "ring2"],      // pos9 (8)  · pos11 (10)
+  ["necklace", "necklace", "chatball", "chatball"], // pos13 (12) · pos15 (14)
+  ["pet", "pet", "healstone", "healstone"],    // pos17 (16) · pos19 (18)
+];
+/** Fileira sob o personagem: arma (pos7, 6), secundária (pos16, 15) e emblema (pos18, 17). */
+const BOTTOM: Array<[ItemKind, EquipPlace]> = [["weapon", "weapon"], ["offhand", "offhand"], ["badge", "badge"]];
 const OPTIONAL: EquipPlace[] = ["head", "glass", "wing", "armlet1", "armlet2", "ring1", "ring2", "offhand", "pet", "chatball", "badge", "healstone"];
 
 export class Bag {
@@ -80,7 +91,7 @@ export class Bag {
     }
     const character = el("section", "", "bag__character");
     const row = el("div", "", "bag__equip"); row.append(left, stage, right);
-    // fileira de baixo do original: balão de chat (14), emblema (17) e pedra de cura (18)
+    // fileira de baixo do original: arma (6), secundária (15) e emblema (17)
     const bottom = el("div", "", "bag__bottom");
     for (const [k, p] of BOTTOM) bottom.append(this.slot(k, p));
     character.append(row, bottom, stats);
